@@ -7,13 +7,25 @@ import './App.css';
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
 
   return (
     <div className="app-container">
-      <Navigation onOpenPost={() => setIsModalOpen(true)} />
+      <Navigation 
+        onOpenPost={() => setIsModalOpen(true)} 
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onOpenHowItWorks={() => setIsHowItWorksOpen(true)}
+      />
       <main>
-        <Hero />
-        <PetGallery />
+        <Hero 
+          onOpenHowItWorks={() => setIsHowItWorksOpen(true)} 
+          onBrowse={() => document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' })}
+        />
+        <div id="gallery">
+          <PetGallery searchQuery={searchQuery} />
+        </div>
       </main>
       
       <footer style={{ padding: '64px 24px', textAlign: 'center', color: 'var(--color-text-muted)', borderTop: '1px solid var(--color-border)', marginTop: '64px' }}>
@@ -26,6 +38,7 @@ function App() {
       </footer>
 
       <ListPetModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <HowItWorksModal isOpen={isHowItWorksOpen} onClose={() => setIsHowItWorksOpen(false)} />
     </div>
   );
 }

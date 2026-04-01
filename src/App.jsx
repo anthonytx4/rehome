@@ -3,6 +3,7 @@ import Navigation from './components/Navigation';
 import Hero from './components/Hero';
 import PetGallery from './components/PetGallery';
 import ListPetModal from './components/ListPetModal';
+import HowItWorksModal from './components/HowItWorksModal';
 import './App.css';
 
 function App() {

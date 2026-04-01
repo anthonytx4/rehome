@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from './Hero.module.css';
 
-const Hero = () => {
+const Hero = ({ onOpenHowItWorks, onBrowse }) => {
   return (
     <div className={styles.heroSection}>
       <div className={`container ${styles.heroContainer}`}>
@@ -15,10 +15,10 @@ const Hero = () => {
           </p>
           
           <div className={styles.ctaGroup}>
-            <button className={`btn btn-primary ${styles.ctaBtn}`}>
+            <button className={`btn btn-primary ${styles.ctaBtn}`} onClick={onBrowse}>
               Browse Pets
             </button>
-            <button className={`btn btn-secondary ${styles.ctaBtn}`}>
+            <button className={`btn btn-secondary ${styles.ctaBtn}`} onClick={onOpenHowItWorks}>
               How It Works
             </button>
           </div>

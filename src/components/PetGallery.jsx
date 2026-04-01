@@ -47,9 +47,20 @@ const mockPets = [
 
 const categories = ['All Pets', 'Dogs', 'Cats', 'Birds', 'Reptiles', 'Other'];
 
-const PetGallery = () => {
+const PetGallery = ({ searchQuery }) => {
   const [activeCat, setActiveCat] = useState('All Pets');
   const [selectedPet, setSelectedPet] = useState(null);
+
+  const filteredPets = mockPets.filter(pet => {
+    const matchesCat = activeCat === 'All Pets' || pet.type === activeCat || (activeCat === 'Dogs' && pet.type === 'Dog') || (activeCat === 'Cats' && pet.type === 'Cat') || (activeCat === 'Birds' && pet.type === 'Bird');
+    const searchLower = searchQuery.toLowerCase();
+    const matchesSearch = 
+      pet.name.toLowerCase().includes(searchLower) ||
+      pet.breed.toLowerCase().includes(searchLower) ||
+      pet.type.toLowerCase().includes(searchLower);
+    
+    return matchesCat && matchesSearch;
+  });
 
   return (
     <section className={`container ${styles.gallerySection}`}>
@@ -70,14 +81,12 @@ const PetGallery = () => {
 
       <div className={styles.grid}>
         {/* Render actual pets */}
-        {mockPets.map(pet => (
+        {filteredPets.map(pet => (
           <PetCard key={pet.id} pet={pet} onClick={setSelectedPet} />
         ))}
         
-        {/* Render a native ad */}
-        <PetCard isAd={true} />
-        
-        {/* More dummy cards could go here to show volume */}
+        {/* Render a native ad only if no active search or if it's 'All Pets' */}
+        {(searchQuery === '' && activeCat === 'All Pets') && <PetCard isAd={true} />}
       </div>
       
       <div className={styles.loadMore}>

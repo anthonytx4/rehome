@@ -2,7 +2,7 @@ import React from 'react';
 import { PawPrint, Search, Menu, PlusCircle } from 'lucide-react';
 import styles from './Navigation.module.css';
 
-const Navigation = ({ onOpenPost }) => {
+const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks }) => {
   return (
     <nav className={styles.navbar}>
       <div className={`container ${styles.navContainer}`}>
@@ -17,11 +17,13 @@ const Navigation = ({ onOpenPost }) => {
             type="text" 
             placeholder="Search for pets, breeds, or shelters..." 
             className={styles.searchInput}
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
           />
         </div>
 
         <div className={styles.actions}>
-          <span className={styles.navLink}>Adopt</span>
+          <span className={styles.navLink} onClick={onOpenHowItWorks}>About</span>
           <span className={styles.navLinkPremium}>For Breeders</span>
           <button className={`btn ${styles.postBtn}`} onClick={onOpenPost}>
             <PlusCircle size={18} />

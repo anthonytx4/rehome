@@ -1,0 +1,10 @@
+/* Core styles defined in index.css. Leave this file for specific app layout wraps if needed */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex-grow: 1;
+}

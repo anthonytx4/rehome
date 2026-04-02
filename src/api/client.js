@@ -1,15 +1,9 @@
 import axios from 'axios';
 
-// Get the API URL from the environment, defaulting to an empty string for relative paths
-const VITE_API_URL = import.meta.env.VITE_API_URL || '';
-
-// Defensive logic to prevent double-concatenation (/api/api)
-// 1. If VITE_API_URL is empty, we use '/api' to stay relative to the current domain.
-// 2. If it already contains '/api', we use it as-is.
-// 3. Otherwise, we append '/api'.
-const baseURL = VITE_API_URL 
-  ? (VITE_API_URL.endsWith('/api') ? VITE_API_URL : `${VITE_API_URL}/api`) 
-  : '/api';
+// FORCE relative path in production, and standard development path otherwise
+// This eliminates the /api/api duplication by ensuring we don't double-concatenate.
+const isProd = import.meta.env.PROD;
+const baseURL = isProd ? '/api' : (import.meta.env.VITE_API_URL || 'http://localhost:5001/api');
 
 const api = axios.create({
   baseURL,
@@ -17,7 +11,7 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' }
 });
 
-// Add token from localStorage as fallback for non-cookie requests
+// Add token from localStorage as fallback
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('rehome_token');
   if (token && !config.headers.Authorization) {
@@ -26,10 +20,12 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 Unauthorized globally to clear sessions
+// Avoid app-wide crashes on API failures
 api.interceptors.response.use(
   (res) => res,
   (err) => {
+    // If we catch a 500 error on boot, we should log it but NOT unmount the React app
+    console.error('API Error:', err.response?.status, err.message);
     if (err.response?.status === 401) {
       localStorage.removeItem('rehome_token');
       localStorage.removeItem('rehome_user');

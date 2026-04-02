@@ -211,12 +211,14 @@ const MessagesPage = () => {
                       {msg.mediaUrl && (
                         <div className={styles.mediaContent}>
                           {msg.mediaType === 'image' ? (
-                            <img src={`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${msg.mediaUrl}`} alt="Sent media" onClick={() => window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${msg.mediaUrl}`)} />
+                            <img src={`${import.meta.env.VITE_API_URL || ''}${msg.mediaUrl}`} alt="Sent media" onClick={() => window.open(`${import.meta.env.VITE_API_URL || ''}${msg.mediaUrl}`)} />
                           ) : (
-                            <video controls poster="">
-                              <source src={`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${msg.mediaUrl}`} type="video/mp4" />
-                              Your browser does not support video.
-                            </video>
+                            <div className={styles.videoContainer}>
+                              <video controls>
+                                <source src={`${import.meta.env.VITE_API_URL || ''}${msg.mediaUrl}`} type="video/mp4" />
+                                Your browser does not support video.
+                              </video>
+                            </div>
                           )}
                         </div>
                       )}

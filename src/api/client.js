@@ -1,9 +1,11 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || ''; // Relative in production, or localhost if VITE_API_URL is set
+const API_URL = import.meta.env.VITE_API_URL || ''; 
+// Ensure we don't double-append /api if it's already in the VITE_API_URL
+const baseURL = API_URL.endsWith('/api') ? API_URL : `${API_URL}/api`;
 
 const api = axios.create({
-  baseURL: `${API_URL}/api`,
+  baseURL,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' }
 });

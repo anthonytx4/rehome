@@ -115,7 +115,13 @@ export const createListing = async (req, res, next) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const images = req.files ? req.files.map(f => `/uploads/${f.filename}`) : [];
+    const images = [];
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const url = await handleUpload(file, 'listings');
+        images.push(url);
+      }
+    }
 
     const listing = await prisma.listing.create({
       data: {

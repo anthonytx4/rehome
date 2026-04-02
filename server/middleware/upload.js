@@ -2,34 +2,12 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import { put } from '@vercel/blob';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Ensure directories exist
-const uploadDirs = [
-  path.join(__dirname, '..', 'uploads'),
-  path.join(__dirname, '..', 'uploads', 'listings'),
-  path.join(__dirname, '..', 'uploads', 'messages')
-];
-
-uploadDirs.forEach(dir => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-});
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    // Determine destination based on fieldname or route if needed
-    // Default to 'listings' if not 'media' (from messages)
-    const subfolder = file.fieldname === 'media' ? 'messages' : 'listings';
-    cb(null, path.join(__dirname, '..', 'uploads', subfolder));
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Local development storage
+const storage = multer.memoryStorage(); // Use memory for dev before uploading if needed
 
 const fileFilter = (req, file, cb) => {
   const allowedImages = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -45,5 +23,25 @@ const fileFilter = (req, file, cb) => {
 export const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 20 * 1024 * 1024 } // 20MB as requested
+  limits: { fileSize: 20 * 1024 * 1024 }
 });
+
+// Helper for Vercel Blob vs Local
+export const handleUpload = async (file, folder = 'listings') => {
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    // Production: Vercel Blob
+    const { url } = await put(`${folder}/${Date.now()}-${file.originalname}`, file.buffer, {
+      access: 'public',
+      token: process.env.BLOB_READ_WRITE_TOKEN
+    });
+    return url;
+  } else {
+    // Local: Save to disk
+    const uploadPath = path.join(__dirname, '..', 'uploads', folder);
+    if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath, { recursive: true });
+    
+    const filename = `${Date.now()}-${file.originalname}`;
+    fs.writeFileSync(path.join(uploadPath, filename), file.buffer);
+    return `/uploads/${folder}/${filename}`;
+  }
+};

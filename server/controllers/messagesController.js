@@ -105,22 +105,22 @@ export const sendMessage = async (req, res, next) => {
     let mediaUrl = null;
     let mediaType = null;
 
-    if (mediaFile) {
-      mediaUrl = `/uploads/messages/${mediaFile.filename}`;
-      mediaType = mediaFile.mimetype.startsWith('video/') ? 'video' : 'image';
+    if (req.file) {
+      mediaUrl = await handleUpload(req.file, 'messages');
+      mediaType = req.file.mimetype.startsWith('video/') ? 'video' : 'image';
     }
 
     const message = await prisma.message.create({
       data: {
-        content,
-        mediaUrl,
-        mediaType,
+        content: content || '',
         senderId: req.user.id,
         receiverId,
-        listingId
+        listingId,
+        mediaUrl,
+        mediaType
       },
       include: {
-        sender: { select: { id: true, name: true, avatar: true } }
+        sender: { select: { name: true, avatar: true } }
       }
     });
 

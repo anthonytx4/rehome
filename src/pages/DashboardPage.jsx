@@ -19,6 +19,7 @@ const DashboardPage = () => {
   }, [tab]);
 
   const loadData = async () => {
+    if (!user) return; // Prevent crash if redirect happens before context is updated
     setLoading(true);
     try {
       if (tab === 'listings') {

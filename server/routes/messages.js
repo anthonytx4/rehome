@@ -1,3 +1,6 @@
+import { Router } from 'express';
+import { getInbox, getThread, sendMessage } from '../controllers/messagesController.js';
+import { auth } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
 
 const router = Router();

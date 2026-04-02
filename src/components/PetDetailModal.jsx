@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Clock, ShieldAlert, CreditCard, ChevronRight, Heart } from 'lucide-react';
+import { X, Clock, ShieldAlert, CreditCard, ChevronRight, Heart, MessageSquare } from 'lucide-react';
 import ContextualRecommendations from './ads/ContextualRecommendations';
 import analytics from '../hooks/useAnalytics';
 import styles from './PetDetailModal.module.css';
@@ -121,6 +121,25 @@ const PetDetailModal = ({ pet, onClose, onPostAction }) => {
                 <p>You now have priority access to contact this seller.</p>
               </div>
             )}
+
+            {/* Message Seller */}
+            <div className={styles.actionCard}>
+              <h3>Contact Seller</h3>
+              <p className={styles.escrowText}>
+                Have questions about {pet.name}? Message the seller directly to discuss rehoming.
+              </p>
+              <button 
+                className={`btn btn-secondary ${styles.fullWidthBtn}`}
+                disabled={!hasSkippedQueue}
+                onClick={() => window.location.href = `/messages/${pet.id}?sellerId=${pet.userId || 'seller-1'}`}
+              >
+                <MessageSquare size={18} />
+                Message Seller
+              </button>
+              {!hasSkippedQueue && (
+                <p className={styles.disabledNote}>Skip the Review Queue to unlock messaging.</p>
+              )}
+            </div>
 
             {/* Escrow Checkout */}
             <div className={styles.actionCard}>

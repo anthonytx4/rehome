@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { PawPrint, Search, Menu, PlusCircle, User, LogOut, LayoutDashboard, X } from 'lucide-react';
+import { PawPrint, Search, Menu, PlusCircle, User, LogOut, LayoutDashboard, X, MessageSquare, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import styles from './Navigation.module.css';
@@ -59,8 +59,16 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
                         <span>{user.email}</span>
                       </div>
                       <Link to="/dashboard" className={styles.menuItem} onClick={() => setShowUserMenu(false)}>
-                        <LayoutDashboard size={16} /> Dashboard
+                        <LayoutDashboard size={16} /> My Dashboard
                       </Link>
+                      <Link to="/messages" className={styles.menuItem} onClick={() => setShowUserMenu(false)}>
+                        <MessageSquare size={16} /> Messages
+                      </Link>
+                      {user?.email === 'admin@rehome.world' && (
+                        <Link to="/admin" className={styles.menuItem} onClick={() => setShowUserMenu(false)}>
+                          <ShieldCheck size={16} /> Admin Panel
+                        </Link>
+                      )}
                       <button className={styles.menuItem} onClick={handleLogout}>
                         <LogOut size={16} /> Sign Out
                       </button>

@@ -14,6 +14,8 @@ import PostActionBanner from './components/ads/PostActionBanner';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
+import MessagesPage from './pages/MessagesPage';
+import AdminPage from './pages/AdminPage';
 import './App.css';
 
 // Protected route wrapper
@@ -21,6 +23,16 @@ const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
   if (loading) return <div style={{ padding: '100px', textAlign: 'center' }}>Loading...</div>;
   return isAuthenticated ? children : <Navigate to="/login" replace />;
+};
+
+// Admin route wrapper
+const AdminRoute = ({ children }) => {
+  const { user, isAuthenticated, loading } = useAuth();
+  if (loading) return <div style={{ padding: '100px', textAlign: 'center' }}>Loading...</div>;
+  if (!isAuthenticated || user?.email !== 'admin@rehome.world') {
+    return <Navigate to="/" replace />;
+  }
+  return children;
 };
 
 // Homepage component (existing layout)
@@ -83,6 +95,9 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+          <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
+          <Route path="/messages/:listingId" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
+          <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
         </Routes>
       </main>
 

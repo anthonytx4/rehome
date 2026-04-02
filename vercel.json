@@ -1,5 +1,9 @@
 {
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.js" },
     { "source": "/((?!api|uploads|images|assets).*)", "destination": "/index.html" }
+  ],
+  "redirects": [
+    { "source": "/(.*)", "has": [{ "type": "host", "value": "rehome.world" }], "destination": "https://www.rehome.world/$1", "permanent": true }
   ]
 }

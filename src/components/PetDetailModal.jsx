@@ -1,16 +1,49 @@
-import React, { useState } from 'react';
-import { X, Clock, ShieldAlert, CreditCard, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Clock, ShieldAlert, CreditCard, ChevronRight, Heart } from 'lucide-react';
+import ContextualRecommendations from './ads/ContextualRecommendations';
+import analytics from '../hooks/useAnalytics';
 import styles from './PetDetailModal.module.css';
 
-const PetDetailModal = ({ pet, onClose }) => {
+const PetDetailModal = ({ pet, onClose, onPostAction }) => {
   const [hasSkippedQueue, setHasSkippedQueue] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false);
+
+  useEffect(() => {
+    if (pet) {
+      analytics.viewListing(pet.id, pet.type, pet.breed);
+    }
+  }, [pet]);
 
   if (!pet) return null;
 
   // Calculate fees
   const baseFee = pet.fee || 0;
-  const escrowFee = baseFee > 0 ? (baseFee * 0.05).toFixed(2) : '2.00'; // $2 minimum or 5%
+  const escrowFee = baseFee > 0 ? (baseFee * 0.05).toFixed(2) : '2.00';
   const total = (parseFloat(baseFee) + parseFloat(escrowFee)).toFixed(2);
+
+  const handleSkipQueue = () => {
+    setHasSkippedQueue(true);
+    analytics.skipQueue(pet.id, 9);
+  };
+
+  const handleFavorite = () => {
+    setIsFavorited(!isFavorited);
+    if (!isFavorited) {
+      analytics.addToFavorites(pet.id, pet.type);
+      onPostAction?.('favorite');
+    } else {
+      analytics.removeFromFavorites(pet.id);
+    }
+  };
+
+  const handleCheckout = () => {
+    analytics.beginCheckout(parseFloat(total));
+    analytics.escrowPayment(pet.id, baseFee, parseFloat(escrowFee));
+  };
+
+  const handlePriorityApp = () => {
+    analytics.priorityApplication(pet.id);
+  };
 
   return (
     <div className={styles.overlay}>
@@ -26,6 +59,12 @@ const PetDetailModal = ({ pet, onClose }) => {
           <div className={styles.leftCol}>
             <div className={styles.imageGallery}>
               <img src={pet.image} alt={pet.name} className={styles.mainImage} />
+              <button 
+                className={`${styles.favoriteBtn} ${isFavorited ? styles.favoriteBtnActive : ''}`}
+                onClick={handleFavorite}
+              >
+                <Heart size={20} fill={isFavorited ? 'currentColor' : 'none'} />
+              </button>
             </div>
             
             <div className={styles.petInfo}>
@@ -49,13 +88,16 @@ const PetDetailModal = ({ pet, onClose }) => {
                 <h3>About {pet.name}</h3>
                 <p>This is a healthy, active {pet.type.toLowerCase()} looking for a forever home. Highly sociable and up to date on shots.</p>
               </div>
+
+              {/* Contextual Product Recommendations */}
+              <ContextualRecommendations petType={pet.type} petName={pet.name} />
             </div>
           </div>
 
-          {/* Right Column: Aggressive Monetization Actions */}
+          {/* Right Column: Monetization Actions */}
           <div className={styles.rightCol}>
             
-            {/* Queue Jump Extraction */}
+            {/* Queue Jump */}
             {!hasSkippedQueue ? (
               <div className={styles.actionCard}>
                 <div className={styles.queueHeader}>
@@ -68,7 +110,7 @@ const PetDetailModal = ({ pet, onClose }) => {
                 <div className={styles.queueTimer}>Time remaining: <strong>23h 45m 12s</strong></div>
                 <button 
                   className={`btn btn-premium ${styles.fullWidthBtn}`}
-                  onClick={() => setHasSkippedQueue(true)}
+                  onClick={handleSkipQueue}
                 >
                   Pay $9.00 to Skip Queue
                 </button>
@@ -80,7 +122,7 @@ const PetDetailModal = ({ pet, onClose }) => {
               </div>
             )}
 
-            {/* 5% Fee Escrow Checkout Extraction */}
+            {/* Escrow Checkout */}
             <div className={styles.actionCard}>
               <h3>Secure Escrow Payment</h3>
               <p className={styles.escrowText}>
@@ -105,6 +147,7 @@ const PetDetailModal = ({ pet, onClose }) => {
               <button 
                 className={`btn btn-primary ${styles.fullWidthBtn}`}
                 disabled={!hasSkippedQueue}
+                onClick={handleCheckout}
               >
                 <CreditCard size={18} />
                 Pay ${total} via Escrow
@@ -115,8 +158,8 @@ const PetDetailModal = ({ pet, onClose }) => {
               )}
             </div>
 
-            {/* Application Upsell */}
-            <div className={styles.secondaryActionCard}>
+            {/* Priority Application */}
+            <div className={styles.secondaryActionCard} onClick={handlePriorityApp}>
               <div className={styles.appRow}>
                 <div>
                   <strong>Priority Application ($5)</strong>

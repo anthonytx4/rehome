@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import PetCard from './PetCard';
 import PetDetailModal from './PetDetailModal';
+import NativeSponsoredCard from './ads/NativeSponsoredCard';
 import styles from './PetGallery.module.css';
 
 const mockPets = [
@@ -47,7 +48,7 @@ const mockPets = [
 
 const categories = ['All Pets', 'Dogs', 'Cats', 'Birds', 'Reptiles', 'Other'];
 
-const PetGallery = ({ searchQuery }) => {
+const PetGallery = ({ searchQuery, onPostAction }) => {
   const [activeCat, setActiveCat] = useState('All Pets');
   const [selectedPet, setSelectedPet] = useState(null);
 
@@ -61,6 +62,30 @@ const PetGallery = ({ searchQuery }) => {
     
     return matchesCat && matchesSearch;
   });
+
+  // Build mixed items: pets + native sponsored cards every 4th position
+  const buildFeedItems = () => {
+    const items = [];
+    let adIndex = 0;
+    
+    filteredPets.forEach((pet, i) => {
+      items.push({ type: 'pet', data: pet });
+      
+      // Insert a native sponsored card after every 3rd pet
+      if ((i + 1) % 3 === 0 && searchQuery === '') {
+        items.push({ type: 'sponsored', index: adIndex++ });
+      }
+    });
+
+    // If there are few pets and no search, still show at least one ad
+    if (filteredPets.length > 0 && filteredPets.length < 3 && searchQuery === '' && activeCat === 'All Pets') {
+      items.push({ type: 'sponsored', index: 0 });
+    }
+
+    return items;
+  };
+
+  const feedItems = buildFeedItems();
 
   return (
     <section className={`container ${styles.gallerySection}`}>
@@ -80,20 +105,25 @@ const PetGallery = ({ searchQuery }) => {
       </div>
 
       <div className={styles.grid}>
-        {/* Render actual pets */}
-        {filteredPets.map(pet => (
-          <PetCard key={pet.id} pet={pet} onClick={setSelectedPet} />
-        ))}
-        
-        {/* Render a native ad only if no active search or if it's 'All Pets' */}
-        {(searchQuery === '' && activeCat === 'All Pets') && <PetCard isAd={true} />}
+        {feedItems.map((item, i) => {
+          if (item.type === 'sponsored') {
+            return <NativeSponsoredCard key={`ad-${item.index}`} index={item.index} />;
+          }
+          return (
+            <PetCard key={item.data.id} pet={item.data} onClick={setSelectedPet} />
+          );
+        })}
       </div>
       
       <div className={styles.loadMore}>
         <button className="btn btn-secondary">Load More Pets</button>
       </div>
 
-      <PetDetailModal pet={selectedPet} onClose={() => setSelectedPet(null)} />
+      <PetDetailModal 
+        pet={selectedPet} 
+        onClose={() => setSelectedPet(null)}
+        onPostAction={onPostAction}
+      />
     </section>
   );
 };

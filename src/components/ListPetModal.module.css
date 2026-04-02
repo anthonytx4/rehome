@@ -462,3 +462,224 @@
   border-radius: var(--radius-full);
   box-shadow: var(--shadow-sm);
 }
+
+/* Guest Warning */
+.guestWarning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  background: #FEF3C7;
+  border-bottom: 1px solid #FCD34D;
+  color: #92400E;
+  font-size: 0.85rem;
+}
+
+.guestLoginBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #FCD34D;
+  border-radius: var(--radius-full);
+  color: #92400E;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  margin-left: auto;
+  flex-shrink: 0;
+  font-family: inherit;
+}
+
+.guestLoginBtn:hover {
+  background: #FEF3C7;
+}
+
+/* Photo Step */
+.photoStep {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.photoGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .photoGrid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.photoCard {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+
+.photoPreview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photoRemoveBtn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+}
+
+.photoRemoveBtn:hover {
+  background: #EF4444;
+}
+
+.photoUploadBtn {
+  aspect-ratio: 1;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.photoUploadBtn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+/* Boost Section */
+.boostSection {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.boostOption {
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.boostOption:hover {
+  border-color: var(--color-text-muted);
+}
+
+.boostActive {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.boostOption h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-secondary);
+  margin-bottom: 4px;
+}
+
+.boostOption p {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+.boostPrice {
+  display: inline-block;
+  margin-top: 8px;
+  font-weight: 800;
+  color: var(--color-primary-dark);
+  font-size: 1.1rem;
+}
+
+.boostBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-premium);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+/* Inline Auth */
+.inlineAuth {
+  padding: 24px;
+  background: var(--color-surface-hover);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.inlineAuth h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-secondary);
+  margin-bottom: 4px;
+}
+
+.inlineAuth p {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+}
+
+/* Step Indicator */
+.stepIndicator {
+  display: flex;
+  gap: 8px;
+}
+
+.stepDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-border);
+  transition: all 0.2s;
+}
+
+.stepDotActive {
+  background: var(--color-primary);
+  width: 24px;
+  border-radius: 4px;
+}
+
+.stepDotDone {
+  background: var(--color-primary-light);
+}
+
+.footerActions {
+  display: flex;
+  gap: 12px;
+}
+
+.fullWidthBtn {
+  width: 100%;
+}
+

@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id               String    @id @default(cuid())
+  name             String
+  email            String    @unique
+  password         String
+  avatar           String?
+  location         String?
+  phone            String?
+  bio              String?
+  isVerifiedBreeder Boolean  @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  listings         Listing[]
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  favorites        Favorite[]
+  reviewsGiven     Review[]  @relation("ReviewsGiven")
+  reviewsReceived  Review[]  @relation("ReviewsReceived")
+}
+
+model Listing {
+  id          String   @id @default(cuid())
+  title       String
+  petName     String
+  species     String
+  breed       String
+  age         String
+  gender      String
+  size        String
+  description String
+  price       Float    @default(0)
+  status      String   @default("available")
+  images      String   @default("[]")
+  location    String
+  vaccinated  Boolean  @default(false)
+  neutered    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  messages    Message[]
+  favorites   Favorite[]
+
+  @@index([species])
+  @@index([status])
+  @@index([userId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String?
+  mediaUrl  String?
+  mediaType String?  // 'image' or 'video'
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  senderId   String
+  sender     User    @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  receiverId String
+  receiver   User    @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  listingId  String
+  listing    Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([listingId])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@index([userId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  reviewerId String
+  reviewer   User   @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  sellerId   String
+  seller     User   @relation("ReviewsReceived", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@index([sellerId])
+}

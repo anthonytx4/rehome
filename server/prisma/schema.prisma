@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL") // Fallback handled by Vercel Environment Variables
+  url      = env("DATABASE_URL")
 }
 
 model User {

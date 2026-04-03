@@ -1,8 +1,3 @@
-const InterstitialAd = ({ isOpen, onClose }) => {
-  if (isOpen && typeof onClose === 'function') {
-    onClose();
-  }
-  return null;
-};
+const InterstitialAd = () => null;
 
 export default InterstitialAd;

@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { X, Clock, ShieldAlert, ChevronRight, Heart, MessageSquare } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import ContextualRecommendations from './ads/ContextualRecommendations';
 import analytics from '../hooks/useAnalytics';
 import { useAuth } from '../context/AuthContext';
 import styles from './PetDetailModal.module.css';
@@ -119,9 +118,6 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
                 <p>{description}</p>
               </div>
 
-              {/* Contextual Product Recommendations */}
-              <ContextualRecommendations petType={displayPet.type} petName={displayPet.name} />
-              
               <div style={{ marginTop: '32px' }}>
                 <AdSenseUnit slot="modal-bottom-native" />
               </div>

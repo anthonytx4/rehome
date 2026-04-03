@@ -1,96 +1,32 @@
-import React, { useRef, useEffect } from 'react';
-import { ExternalLink, ShieldCheck, Truck, Heart, Star } from 'lucide-react';
-import analytics from '../../hooks/useAnalytics';
-import styles from './ContextualRecommendations.module.css';
+import React from 'react';
 
-const PRODUCT_DATA = {
-  Dog: [
-    { id: 'dog-crate', name: 'Premium Dog Crate', brand: 'Chewy', price: '$89', emoji: '🏠', url: 'https://www.chewy.com', tag: 'Essential' },
-    { id: 'dog-food', name: 'Organic Dry Food', brand: 'Chewy', price: '$54', emoji: '🍖', url: 'https://www.chewy.com', tag: 'Top Rated' },
-    { id: 'dog-leash', name: 'No-Pull Harness', brand: 'Amazon', price: '$28', emoji: '🦮', url: 'https://www.amazon.com', tag: 'Best Seller' },
-    { id: 'dog-bed', name: 'Orthopedic Dog Bed', brand: 'Chewy', price: '$65', emoji: '🛏️', url: 'https://www.chewy.com', tag: 'Comfort' },
-  ],
-  Cat: [
-    { id: 'cat-tree', name: 'Cat Tower & Scratcher', brand: 'Chewy', price: '$120', emoji: '🌳', url: 'https://www.chewy.com', tag: 'Essential' },
-    { id: 'cat-litter', name: 'Self-Cleaning Litter Box', brand: 'Petco', price: '$350', emoji: '✨', url: 'https://www.petco.com', tag: 'Premium' },
-    { id: 'cat-food', name: 'Grain-Free Wet Food', brand: 'Chewy', price: '$36', emoji: '🐟', url: 'https://www.chewy.com', tag: 'Top Rated' },
-    { id: 'cat-toy', name: 'Interactive Laser Toy', brand: 'Amazon', price: '$18', emoji: '🔴', url: 'https://www.amazon.com', tag: 'Fun' },
-  ],
-  Bird: [
-    { id: 'bird-cage', name: 'Flight Cage XL', brand: 'Petco', price: '$199', emoji: '🏠', url: 'https://www.petco.com', tag: 'Essential' },
-    { id: 'bird-food', name: 'Seed & Pellet Mix', brand: 'Chewy', price: '$24', emoji: '🌾', url: 'https://www.chewy.com', tag: 'Nutrition' },
-    { id: 'bird-perch', name: 'Natural Wood Perch Set', brand: 'Amazon', price: '$15', emoji: '🌿', url: 'https://www.amazon.com', tag: 'Comfort' },
-    { id: 'bird-toy', name: 'Foraging Toy Bundle', brand: 'Chewy', price: '$22', emoji: '🧩', url: 'https://www.chewy.com', tag: 'Enrichment' },
-  ],
-  default: [
-    { id: 'gen-carrier', name: 'Travel Carrier', brand: 'Chewy', price: '$45', emoji: '🧳', url: 'https://www.chewy.com', tag: 'Essential' },
-    { id: 'gen-insurance', name: 'Pet Insurance Plan', brand: 'Lemonade', price: '$12/mo', emoji: '🛡️', url: 'https://www.lemonade.com/pet', tag: 'Protection' },
-    { id: 'gen-treats', name: 'Training Treats Variety', brand: 'Amazon', price: '$16', emoji: '🦴', url: 'https://www.amazon.com', tag: 'Training' },
-    { id: 'gen-grooming', name: 'Grooming Kit', brand: 'Petco', price: '$32', emoji: '✂️', url: 'https://www.petco.com', tag: 'Care' },
-  ],
+const checklistStyle = {
+  marginTop: '28px',
+  padding: '20px',
+  borderRadius: '20px',
+  background: 'var(--color-surface)',
+  border: '1px solid var(--color-border)',
 };
 
-const ContextualRecommendations = ({ petType = 'Dog', petName = 'your pet' }) => {
-  const products = PRODUCT_DATA[petType] || PRODUCT_DATA.default;
-  const sectionRef = useRef(null);
+const listStyle = {
+  marginTop: '12px',
+  paddingLeft: '18px',
+  color: 'var(--color-text-muted)',
+  lineHeight: 1.7,
+};
 
-  useEffect(() => {
-    if (!sectionRef.current) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          analytics.adImpression('contextual_recs', 'listing_detail', `recs_${petType}`);
-        }
-      },
-      { threshold: 0.3 }
-    );
-    observer.observe(sectionRef.current);
-    return () => observer.disconnect();
-  }, [petType]);
-
-  const handleProductClick = (product) => {
-    analytics.adClick('contextual_recs', 'listing_detail', product.id, product.url);
-  };
-
+const ContextualRecommendations = ({ petName = 'your listing' }) => {
   return (
-    <div ref={sectionRef} className={styles.section}>
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <Heart size={18} className={styles.headerIcon} />
-          <h3 className={styles.title}>Prepare for {petName}</h3>
-        </div>
-        <span className={styles.partnerLabel}>
-          <ShieldCheck size={12} />
-          Partner Products
-        </span>
-      </div>
-
-      <div className={styles.grid}>
-        {products.map((product) => (
-          <a
-            key={product.id}
-            href={product.url}
-            className={styles.productCard}
-            onClick={() => handleProductClick(product)}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <div className={styles.productTag}>{product.tag}</div>
-            <div className={styles.productEmoji}>{product.emoji}</div>
-            <div className={styles.productInfo}>
-              <h4 className={styles.productName}>{product.name}</h4>
-              <div className={styles.productMeta}>
-                <span className={styles.productBrand}>
-                  <Truck size={11} />
-                  {product.brand}
-                </span>
-                <span className={styles.productPrice}>{product.price}</span>
-              </div>
-            </div>
-            <ExternalLink size={14} className={styles.productArrow} />
-          </a>
-        ))}
-      </div>
+    <div style={checklistStyle}>
+      <h3 style={{ marginBottom: '8px' }}>Before You Commit to {petName}</h3>
+      <p style={{ color: 'var(--color-text-muted)', margin: 0 }}>
+        Ask for the feeding routine, transport details, medical records, and the safest pickup or delivery plan before you send payment.
+      </p>
+      <ul style={listStyle}>
+        <li>Confirm vaccinations, breeder paperwork, or health disclosures.</li>
+        <li>Clarify pickup timing, transport crates, and handoff location.</li>
+        <li>Keep high-value payments and boosts inside the Rehome checkout flow.</li>
+      </ul>
     </div>
   );
 };

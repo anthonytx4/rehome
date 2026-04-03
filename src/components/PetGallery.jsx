@@ -5,7 +5,7 @@ import PetCard from './PetCard';
 import PetDetailModal from './PetDetailModal';
 import AdSenseUnit from './ads/AdSenseUnit';
 import styles from './PetGallery.module.css';
-import { normalizeListing } from '../utils/listings';
+import { dedupeListings, normalizeListing } from '../utils/listings';
 
 const escapeXml = (value) => String(value)
   .replaceAll('&', '&amp;')
@@ -140,6 +140,7 @@ const buildMockCatalog = (families, variants, category, idBase) => families.flat
   const price = family.fee + (variant.feeDelta || 0);
   const item = {
     id: idBase + index,
+    title: `${family.name} - ${family.breed}`,
     name: `${family.name} - ${family.breed}`,
     type: family.type,
     breed: family.breed,
@@ -509,24 +510,6 @@ const marketplaceMinimums = {
   supplies: 20,
 };
 
-const dedupeListings = (items) => {
-  const seen = new Set();
-  return items.filter((item) => {
-    if (!item) return false;
-    const key = [
-      safeText(item.name),
-      safeText(item.breed),
-      safeText(item.location),
-      safeText(item.fee),
-      safeText(item.category),
-      safeText(item.listingType),
-    ].join('|').toLowerCase();
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-};
-
 const categoryMaps = {
   'pets': ['All Pets', 'Dogs', 'Cats', 'Birds', 'Reptiles', 'Other'],
   'livestock': ['All Livestock', 'Cattle', 'Horses', 'Poultry', 'Sheep', 'Other'],
@@ -618,7 +601,7 @@ const PetGallery = ({ searchQuery = '', onPostAction, overrideType = '' }) => {
     };
   }, [marketplaceContext, reloadToken]);
 
-  const liveMarketplaceListings = listings.filter((item) => item && item.category === marketplaceContext);
+  const liveMarketplaceListings = dedupeListings(listings.filter((item) => item && item.category === marketplaceContext));
   const fallbackMarketplaceListings = mockMarketplaceListings[marketplaceContext] || mockMarketplaceListings.pets;
   const sourcePets = liveMarketplaceListings.length >= (marketplaceMinimums[marketplaceContext] || 0)
     ? liveMarketplaceListings

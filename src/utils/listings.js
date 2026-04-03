@@ -51,6 +51,25 @@ export function formatLotSize(lotSize) {
   return `Lot of ${numericLotSize}`;
 }
 
+const normalizeListingIdentityPart = (value) => String(value ?? '').trim().toLowerCase();
+
+export function dedupeListings(items = []) {
+  const seen = new Set();
+
+  return items.filter((item) => {
+    if (!item) return false;
+
+    const key = [
+      normalizeListingIdentityPart(item.category),
+      normalizeListingIdentityPart(item.name || item.petName || item.title),
+    ].join('|');
+
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 export function normalizeListing(rawListing) {
   if (!rawListing) return null;
 

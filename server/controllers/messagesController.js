@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { handleUpload } from '../middleware/upload.js';
+import { decorateListingWithArtwork } from '../../src/utils/listingArtwork.js';
 
 const prisma = new PrismaClient();
 
@@ -29,7 +30,7 @@ export const getInbox = async (req, res, next) => {
       if (!conversations[key]) {
         conversations[key] = {
           listingId: msg.listingId,
-          listing: { ...msg.listing, images: JSON.parse(msg.listing.images) },
+          listing: decorateListingWithArtwork(msg.listing),
           otherUser,
           lastMessage: msg,
           unreadCount: 0

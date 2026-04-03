@@ -117,7 +117,7 @@ const DashboardPage = () => {
                 ) : listings.map(listing => (
                   <div key={listing.id} className={styles.listingCard}>
                     <div className={styles.listingImage}>
-                      <img src={listing.images?.[0] || '/images/mock_dog_1775037305181.png'} alt={listing.petName} />
+                      <img src={listing.image || listing.images?.[0] || '/images/mock_dog_1775037305181.png'} alt={listing.petName} />
                       <span className={`${styles.statusBadge} ${styles[`status_${listing.status}`]}`}>
                         {listing.status}
                       </span>
@@ -154,7 +154,7 @@ const DashboardPage = () => {
                 ) : favorites.map(fav => (
                   <Link to={`/listing/${fav.listing.id}`} key={fav.id} className={styles.listingCard}>
                     <div className={styles.listingImage}>
-                      <img src={fav.listing.images?.[0] || '/images/mock_dog_1775037305181.png'} alt={fav.listing.petName} />
+                      <img src={fav.listing.image || fav.listing.images?.[0] || '/images/mock_dog_1775037305181.png'} alt={fav.listing.petName} />
                     </div>
                     <div className={styles.listingInfo}>
                       <h3>{fav.listing.petName}</h3>

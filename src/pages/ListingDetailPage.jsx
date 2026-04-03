@@ -3,61 +3,8 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import api from '../api/client';
 import PetDetailModal from '../components/PetDetailModal';
+import { normalizeListing } from '../utils/listings';
 import toast from 'react-hot-toast';
-
-const fallbackImageByType = (type = '', category = 'pets') => {
-  const normalized = type.toLowerCase();
-  if (normalized.includes('cat')) return '/images/mock_cat_1775037291038.png';
-  if (normalized.includes('bird')) return '/images/mock_bird_1775037276059.png';
-  if (normalized.includes('livestock') || normalized.includes('cow') || normalized.includes('cattle')) return '/images/mock_livestock.svg';
-  if (normalized.includes('supply') || normalized.includes('feed') || normalized.includes('tool')) return '/images/mock_supplies.svg';
-  return category === 'supplies'
-    ? '/images/mock_supplies.svg'
-    : '/images/mock_dog_1775037305181.png';
-};
-
-const parseListingImages = (value) => {
-  if (Array.isArray(value)) return value.filter(Boolean);
-  if (typeof value !== 'string' || !value.trim()) return [];
-
-  try {
-    const parsed = JSON.parse(value);
-    if (Array.isArray(parsed)) return parsed.filter(Boolean);
-    if (typeof parsed === 'string' && parsed.trim()) return [parsed.trim()];
-  } catch {
-    return [value];
-  }
-
-  return [];
-};
-
-const normalizeListing = (listing) => {
-  const category = (listing.category || 'pets').toLowerCase();
-  const images = parseListingImages(listing.images);
-  const type = listing.species || (category === 'supplies' ? 'Supply' : 'Animal');
-  const fallbackImage = listing.image || fallbackImageByType(type, category);
-
-  return {
-    id: listing.id,
-    name: listing.petName || listing.title || 'Untitled Listing',
-    type,
-    breed: listing.breed || (category === 'supplies' ? listing.species : 'Mixed'),
-    age: listing.age || 'Unknown',
-    gender: listing.gender || 'Unknown',
-    location: listing.location || 'Unknown',
-    fee: Number(listing.price || 0),
-    verified: Boolean(listing.seller?.isVerifiedBreeder || listing.user?.isVerifiedBreeder),
-    isPremium: Boolean(listing.boostType),
-    image: images[0] || fallbackImage,
-    images: images.length ? images : [fallbackImage],
-    listingType: listing.listingType || 'fixed',
-    currentBid: listing.currentBid,
-    bidCount: listing.bidCount || 0,
-    auctionEndsAt: listing.auctionEndsAt || null,
-    sellerId: listing.seller?.id || listing.user?.id,
-    description: listing.description,
-  };
-};
 
 // This is a "page" wrapper for PetDetailModal content
 const ListingDetailPage = () => {

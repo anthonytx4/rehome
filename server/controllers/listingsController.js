@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { handleUpload } from '../middleware/upload.js';
+import { decorateListingWithArtwork } from '../../src/utils/listingArtwork.js';
 
 const prisma = new PrismaClient();
 
@@ -25,6 +26,15 @@ const parseLotSize = (value) => {
   if (Number.isFinite(direct) && direct > 0) return Math.round(direct);
   const matched = String(value).match(/\d+/);
   return matched ? Number(matched[0]) : 1;
+};
+
+const serializeListing = (listing, extras = {}) => {
+  const decorated = decorateListingWithArtwork(listing);
+  const { _count, ...rest } = decorated;
+  return {
+    ...rest,
+    ...extras,
+  };
 };
 
 export const getListings = async (req, res, next) => {
@@ -95,11 +105,8 @@ export const getListings = async (req, res, next) => {
       prisma.listing.count({ where })
     ]);
 
-    const parsed = listings.map(l => ({
-      ...l,
-      images: JSON.parse(l.images),
+    const parsed = listings.map(l => serializeListing(l, {
       favoritesCount: l._count.favorites,
-      _count: undefined
     }));
 
     res.json({
@@ -137,16 +144,14 @@ export const getListingById = async (req, res, next) => {
       _avg: { rating: true }
     });
 
-    res.json({
-      ...listing,
-      images: JSON.parse(listing.images),
+    res.json(serializeListing(listing, {
       favoritesCount: listing._count.favorites,
       seller: {
         ...listing.user,
         avgRating: avgRating._avg.rating || 0,
         reviewCount: listing.user._count.reviewsReceived
       }
-    });
+    }));
   } catch (err) {
     next(err);
   }
@@ -217,7 +222,7 @@ export const createListing = async (req, res, next) => {
       }
     });
 
-    res.status(201).json({ ...listing, images: JSON.parse(listing.images) });
+    res.status(201).json(serializeListing(listing));
   } catch (err) {
     next(err);
   }
@@ -288,7 +293,7 @@ export const updateListing = async (req, res, next) => {
       }
     });
 
-    res.json({ ...updated, images: JSON.parse(updated.images) });
+    res.json(serializeListing(updated));
   } catch (err) {
     next(err);
   }
@@ -318,10 +323,8 @@ export const getUserListings = async (req, res, next) => {
       }
     });
 
-    res.json(listings.map(l => ({
-      ...l,
-      images: JSON.parse(l.images),
-      favoritesCount: l._count.favorites
+    res.json(listings.map(l => serializeListing(l, {
+      favoritesCount: l._count.favorites,
     })));
   } catch (err) {
     next(err);

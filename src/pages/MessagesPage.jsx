@@ -206,7 +206,7 @@ const MessagesPage = () => {
                 {messages.length === 0 ? (
                   <div className={styles.chatStart}>
                     <div className={styles.listingPreview}>
-                      <img src={activeConv.listing.images?.[0]} alt="" />
+                      <img src={activeConv.listing.image || activeConv.listing.images?.[0]} alt={activeConv.listing.petName || 'Listing preview'} />
                       <div>
                         <h4>Inquiry about {activeConv.listing.petName}</h4>
                         <p>${activeConv.listing.price}</p>

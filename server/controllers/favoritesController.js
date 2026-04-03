@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { decorateListingWithArtwork } from '../../src/utils/listingArtwork.js';
 
 const prisma = new PrismaClient();
 
@@ -19,7 +20,10 @@ export const getFavorites = async (req, res, next) => {
 
     res.json(favorites.map(f => ({
       ...f,
-      listing: { ...f.listing, images: JSON.parse(f.listing.images), favoritesCount: f.listing._count.favorites }
+      listing: {
+        ...decorateListingWithArtwork(f.listing),
+        favoritesCount: f.listing._count.favorites,
+      }
     })));
   } catch (err) {
     next(err);

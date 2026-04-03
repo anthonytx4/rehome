@@ -1,6 +1,4 @@
-const DOG_IMAGE = '/images/mock_dog_1775037305181.png';
-const CAT_IMAGE = '/images/mock_cat_1775037291038.png';
-const BIRD_IMAGE = '/images/mock_bird_1775037276059.png';
+import { decorateListingWithArtwork } from './listingArtwork.js';
 
 const PET_SPECIES = new Set([
   'dog',
@@ -35,21 +33,6 @@ const SUPPLY_SPECIES = new Set([
   'tools',
 ]);
 
-const parseListingImages = (value) => {
-  if (Array.isArray(value)) return value.filter(Boolean);
-  if (typeof value !== 'string' || !value.trim()) return [];
-
-  try {
-    const parsed = JSON.parse(value);
-    if (Array.isArray(parsed)) return parsed.filter(Boolean);
-    if (typeof parsed === 'string' && parsed.trim()) return [parsed.trim()];
-  } catch {
-    return [value];
-  }
-
-  return [];
-};
-
 export function normalizeMarketplaceCategory(category, species = '') {
   const normalizedCategory = String(category || '').trim().toLowerCase();
   if (normalizedCategory === 'pet' || normalizedCategory === 'pets') return 'pets';
@@ -62,21 +45,6 @@ export function normalizeMarketplaceCategory(category, species = '') {
   return 'livestock';
 }
 
-export function getFallbackImage(species = '', category = 'pets') {
-  const normalizedSpecies = String(species || '').trim().toLowerCase();
-  if (normalizedSpecies.includes('cat')) return CAT_IMAGE;
-  if (
-    normalizedSpecies.includes('bird') ||
-    normalizedSpecies.includes('poultry') ||
-    normalizedSpecies.includes('duck') ||
-    normalizedSpecies.includes('chicken')
-  ) {
-    return BIRD_IMAGE;
-  }
-  if (category === 'supplies') return DOG_IMAGE;
-  return DOG_IMAGE;
-}
-
 export function formatLotSize(lotSize) {
   const numericLotSize = Number(lotSize);
   if (!Number.isFinite(numericLotSize) || numericLotSize <= 1) return null;
@@ -86,13 +54,20 @@ export function formatLotSize(lotSize) {
 export function normalizeListing(rawListing) {
   if (!rawListing) return null;
 
-  const images = parseListingImages(rawListing.images);
   const category = normalizeMarketplaceCategory(rawListing.category, rawListing.species || rawListing.type);
   const seller = rawListing.seller || rawListing.user || null;
   const type = rawListing.species || rawListing.type || 'Listing';
   const name = rawListing.petName || rawListing.name || rawListing.title || type;
   const price = Number(rawListing.price ?? rawListing.fee ?? 0);
-  const fallbackImage = rawListing.image || getFallbackImage(type, category);
+  const artworkListing = decorateListingWithArtwork({
+    ...rawListing,
+    category,
+    species: rawListing.species || rawListing.type,
+    type: rawListing.type || rawListing.species,
+    name: rawListing.name || name,
+    petName: rawListing.petName || name,
+    title: rawListing.title || name,
+  });
 
   return {
     id: rawListing.id,
@@ -107,8 +82,8 @@ export function normalizeListing(rawListing) {
     fee: Number.isFinite(price) ? price : 0,
     verified: seller?.isVerifiedBreeder ?? rawListing.verified ?? false,
     isPremium: Boolean(rawListing.boostType || rawListing.isPremium),
-    image: images[0] || fallbackImage,
-    images: images.length ? images : [fallbackImage],
+    image: artworkListing.image,
+    images: artworkListing.images,
     category,
     listingType: rawListing.listingType || 'fixed',
     lotSize: formatLotSize(rawListing.lotSize),

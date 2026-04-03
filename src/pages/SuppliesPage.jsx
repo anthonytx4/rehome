@@ -4,7 +4,7 @@ import PetGallery from '../components/PetGallery';
 import AdSenseUnit from '../components/ads/AdSenseUnit';
 import PremiumBanner from '../components/ads/PremiumBanner';
 import FooterPartnerStrip from '../components/ads/FooterPartnerStrip';
-import styles from '../App.css';
+import '../App.css';
 
 const SuppliesPage = () => {
   const [searchQuery, setSearchQuery] = useState('');

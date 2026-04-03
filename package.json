@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "npx prisma generate --schema=server/prisma/schema.prisma && vite build",
+    "vercel-build": "npm run build",
     "lint": "eslint .",
     "preview": "vite preview",
     "db:push": "npx prisma db push --schema=server/prisma/schema.prisma",

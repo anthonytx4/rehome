@@ -4,7 +4,8 @@ import PetGallery from '../components/PetGallery';
 import AdSenseUnit from '../components/ads/AdSenseUnit';
 import PremiumBanner from '../components/ads/PremiumBanner';
 import FooterPartnerStrip from '../components/ads/FooterPartnerStrip';
-import styles from '../App.css'; // Reusing or custom styles
+import styles from './LivestockPage.module.css'; // Changed to local module
+import '../App.css'; 
 
 const LivestockPage = () => {
   const [searchQuery, setSearchQuery] = useState('');

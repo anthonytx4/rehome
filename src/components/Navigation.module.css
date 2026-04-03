@@ -55,15 +55,20 @@
   border-radius: 12px;
   position: relative;
   border: 1px solid rgba(0, 0, 0, 0.05);
-  width: 360px;
+  width: 300px;
+  flex-shrink: 0;
   height: 44px;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 640px) {
   .marketplaceSwitcher {
     display: flex;
     align-items: center;
   }
+}
+
+@media (min-width: 900px) {
+  .marketplaceSwitcher { width: 360px; }
 }
 
 .switchItem {
@@ -98,7 +103,7 @@
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1;
 }
 
@@ -299,6 +304,49 @@
   background: white !important;
   color: #dc2626 !important;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* ── Sub-nav Strip (always visible on all screens) ──── */
+.subNav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 16px;
+  background: rgba(248, 248, 248, 0.95);
+  border-top: 1px solid #f0f0f0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+@media (min-width: 640px) {
+  .subNav { display: none; }
+}
+
+.subNavItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  max-width: 140px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.subNavItem:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.subNavActive {
+  background: #dc2626;
+  color: white;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
 }
 
 /* ── User Menu Wrap ───────────────────────────── */

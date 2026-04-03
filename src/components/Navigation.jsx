@@ -27,25 +27,25 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
           <span className={styles.brandText}>Rehome</span>
         </Link>
         
-        {/* Elite Marketplace Switcher */}
+        {/* Elite Marketplace Switcher — desktop/tablet */}
         <div className={styles.marketplaceSwitcher}>
           <Link to="/" className={`${styles.switchItem} ${location.pathname === '/' ? styles.switchActive : ''}`}>
-            <PawPrint size={18} />
+            <PawPrint size={16} />
             <span>Pets</span>
           </Link>
           <Link to="/livestock" className={`${styles.switchItem} ${location.pathname === '/livestock' ? styles.switchActive : ''}`}>
-            <LayoutDashboard size={18} />
+            <LayoutDashboard size={16} />
             <span>Livestock</span>
           </Link>
           <Link to="/supplies" className={`${styles.switchItem} ${location.pathname === '/supplies' ? styles.switchActive : ''}`}>
-            <PlusCircle size={18} />
+            <PlusCircle size={16} />
             <span>Supplies</span>
           </Link>
-          <div 
-            className={styles.switchGlow} 
-            style={{ 
-              transform: `translateX(${location.pathname === '/livestock' ? '100%' : location.pathname === '/supplies' ? '200%' : '0%'})` 
-            }} 
+          <div
+            className={styles.switchGlow}
+            style={{
+              transform: `translateX(${location.pathname === '/livestock' ? '100%' : location.pathname === '/supplies' ? '200%' : '0%'})`
+            }}
           />
         </div>
 
@@ -117,18 +117,31 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
         </div>
       </div>
 
+      {/* Sub-nav strip — mobile only, always visible */}
+      <div className={styles.subNav}>
+        <Link to="/" className={`${styles.subNavItem} ${location.pathname === '/' ? styles.subNavActive : ''}`}>
+          <PawPrint size={16} /> Pets
+        </Link>
+        <Link to="/livestock" className={`${styles.subNavItem} ${location.pathname === '/livestock' ? styles.subNavActive : ''}`}>
+          <LayoutDashboard size={16} /> Livestock
+        </Link>
+        <Link to="/supplies" className={`${styles.subNavItem} ${location.pathname === '/supplies' ? styles.subNavActive : ''}`}>
+          <PlusCircle size={16} /> Supplies
+        </Link>
+      </div>
+
       {/* Mobile menu */}
       {showMobileMenu && (
         <div className={styles.mobileNav}>
           <div className={styles.mobileSwitcher}>
             <Link to="/" className={`${styles.mobileLink} ${location.pathname === '/' ? styles.mobileActive : ''}`} onClick={() => setShowMobileMenu(false)}>
-              <PawPrint size={20} /> Pets
+              <PawPrint size={16} /> Pets
             </Link>
             <Link to="/livestock" className={`${styles.mobileLink} ${location.pathname === '/livestock' ? styles.mobileActive : ''}`} onClick={() => setShowMobileMenu(false)}>
-              <LayoutDashboard size={20} /> Livestock
+              <LayoutDashboard size={16} /> Livestock
             </Link>
             <Link to="/supplies" className={`${styles.mobileLink} ${location.pathname === '/supplies' ? styles.mobileActive : ''}`} onClick={() => setShowMobileMenu(false)}>
-              <PlusCircle size={20} /> Supplies
+              <PlusCircle size={16} /> Supplies
             </Link>
           </div>
           <span className={styles.mobileLink} onClick={() => { onOpenHowItWorks(); setShowMobileMenu(false); }}>About</span>

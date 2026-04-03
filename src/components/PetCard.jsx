@@ -1,6 +1,16 @@
 import { MapPin, ShieldCheck, Star, AlertTriangle, Gavel, Users, Boxes, TrendingUp } from 'lucide-react';
 import styles from './PetCard.module.css';
 
+const formatAuctionEnd = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+  }).format(date);
+};
+
 const PetCard = ({ pet, isAd, onClick }) => {
   if (isAd) {
     return (
@@ -17,6 +27,9 @@ const PetCard = ({ pet, isAd, onClick }) => {
 
   const isAuction = pet.listingType === 'auction';
   const isHot = pet.bidCount > 10;
+  const lotLabel = pet.lotLabel || (pet.lotSize ? `Lot of ${pet.lotSize}` : null);
+  const auctionEndsAt = formatAuctionEnd(pet.auctionEndsAt || pet.raw?.auctionEndsAt);
+  const imageSource = pet.image || pet.images?.[0] || '/images/mock_dog_1775037305181.png';
 
   return (
     <div 
@@ -42,7 +55,7 @@ const PetCard = ({ pet, isAd, onClick }) => {
       )}
       
       <div className={styles.imageContainer}>
-        <img src={pet.image} alt={pet.name} className={styles.image} />
+        <img src={imageSource} alt={pet.name} className={styles.image} />
         {pet.verified && (
           <div className={styles.verifiedBadge}>
             <ShieldCheck size={14} className={styles.verifiedIcon} />
@@ -67,6 +80,13 @@ const PetCard = ({ pet, isAd, onClick }) => {
         </div>
         
         <p className={styles.breed}>{pet.breed} • {pet.age}</p>
+
+        {(lotLabel || auctionEndsAt) && (
+          <div className={styles.metaRow}>
+            {lotLabel && <span className={styles.metaTag}>{lotLabel}</span>}
+            {auctionEndsAt && <span className={styles.metaTagSecondary}>Closes {auctionEndsAt}</span>}
+          </div>
+        )}
         
         {isAuction && (
           <div className={styles.auctionStats}>

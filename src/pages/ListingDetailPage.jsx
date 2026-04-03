@@ -16,10 +16,26 @@ const fallbackImageByType = (type = '', category = 'pets') => {
     : '/images/mock_dog_1775037305181.png';
 };
 
+const parseListingImages = (value) => {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (typeof value !== 'string' || !value.trim()) return [];
+
+  try {
+    const parsed = JSON.parse(value);
+    if (Array.isArray(parsed)) return parsed.filter(Boolean);
+    if (typeof parsed === 'string' && parsed.trim()) return [parsed.trim()];
+  } catch {
+    return [value];
+  }
+
+  return [];
+};
+
 const normalizeListing = (listing) => {
   const category = (listing.category || 'pets').toLowerCase();
-  const images = Array.isArray(listing.images) ? listing.images : [];
+  const images = parseListingImages(listing.images);
   const type = listing.species || (category === 'supplies' ? 'Supply' : 'Animal');
+  const fallbackImage = listing.image || fallbackImageByType(type, category);
 
   return {
     id: listing.id,
@@ -32,10 +48,12 @@ const normalizeListing = (listing) => {
     fee: Number(listing.price || 0),
     verified: Boolean(listing.seller?.isVerifiedBreeder || listing.user?.isVerifiedBreeder),
     isPremium: Boolean(listing.boostType),
-    image: images[0] || fallbackImageByType(type, category),
+    image: images[0] || fallbackImage,
+    images: images.length ? images : [fallbackImage],
     listingType: listing.listingType || 'fixed',
     currentBid: listing.currentBid,
     bidCount: listing.bidCount || 0,
+    auctionEndsAt: listing.auctionEndsAt || null,
     sellerId: listing.seller?.id || listing.user?.id,
     description: listing.description,
   };

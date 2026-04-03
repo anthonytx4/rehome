@@ -35,6 +35,21 @@ const SUPPLY_SPECIES = new Set([
   'tools',
 ]);
 
+const parseListingImages = (value) => {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (typeof value !== 'string' || !value.trim()) return [];
+
+  try {
+    const parsed = JSON.parse(value);
+    if (Array.isArray(parsed)) return parsed.filter(Boolean);
+    if (typeof parsed === 'string' && parsed.trim()) return [parsed.trim()];
+  } catch {
+    return [value];
+  }
+
+  return [];
+};
+
 export function normalizeMarketplaceCategory(category, species = '') {
   const normalizedCategory = String(category || '').trim().toLowerCase();
   if (normalizedCategory === 'pet' || normalizedCategory === 'pets') return 'pets';
@@ -71,16 +86,13 @@ export function formatLotSize(lotSize) {
 export function normalizeListing(rawListing) {
   if (!rawListing) return null;
 
-  const images = Array.isArray(rawListing.images)
-    ? rawListing.images
-    : rawListing.image
-      ? [rawListing.image]
-      : [];
+  const images = parseListingImages(rawListing.images);
   const category = normalizeMarketplaceCategory(rawListing.category, rawListing.species || rawListing.type);
   const seller = rawListing.seller || rawListing.user || null;
   const type = rawListing.species || rawListing.type || 'Listing';
   const name = rawListing.petName || rawListing.name || rawListing.title || type;
   const price = Number(rawListing.price ?? rawListing.fee ?? 0);
+  const fallbackImage = rawListing.image || getFallbackImage(type, category);
 
   return {
     id: rawListing.id,
@@ -95,13 +107,15 @@ export function normalizeListing(rawListing) {
     fee: Number.isFinite(price) ? price : 0,
     verified: seller?.isVerifiedBreeder ?? rawListing.verified ?? false,
     isPremium: Boolean(rawListing.boostType || rawListing.isPremium),
-    image: images[0] || getFallbackImage(type, category),
-    images: images.length ? images : [getFallbackImage(type, category)],
+    image: images[0] || fallbackImage,
+    images: images.length ? images : [fallbackImage],
     category,
     listingType: rawListing.listingType || 'fixed',
     lotSize: formatLotSize(rawListing.lotSize),
     currentBid: rawListing.currentBid ?? null,
     bidCount: rawListing.bidCount ?? 0,
+    auctionEndsAt: rawListing.auctionEndsAt || rawListing.auctionEndAt || null,
+    status: rawListing.status || 'available',
     sellerId: rawListing.userId || seller?.id || null,
     sellerName: seller?.name || null,
     seller,

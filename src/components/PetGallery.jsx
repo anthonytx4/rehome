@@ -22,10 +22,34 @@ const hashString = (value) => {
   return hash;
 };
 
+// Stable local demo artwork for marketplace fallbacks.
+
 const safeText = (value, fallback = '') => {
   if (value === null || value === undefined) return fallback;
   const text = String(value).trim();
   return text || fallback;
+};
+
+const artworkPools = {
+  dog: ['/images/mock_dog_1775037305181.png', '/images/mock_dog_alt.svg'],
+  cat: ['/images/mock_cat_1775037291038.png', '/images/mock_cat_alt.svg'],
+  bird: ['/images/mock_bird_1775037276059.png', '/images/mock_bird_alt.svg'],
+  rabbit: ['/images/mock_rabbit.svg', '/images/mock_rabbit_alt.svg'],
+  livestock: ['/images/mock_livestock.svg', '/images/mock_livestock_alt.svg'],
+  supplies: ['/images/mock_supplies.svg', '/images/mock_supplies_alt.svg'],
+};
+
+const getArtworkPoolKey = (pet) => {
+  const category = safeText(pet.category).toLowerCase();
+  const type = safeText(pet.type).toLowerCase();
+
+  if (category === 'livestock') return 'livestock';
+  if (category === 'supplies') return 'supplies';
+  if (type.includes('dog')) return 'dog';
+  if (type.includes('cat')) return 'cat';
+  if (type.includes('bird') || type.includes('poultry') || type.includes('duck') || type.includes('chicken')) return 'bird';
+  if (type.includes('rabbit')) return 'rabbit';
+  return category === 'pets' ? 'dog' : 'livestock';
 };
 
 const makeMockArtwork = (pet, index) => {
@@ -35,11 +59,13 @@ const makeMockArtwork = (pet, index) => {
     ['#10B981', '#34D399'],
     ['#8B5CF6', '#A78BFA'],
     ['#E11D48', '#F97316'],
+    ['#0F766E', '#22C55E'],
   ];
+  const artworkKey = getArtworkPoolKey(pet);
+  const pool = artworkPools[artworkKey] || artworkPools.livestock;
   const [accent, accent2] = palette[hashString(`${safeText(pet.name)}|${safeText(pet.type)}|${index}`) % palette.length];
+  const base = pool[hashString(`${safeText(pet.name)}|${safeText(pet.type)}|${index}|base`) % pool.length];
   const title = escapeXml(safeText(pet.name, 'Listing'));
-  const subtitle = escapeXml(`${safeText(pet.breed, 'Mixed breed')} · ${safeText(pet.location, 'Location available')}`);
-  const footer = escapeXml(`${safeText(pet.category, 'market').toUpperCase()} · ${safeText(pet.fee, 'Contact seller')}`);
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="${title}">
       <defs>
@@ -47,15 +73,17 @@ const makeMockArtwork = (pet, index) => {
           <stop offset="0%" stop-color="${accent}" />
           <stop offset="100%" stop-color="${accent2}" />
         </linearGradient>
+        <clipPath id="cardClip">
+          <rect x="26" y="26" width="748" height="548" rx="36" />
+        </clipPath>
       </defs>
       <rect width="800" height="600" rx="40" fill="url(#bg)" />
-      <circle cx="640" cy="150" r="72" fill="rgba(255,255,255,0.14)" />
-      <circle cx="140" cy="140" r="52" fill="rgba(255,255,255,0.12)" />
-      <circle cx="645" cy="460" r="120" fill="rgba(255,255,255,0.08)" />
-      <rect x="50" y="350" width="700" height="190" rx="28" fill="#08101C" fill-opacity="0.82" />
-      <text x="68" y="428" font-size="54" font-family="Arial, Helvetica, sans-serif" font-weight="700" fill="#FFFFFF">${title}</text>
-      <text x="68" y="474" font-size="28" font-family="Arial, Helvetica, sans-serif" fill="#E5E7EB">${subtitle}</text>
-      <text x="68" y="520" font-size="22" font-family="Arial, Helvetica, sans-serif" fill="#FDE68A">${footer}</text>
+      <g clip-path="url(#cardClip)">
+        <image href="${base}" x="28" y="28" width="744" height="392" preserveAspectRatio="xMidYMid slice" opacity="0.95" />
+        <circle cx="650" cy="142" r="72" fill="rgba(255,255,255,0.18)" />
+        <circle cx="150" cy="132" r="50" fill="rgba(255,255,255,0.12)" />
+        <circle cx="640" cy="470" r="128" fill="rgba(255,255,255,0.08)" />
+      </g>
     </svg>`;
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 };
@@ -83,7 +111,20 @@ const mockPetBlueprints = [
   { name: 'Sky', type: 'Bird', breed: 'Quaker Pair', age: '2 Years', gender: 'Pair', location: 'Charlotte, NC', fee: 620, verified: true, isPremium: false },
 ];
 
-const mockPets = mockPetBlueprints.map((pet, index) => {
+const extraMockPetBlueprints = [
+  { name: 'Fern', type: 'Dog', breed: 'Pembroke Welsh Corgi', age: '11 Months', gender: 'Female', location: 'Bend, OR', fee: 980, verified: true, isPremium: false },
+  { name: 'Rocco', type: 'Dog', breed: 'Border Collie', age: '2 Years', gender: 'Male', location: 'Columbia, SC', fee: 760, verified: true, isPremium: false },
+  { name: 'Saffron', type: 'Cat', breed: 'Sphynx', age: '1 Year', gender: 'Female', location: 'Phoenix, AZ', fee: 1320, verified: true, isPremium: true },
+  { name: 'Juno', type: 'Cat', breed: 'Persian', age: '3 Years', gender: 'Female', location: 'Providence, RI', fee: 640, verified: true, isPremium: false },
+  { name: 'Mango', type: 'Rabbit', breed: 'Lionhead', age: '8 Months', gender: 'Male', location: 'Boulder, CO', fee: 225, verified: true, isPremium: false },
+  { name: 'Bramble', type: 'Rabbit', breed: 'Netherland Dwarf', age: '10 Months', gender: 'Female', location: 'Eugene, OR', fee: 190, verified: true, isPremium: false },
+  { name: 'Tala', type: 'Bird', breed: 'Lovebird Pair', age: '9 Months', gender: 'Pair', location: 'Tampa, FL', fee: 280, verified: true, isPremium: false },
+  { name: 'Pip', type: 'Bird', breed: 'Canary Trio', age: '7 Months', gender: 'Trio', location: 'Raleigh, NC', fee: 165, verified: false, isPremium: false },
+  { name: 'Dot', type: 'Guinea Pig', breed: 'Peruvian Pair', age: '5 Months', gender: 'Pair', location: 'Madison, WI', fee: 130, verified: true, isPremium: false },
+  { name: 'Nova', type: 'Ferret', breed: 'Sable Ferret', age: '1 Year', gender: 'Female', location: 'Denver, CO', fee: 310, verified: true, isPremium: false },
+];
+
+const mockPets = [...mockPetBlueprints, ...extraMockPetBlueprints].map((pet, index) => {
   const image = makeMockArtwork(pet, index);
   return {
     id: index + 1,
@@ -99,7 +140,7 @@ const buildMockCatalog = (families, variants, category, idBase) => families.flat
   const price = family.fee + (variant.feeDelta || 0);
   const item = {
     id: idBase + index,
-    name: `${family.name} - ${family.breed} (${variant.suffix})`,
+    name: `${family.name} - ${family.breed}`,
     type: family.type,
     breed: family.breed,
     age: variant.age || family.age,
@@ -109,6 +150,7 @@ const buildMockCatalog = (families, variants, category, idBase) => families.flat
     verified: family.verified,
     isPremium: family.isPremium,
     category,
+    lotLabel: variant.suffix || null,
     listingType: family.listingType || 'fixed',
     lotSize: variant.lotSize || family.lotSize || null,
     currentBid: variant.currentBid || null,
@@ -461,6 +503,30 @@ const mockMarketplaceListings = {
   supplies: mockSupplies,
 };
 
+const marketplaceMinimums = {
+  pets: 30,
+  livestock: 30,
+  supplies: 20,
+};
+
+const dedupeListings = (items) => {
+  const seen = new Set();
+  return items.filter((item) => {
+    if (!item) return false;
+    const key = [
+      safeText(item.name),
+      safeText(item.breed),
+      safeText(item.location),
+      safeText(item.fee),
+      safeText(item.category),
+      safeText(item.listingType),
+    ].join('|').toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 const categoryMaps = {
   'pets': ['All Pets', 'Dogs', 'Cats', 'Birds', 'Reptiles', 'Other'],
   'livestock': ['All Livestock', 'Cattle', 'Horses', 'Poultry', 'Sheep', 'Other'],
@@ -552,8 +618,14 @@ const PetGallery = ({ searchQuery = '', onPostAction, overrideType = '' }) => {
     };
   }, [marketplaceContext, reloadToken]);
 
-  const hasMarketplaceListings = listings.some((item) => item && item.category === marketplaceContext);
-  const sourcePets = hasMarketplaceListings ? listings : (mockMarketplaceListings[marketplaceContext] || mockMarketplaceListings.pets);
+  const liveMarketplaceListings = listings.filter((item) => item && item.category === marketplaceContext);
+  const fallbackMarketplaceListings = mockMarketplaceListings[marketplaceContext] || mockMarketplaceListings.pets;
+  const sourcePets = liveMarketplaceListings.length >= (marketplaceMinimums[marketplaceContext] || 0)
+    ? liveMarketplaceListings
+    : dedupeListings([...liveMarketplaceListings, ...fallbackMarketplaceListings]).slice(
+      0,
+      marketplaceMinimums[marketplaceContext] || fallbackMarketplaceListings.length,
+    );
 
   const filteredPets = sourcePets.filter(item => {
     if (!item) return false;

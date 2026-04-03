@@ -9,17 +9,25 @@ datasource db {
 }
 
 model User {
-  id               String    @id @default(cuid())
-  name             String
-  email            String    @unique
-  password         String
-  avatar           String?
-  location         String?
-  phone            String?
-  bio              String?
-  isVerifiedBreeder Boolean  @default(false)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id                  String    @id @default(cuid())
+  name                String
+  email               String    @unique
+  password            String
+  avatar              String?
+  location            String?
+  phone               String?
+  bio                 String?
+  ssn                 String?
+  dob                 String?
+  experience          String?
+  breederType         String?
+  isVerifiedBreeder   Boolean   @default(false)
+  membershipTier      String    @default("free")
+  membershipExpiresAt DateTime?
+  stripeCustomerId    String?
+  remainingSkips      Int       @default(0)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   listings         Listing[]
   sentMessages     Message[] @relation("SentMessages")
@@ -27,26 +35,36 @@ model User {
   favorites        Favorite[]
   reviewsGiven     Review[]  @relation("ReviewsGiven")
   reviewsReceived  Review[]  @relation("ReviewsReceived")
+  payments         Payment[]
 }
 
 model Listing {
-  id          String   @id @default(cuid())
-  title       String
-  petName     String
-  species     String
-  breed       String
-  age         String
-  gender      String
-  size        String
-  description String
-  price       Float    @default(0)
-  status      String   @default("available")
-  images      String   @default("[]")
-  location    String
-  vaccinated  Boolean  @default(false)
-  neutered    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String    @id @default(cuid())
+  title           String
+  petName         String
+  species         String
+  breed           String
+  age             String
+  gender          String
+  size            String
+  description     String
+  price           Float     @default(0)
+  status          String    @default("available")
+  images          String    @default("[]")
+  location        String
+  vaccinated      Boolean   @default(false)
+  neutered        Boolean   @default(false)
+  category        String    @default("pet")
+  listingType     String    @default("fixed")
+  lotSize         Int       @default(1)
+  allowPartialSale Boolean  @default(true)
+  reservePrice    Float?
+  currentBid      Float?
+  auctionEndsAt   DateTime?
+  boostType       String?
+  boostExpiresAt  DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -57,6 +75,7 @@ model Listing {
   @@index([species])
   @@index([status])
   @@index([userId])
+  @@index([category])
 }
 
 model Message {
@@ -108,4 +127,21 @@ model Review {
   seller     User   @relation("ReviewsReceived", fields: [sellerId], references: [id], onDelete: Cascade)
 
   @@index([sellerId])
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  type            String
+  amount          Float
+  status          String   @default("pending")
+  description     String?
+  metadata        String?
+  stripePaymentId String?
+  createdAt       DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([stripePaymentId])
 }

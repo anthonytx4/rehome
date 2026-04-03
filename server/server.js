@@ -10,6 +10,8 @@ import messagesRoutes from './routes/messages.js';
 import favoritesRoutes from './routes/favorites.js';
 import reviewsRoutes from './routes/reviews.js';
 import usersRoutes from './routes/users.js';
+import paymentsRoutes from './routes/payments.js';
+import { handleWebhook } from './controllers/paymentsController.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -33,6 +35,10 @@ app.use(cors({
   },
   credentials: true
 }));
+
+// Raw body for Stripe webhook signature verification (must come before express.json)
+app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), handleWebhook);
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -46,6 +52,7 @@ app.use('/api/messages', messagesRoutes);
 app.use('/api/favorites', favoritesRoutes);
 app.use('/api/reviews', reviewsRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/payments', paymentsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

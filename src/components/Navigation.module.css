@@ -16,6 +16,12 @@
   gap: 32px;
 }
 
+@media (max-width: 1024px) {
+  .navContainer {
+    gap: 16px;
+  }
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -36,6 +42,7 @@
   letter-spacing: -1px;
   background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   text-transform: uppercase;
 }
@@ -52,7 +59,7 @@
   height: 44px;
 }
 
-@media (min-width: 900px) {
+@media (min-width: 768px) {
   .marketplaceSwitcher {
     display: flex;
     align-items: center;

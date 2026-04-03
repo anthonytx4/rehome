@@ -26,21 +26,21 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #dc2626; /* Ruby Red Base */
+  color: var(--color-primary);
   cursor: pointer;
   text-decoration: none;
   flex-shrink: 0;
 }
 
 .brandIcon {
-  filter: drop-shadow(0 0 8px rgba(220, 38, 38, 0.3));
+  filter: drop-shadow(0 0 8px var(--color-primary-glow));
 }
 
 .brandText {
   font-size: 1.6rem;
   font-weight: 900;
   letter-spacing: -1px;
-  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -90,8 +90,8 @@
 }
 
 .switchActive {
-  color: #dc2626;
-  text-shadow: 0 0 10px rgba(220, 38, 38, 0.2);
+  color: var(--color-primary);
+  text-shadow: 0 0 10px var(--color-primary-glow);
 }
 
 .switchGlow {
@@ -139,9 +139,9 @@
 
 .searchInput:focus {
   outline: none;
-  border-color: #dc2626;
+  border-color: var(--color-primary);
   background: white;
-  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
+  box-shadow: 0 0 0 4px var(--color-primary-light);
 }
 
 .actions {
@@ -161,7 +161,7 @@
 }
 
 .navLink:hover {
-  color: #dc2626;
+  color: var(--color-primary);
 }
 
 @media (min-width: 1024px) {
@@ -169,7 +169,7 @@
 }
 
 .postBtn {
-  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   color: white;
   border-radius: 10px;
   padding: 10px 18px;
@@ -179,7 +179,7 @@
   align-items: center;
   gap: 8px;
   border: none;
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+  box-shadow: 0 4px 12px var(--color-primary-glow);
 }
 
 @media (min-width: 768px) {
@@ -188,7 +188,7 @@
 
 .postBtn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.3);
+  box-shadow: 0 6px 16px var(--color-primary-glow);
 }
 
 .loginBtn {
@@ -219,8 +219,8 @@
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  background: #fee2e2;
-  color: #dc2626;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -230,8 +230,9 @@
 }
 
 .avatarBtn:hover {
-  background: #fecaca;
+  background: var(--color-primary-light);
   transform: translateY(-1px);
+  filter: brightness(0.95);
 }
 
 .userMenu {
@@ -302,7 +303,7 @@
 
 .mobileActive {
   background: white !important;
-  color: #dc2626 !important;
+  color: var(--color-primary) !important;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
@@ -344,9 +345,9 @@
 }
 
 .subNavActive {
-  background: #dc2626;
+  background: var(--color-primary);
   color: white;
-  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+  box-shadow: 0 2px 8px var(--color-primary-glow);
 }
 
 /* ── User Menu Wrap ───────────────────────────── */

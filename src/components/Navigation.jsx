@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { PawPrint, Search, Menu, PlusCircle, User, LogOut, LayoutDashboard, X, MessageSquare, ShieldCheck } from 'lucide-react';
+import { PawPrint, Search, Menu, PlusCircle, User, LogOut, LayoutDashboard, X, MessageSquare, ShieldCheck, Beef, ShoppingBag } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import styles from './Navigation.module.css';
@@ -34,11 +34,11 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
             <span>Pets</span>
           </Link>
           <Link to="/livestock" className={`${styles.switchItem} ${location.pathname === '/livestock' ? styles.switchActive : ''}`}>
-            <LayoutDashboard size={16} />
+            <Beef size={16} />
             <span>Livestock</span>
           </Link>
           <Link to="/supplies" className={`${styles.switchItem} ${location.pathname === '/supplies' ? styles.switchActive : ''}`}>
-            <PlusCircle size={16} />
+            <ShoppingBag size={16} />
             <span>Supplies</span>
           </Link>
           <div
@@ -123,10 +123,10 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
           <PawPrint size={16} /> Pets
         </Link>
         <Link to="/livestock" className={`${styles.subNavItem} ${location.pathname === '/livestock' ? styles.subNavActive : ''}`}>
-          <LayoutDashboard size={16} /> Livestock
+          <Beef size={16} /> Livestock
         </Link>
         <Link to="/supplies" className={`${styles.subNavItem} ${location.pathname === '/supplies' ? styles.subNavActive : ''}`}>
-          <PlusCircle size={16} /> Supplies
+          <ShoppingBag size={16} /> Supplies
         </Link>
       </div>
 
@@ -138,10 +138,10 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
               <PawPrint size={16} /> Pets
             </Link>
             <Link to="/livestock" className={`${styles.mobileLink} ${location.pathname === '/livestock' ? styles.mobileActive : ''}`} onClick={() => setShowMobileMenu(false)}>
-              <LayoutDashboard size={16} /> Livestock
+              <Beef size={16} /> Livestock
             </Link>
             <Link to="/supplies" className={`${styles.mobileLink} ${location.pathname === '/supplies' ? styles.mobileActive : ''}`} onClick={() => setShowMobileMenu(false)}>
-              <PlusCircle size={16} /> Supplies
+              <ShoppingBag size={16} /> Supplies
             </Link>
           </div>
           <span className={styles.mobileLink} onClick={() => { onOpenHowItWorks(); setShowMobileMenu(false); }}>About</span>

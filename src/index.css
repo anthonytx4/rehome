@@ -1,12 +1,31 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-  /* Colors */
-  --color-primary: #10B981; /* Soft teal / emerald */
+  /* Colors — Pets theme (default green) */
+  --color-primary: #10B981;
   --color-primary-dark: #059669;
   --color-primary-light: #D1FAE5;
-  --color-secondary: #0F172A; /* Deep navy */
-  
+  --color-primary-glow: rgba(16, 185, 129, 0.3);
+  --color-secondary: #0F172A;
+}
+
+/* Livestock theme — red */
+[data-marketplace="livestock"] {
+  --color-primary: #dc2626;
+  --color-primary-dark: #991b1b;
+  --color-primary-light: #fee2e2;
+  --color-primary-glow: rgba(220, 38, 38, 0.3);
+}
+
+/* Supplies theme — blue */
+[data-marketplace="supplies"] {
+  --color-primary: #3B82F6;
+  --color-primary-dark: #1D4ED8;
+  --color-primary-light: #DBEAFE;
+  --color-primary-glow: rgba(59, 130, 246, 0.3);
+}
+
+:root {
   --color-bg: #FAFAFA; /* Warm sand neutral */
   --color-surface: #FFFFFF;
   --color-surface-hover: #F8FAFC;

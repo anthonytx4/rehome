@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react';
 import { useAuth } from './context/AuthContext';
 import Navigation from './components/Navigation';
@@ -75,6 +75,14 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const location = useLocation();
+
+  // Determine marketplace theme from route
+  const marketplace = location.pathname.startsWith('/livestock')
+    ? 'livestock'
+    : location.pathname.startsWith('/supplies')
+      ? 'supplies'
+      : 'pets';
 
   // Listen for HowItWorks events from HomePage
   React.useEffect(() => {
@@ -84,7 +92,7 @@ function App() {
   }, []);
 
   return (
-    <div className="app-container">
+    <div className="app-container" data-marketplace={marketplace}>
       <Navigation 
         onOpenPost={() => setIsModalOpen(true)} 
         searchQuery={searchQuery}

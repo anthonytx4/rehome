@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { PawPrint, Search, Menu, PlusCircle, User, LogOut, LayoutDashboard, X, MessageSquare, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -7,6 +7,7 @@ import styles from './Navigation.module.css';
 
 const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks }) => {
   const { user, isAuthenticated, logout } = useAuth();
+  const location = useLocation();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const navigate = useNavigate();
@@ -25,6 +26,50 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
           <PawPrint className={styles.brandIcon} size={28} />
           <span className={styles.brandText}>Rehome</span>
         </Link>
+        
+        {/* Elite Marketplace Switcher */}
+        <div className={styles.marketplaceSwitcher}>
+          <Link to="/" className={`${styles.switchItem} ${location.pathname === '/' ? styles.switchActive : ''}`}>
+            <PawPrint size={18} />
+            <span>Pets</span>
+          </Link>
+          <Link to="/livestock" className={`${styles.switchItem} ${location.pathname === '/livestock' ? styles.switchActive : ''}`}>
+            <LayoutDashboard size={18} />
+            <span>Livestock</span>
+          </Link>
+          <Link to="/supplies" className={`${styles.switchItem} ${location.pathname === '/supplies' ? styles.switchActive : ''}`}>
+            <PlusCircle size={18} />
+            <span>Supplies</span>
+          </Link>
+          <div 
+            className={styles.switchGlow} 
+            style={{ 
+              transform: `translateX(${location.pathname === '/livestock' ? '100%' : location.pathname === '/supplies' ? '200%' : '0%'})` 
+            }} 
+          />
+        </div>
+
+        {/* Elite Marketplace Switcher */}
+        <div className={styles.marketplaceSwitcher}>
+          <Link to="/" className={`${styles.switchItem} ${location.pathname === '/' ? styles.switchActive : ''}`}>
+            <PawPrint size={18} />
+            <span>Pets</span>
+          </Link>
+          <Link to="/livestock" className={`${styles.switchItem} ${location.pathname === '/livestock' ? styles.switchActive : ''}`}>
+            <LayoutDashboard size={18} />
+            <span>Livestock</span>
+          </Link>
+          <Link to="/supplies" className={`${styles.switchItem} ${location.pathname === '/supplies' ? styles.switchActive : ''}`}>
+            <PlusCircle size={18} />
+            <span>Supplies</span>
+          </Link>
+          <div 
+            className={styles.switchGlow} 
+            style={{ 
+              transform: `translateX(${location.pathname === '/livestock' ? '100%' : location.pathname === '/supplies' ? '200%' : '0%'})` 
+            }} 
+          />
+        </div>
         
         <div className={styles.searchBar}>
           <Search size={18} className={styles.searchIcon} />
@@ -97,6 +142,17 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
       {/* Mobile menu */}
       {showMobileMenu && (
         <div className={styles.mobileNav}>
+          <div className={styles.mobileSwitcher}>
+            <Link to="/" className={`${styles.mobileLink} ${location.pathname === '/' ? styles.mobileActive : ''}`} onClick={() => setShowMobileMenu(false)}>
+              <PawPrint size={20} /> Pets
+            </Link>
+            <Link to="/livestock" className={`${styles.mobileLink} ${location.pathname === '/livestock' ? styles.mobileActive : ''}`} onClick={() => setShowMobileMenu(false)}>
+              <LayoutDashboard size={20} /> Livestock
+            </Link>
+            <Link to="/supplies" className={`${styles.mobileLink} ${location.pathname === '/supplies' ? styles.mobileActive : ''}`} onClick={() => setShowMobileMenu(false)}>
+              <PlusCircle size={20} /> Supplies
+            </Link>
+          </div>
           <span className={styles.mobileLink} onClick={() => { onOpenHowItWorks(); setShowMobileMenu(false); }}>About</span>
           <span className={styles.mobileLink} onClick={() => { onOpenPost(); setShowMobileMenu(false); }}>List a Pet</span>
           {isAuthenticated ? (

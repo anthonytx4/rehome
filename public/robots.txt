@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Sitemap: https://rehome.world/sitemap.xml
+
+# Allow AdSense Crawler
+User-agent: Mediapartners-Google
+Allow: /

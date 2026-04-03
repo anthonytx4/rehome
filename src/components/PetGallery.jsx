@@ -7,21 +7,86 @@ import AdSenseUnit from './ads/AdSenseUnit';
 import styles from './PetGallery.module.css';
 import { normalizeListing } from '../utils/listings';
 
-const mockPets = [
-  { id: 1, name: 'Cooper', type: 'Dog', breed: 'Golden Retriever', age: '3 Months', gender: 'Male', location: 'Austin, TX', fee: 450, verified: true, isPremium: true, image: '/images/mock_dog_1775037305181.png', category: 'pets' },
-  { id: 2, name: 'Luna', type: 'Cat', breed: 'Calico', age: '2 Years', gender: 'Female', location: 'Seattle, WA', fee: 100, verified: true, isPremium: true, image: '/images/mock_cat_1775037291038.png', category: 'pets' },
-  { id: 3, name: 'Rio', type: 'Bird', breed: 'Macaw', age: '5 Years', gender: 'Male', location: 'Miami, FL', fee: 800, verified: false, isPremium: false, image: '/images/mock_bird_1775037276059.png', category: 'pets' },
-  
-  // Livestock Mock Data
-  { id: 101, name: 'Angus Lot #42', type: 'Cattle', breed: 'Black Angus', age: '1 Year', gender: 'Mixed Lot', location: 'Omaha, NE', fee: 18500, verified: true, isPremium: true, image: 'https://images.unsplash.com/photo-1546445317-29f4545e9d53?auto=format&fit=crop&q=80&w=800', category: 'livestock', lotSize: 'Complete Lot (10)', listingType: 'auction', currentBid: 19200, bidCount: 14 },
-  { id: 102, name: 'Stallion "Spirit"', type: 'Horse', breed: 'Arabian', age: '4 Years', gender: 'Male', location: 'Lexington, KY', fee: 25000, verified: true, isPremium: true, image: 'https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?auto=format&fit=crop&q=80&w=800', category: 'livestock', listingType: 'auction', currentBid: 26500, bidCount: 8 },
-  { id: 103, name: 'Layer Hen Lot', type: 'Poultry', breed: 'Rhode Island Red', age: '6 Months', gender: 'Female', location: 'Des Moines, IA', fee: 450, verified: false, isPremium: false, image: 'https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?auto=format&fit=crop&q=80&w=800', category: 'livestock', lotSize: 'Half Lot (25)', listingType: 'fixed' },
+const escapeXml = (value) => String(value)
+  .replaceAll('&', '&amp;')
+  .replaceAll('<', '&lt;')
+  .replaceAll('>', '&gt;')
+  .replaceAll('"', '&quot;')
+  .replaceAll("'", '&apos;');
 
-  // Supplies Mock Data
-  { id: 201, name: 'Industrial Grooming Kit', type: 'Grooming', breed: 'Professional Grade', age: 'New', gender: 'Bulk', location: 'Phoenix, AZ', fee: 899, verified: true, isPremium: true, image: 'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&q=80&w=800', category: 'supplies', lotSize: 'Bulk Pack (5)' },
-  { id: 202, name: 'Antibacterial Livestock Soap', type: 'Hygiene', breed: 'Large Animal', age: 'New', gender: 'Case', location: 'Dallas, TX', fee: 120, verified: true, isPremium: false, image: 'https://images.unsplash.com/photo-1600857544200-b2f666a9a2ec?auto=format&fit=crop&q=80&w=800', category: 'supplies', lotSize: 'Case of 12' },
-  { id: 203, name: 'Electric Fence Energizer', type: 'Healthcare', breed: '20-Mile Range', age: 'New', gender: 'Unit', location: 'Denver, CO', fee: 350, verified: false, isPremium: true, image: 'https://images.unsplash.com/photo-1590684153482-d3302273aa4a?auto=format&fit=crop&q=80&w=800', category: 'supplies' }
+const hashString = (value) => {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+};
+
+const makeMockArtwork = (pet, index) => {
+  const palette = [
+    ['#F59E0B', '#FB7185'],
+    ['#0EA5E9', '#38BDF8'],
+    ['#10B981', '#34D399'],
+    ['#8B5CF6', '#A78BFA'],
+    ['#E11D48', '#F97316'],
+  ];
+  const [accent, accent2] = palette[hashString(`${pet.name}|${pet.type}|${index}`) % palette.length];
+  const title = escapeXml(pet.name);
+  const subtitle = escapeXml(`${pet.breed} · ${pet.location}`);
+  const footer = escapeXml(`${pet.category.toUpperCase()} · ${pet.fee}`);
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="${title}">
+      <defs>
+        <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0%" stop-color="${accent}" />
+          <stop offset="100%" stop-color="${accent2}" />
+        </linearGradient>
+      </defs>
+      <rect width="800" height="600" rx="40" fill="url(#bg)" />
+      <circle cx="640" cy="150" r="72" fill="rgba(255,255,255,0.14)" />
+      <circle cx="140" cy="140" r="52" fill="rgba(255,255,255,0.12)" />
+      <circle cx="645" cy="460" r="120" fill="rgba(255,255,255,0.08)" />
+      <rect x="50" y="350" width="700" height="190" rx="28" fill="#08101C" fill-opacity="0.82" />
+      <text x="68" y="428" font-size="54" font-family="Arial, Helvetica, sans-serif" font-weight="700" fill="#FFFFFF">${title}</text>
+      <text x="68" y="474" font-size="28" font-family="Arial, Helvetica, sans-serif" fill="#E5E7EB">${subtitle}</text>
+      <text x="68" y="520" font-size="22" font-family="Arial, Helvetica, sans-serif" fill="#FDE68A">${footer}</text>
+    </svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+};
+
+const mockPetBlueprints = [
+  { name: 'Cooper', type: 'Dog', breed: 'Golden Retriever', age: '3 Months', gender: 'Male', location: 'Austin, TX', fee: 450, verified: true, isPremium: true },
+  { name: 'Luna', type: 'Cat', breed: 'Calico', age: '2 Years', gender: 'Female', location: 'Seattle, WA', fee: 100, verified: true, isPremium: true },
+  { name: 'Rio', type: 'Bird', breed: 'Macaw', age: '5 Years', gender: 'Male', location: 'Miami, FL', fee: 800, verified: false, isPremium: false },
+  { name: 'Milo', type: 'Dog', breed: 'Cocker Spaniel', age: '1 Year', gender: 'Male', location: 'Nashville, TN', fee: 620, verified: true, isPremium: false },
+  { name: 'Pearl', type: 'Cat', breed: 'Russian Blue', age: '18 Months', gender: 'Female', location: 'Portland, OR', fee: 945, verified: true, isPremium: true },
+  { name: 'Bluebell', type: 'Bird', breed: 'Cockatiel', age: '2 Years', gender: 'Male', location: 'Phoenix, AZ', fee: 320, verified: true, isPremium: false },
+  { name: 'Biscuit', type: 'Dog', breed: 'Beagle', age: '9 Months', gender: 'Female', location: 'Dallas, TX', fee: 740, verified: true, isPremium: false },
+  { name: 'Sable', type: 'Cat', breed: 'Tuxedo', age: '4 Years', gender: 'Female', location: 'Milwaukee, WI', fee: 280, verified: false, isPremium: false },
+  { name: 'Comet', type: 'Rabbit', breed: 'Holland Lop', age: '10 Months', gender: 'Male', location: 'Madison, WI', fee: 215, verified: true, isPremium: false },
+  { name: 'Juniper', type: 'Dog', breed: 'Australian Shepherd', age: '14 Months', gender: 'Female', location: 'Boise, ID', fee: 1320, verified: true, isPremium: true },
+  { name: 'Taffy', type: 'Cat', breed: 'Maine Coon', age: '7 Months', gender: 'Female', location: 'Charleston, SC', fee: 1485, verified: true, isPremium: true },
+  { name: 'Mosaic', type: 'Bird', breed: 'Sun Conure', age: '15 Months', gender: 'Female', location: 'Orlando, FL', fee: 890, verified: false, isPremium: true },
+  { name: 'Ember', type: 'Dog', breed: 'Miniature Poodle', age: '2 Years', gender: 'Male', location: 'San Antonio, TX', fee: 1250, verified: true, isPremium: false },
+  { name: 'Velvet', type: 'Cat', breed: 'Ragdoll', age: '16 Months', gender: 'Female', location: 'Minneapolis, MN', fee: 975, verified: true, isPremium: false },
+  { name: 'Tilly', type: 'Rabbit', breed: 'Mini Rex', age: '1 Year', gender: 'Female', location: 'Reno, NV', fee: 180, verified: false, isPremium: false },
+  { name: 'Cedar', type: 'Bird', breed: 'Parakeet Pair', age: '8 Months', gender: 'Pair', location: 'Tampa, FL', fee: 190, verified: true, isPremium: false },
+  { name: 'Nectar', type: 'Dog', breed: 'Labrador Retriever', age: '10 Months', gender: 'Female', location: 'Baton Rouge, LA', fee: 1100, verified: true, isPremium: true },
+  { name: 'Orbit', type: 'Cat', breed: 'British Shorthair', age: '2 Years', gender: 'Male', location: 'Salt Lake City, UT', fee: 1125, verified: true, isPremium: false },
+  { name: 'Poppy', type: 'Rabbit', breed: 'Angora', age: '10 Months', gender: 'Female', location: 'Bozeman, MT', fee: 235, verified: false, isPremium: false },
+  { name: 'Sky', type: 'Bird', breed: 'Quaker Pair', age: '2 Years', gender: 'Pair', location: 'Charlotte, NC', fee: 620, verified: true, isPremium: false },
 ];
+
+const mockPets = mockPetBlueprints.map((pet, index) => {
+  const image = makeMockArtwork(pet, index);
+  return {
+    id: index + 1,
+    ...pet,
+    category: 'pets',
+    image,
+    images: [image],
+  };
+});
 
 const categoryMaps = {
   'pets': ['All Pets', 'Dogs', 'Cats', 'Birds', 'Reptiles', 'Other'],

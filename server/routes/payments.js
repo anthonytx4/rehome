@@ -1,28 +1,28 @@
-import { Router } from 'express';
+import express from 'express';
+import { authenticate, authorize } from '../middleware/auth.js';
 import {
   createCheckoutSession,
   verifySession,
-  createPortalSession,
   processPaymentMock,
   getPaymentHistory,
-  getStripeConfig,
+  releaseEscrow,
+  getStripeConfig
 } from '../controllers/paymentsController.js';
-import { auth } from '../middleware/auth.js';
 
-const router = Router();
+const router = express.Router();
 
-// Public
+// Public config
 router.get('/config', getStripeConfig);
 
-// Stripe Checkout flow
-router.post('/checkout', auth, createCheckoutSession);
-router.get('/verify', auth, verifySession);
-router.post('/portal', auth, createPortalSession);
+// All other routes require auth
+router.use(authenticate);
 
-// Mock/fallback payment (used by PaymentModal when Stripe not configured)
-router.post('/process', auth, processPaymentMock);
+router.post('/checkout', createCheckoutSession);
+router.get('/verify', verifySession);
+router.post('/process-mock', processPaymentMock);
+router.get('/history', getPaymentHistory);
 
-// History
-router.get('/history', auth, getPaymentHistory);
+// Admin / Escrow management
+router.post('/escrow/:paymentId/release', authorize('admin'), releaseEscrow);
 
 export default router;

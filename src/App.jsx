@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react';
+import { useEffect, useState } from 'react';
 import { useAuth } from './context/AuthContext';
 import Navigation from './components/Navigation';
 import Hero from './components/Hero';
@@ -11,6 +11,7 @@ import PremiumBanner from './components/ads/PremiumBanner';
 import FooterPartnerStrip from './components/ads/FooterPartnerStrip';
 import CookieConsent from './components/ads/CookieConsent';
 import PostActionBanner from './components/ads/PostActionBanner';
+import InterstitialAd from './components/ads/InterstitialAd';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
@@ -18,6 +19,8 @@ import MessagesPage from './pages/MessagesPage';
 import AdminPage from './pages/AdminPage';
 import LivestockPage from './pages/LivestockPage';
 import SuppliesPage from './pages/SuppliesPage';
+import ListingDetailPage from './pages/ListingDetailPage';
+import PrivacyPage from './pages/PrivacyPage';
 import './App.css';
 
 // Protected route wrapper
@@ -45,6 +48,10 @@ const HomePage = () => {
   return (
     <>
       <Hero 
+        badge="Trusted by Verified Breeders"
+        title={<>Find your new <span className="highlight">best friend</span> today.</>}
+        subtitle="Premium adoption and rehoming marketplace. Connect safely with trusted breeders, loving shelters, and verified pet owners."
+        ctaText="Browse Pets"
         onOpenHowItWorks={() => document.dispatchEvent(new CustomEvent('openHowItWorks'))}
         onBrowse={() => document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' })}
       />
@@ -74,25 +81,39 @@ const HomePage = () => {
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
+  const [showInterstitial, setShowInterstitial] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const location = useLocation();
 
-  // Determine marketplace theme from route
-  const marketplace = location.pathname.startsWith('/livestock')
-    ? 'livestock'
-    : location.pathname.startsWith('/supplies')
-      ? 'supplies'
-      : 'pets';
+  // Dynamic Marketplace Theming & Aggressive Monetization
+  useEffect(() => {
+    let theme = 'pets';
+    if (location.pathname === '/livestock') {
+      theme = 'livestock';
+      setShowInterstitial(true);
+    }
+    if (location.pathname === '/supplies') { 
+      theme = 'supplies';
+      setShowInterstitial(true);
+    }
+    document.documentElement.setAttribute('data-marketplace', theme);
+  }, [location.pathname]);
 
   // Listen for HowItWorks events from HomePage
-  React.useEffect(() => {
+  useEffect(() => {
     const handler = () => setIsHowItWorksOpen(true);
     document.addEventListener('openHowItWorks', handler);
     return () => document.removeEventListener('openHowItWorks', handler);
   }, []);
 
+  useEffect(() => {
+    const handler = () => setIsModalOpen(true);
+    document.addEventListener('openPostModal', handler);
+    return () => document.removeEventListener('openPostModal', handler);
+  }, []);
+
   return (
-    <div className="app-container" data-marketplace={marketplace}>
+    <div className="app-container">
       <Navigation 
         onOpenPost={() => setIsModalOpen(true)} 
         searchQuery={searchQuery}
@@ -110,11 +131,14 @@ function App() {
           <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
           <Route path="/livestock" element={<LivestockPage />} />
           <Route path="/supplies" element={<SuppliesPage />} />
+          <Route path="/listing/:id" element={<ListingDetailPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
         </Routes>
       </main>
 
       <ListPetModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
       <HowItWorksModal isOpen={isHowItWorksOpen} onClose={() => setIsHowItWorksOpen(false)} />
+      <InterstitialAd isOpen={showInterstitial} onClose={() => setShowInterstitial(false)} />
       <CookieConsent />
       <Analytics />
     </div>

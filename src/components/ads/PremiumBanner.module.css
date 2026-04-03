@@ -169,3 +169,38 @@
     font-size: 2rem;
   }
 }
+
+/* Royal Flashy Effect */
+.banner:has(.isFlashy) {
+  position: relative;
+  overflow: hidden;
+}
+
+.isFlashy::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -150%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 45%,
+    rgba(252, 211, 77, 0.2) 48%,
+    rgba(252, 211, 77, 0.4) 50%,
+    rgba(252, 211, 77, 0.2) 52%,
+    transparent 55%
+  );
+  animation: shine 4s infinite linear;
+  pointer-events: none;
+}
+
+@keyframes shine {
+  0% { transform: translateX(0) rotate(45deg); }
+  100% { transform: translateX(100%) rotate(45deg); }
+}
+
+.isFlashyTitle {
+  color: #FCD34D !important;
+  text-shadow: 0 0 15px rgba(252, 211, 77, 0.5);
+}

@@ -13,8 +13,11 @@ const LivestockPage = () => {
   return (
     <div className="livestock-page">
       <Hero 
-        title="Elite Livestock Auctions"
-        subtitle="The world's most exclusive marketplace for premium livestock. Verified genetics, secure escrow."
+        badge="Elite Livestock Auctions — High Stakes Bidding"
+        title={<>Royal <span className={styles.highlight}>Livestock</span> Marketplace.</>}
+        subtitle="The world's most exclusive marketplace for premium livestock. Verified genetics, secure escrow, and high-impact trading."
+        ctaText="View Auctions"
+        onOpenHowItWorks={() => document.dispatchEvent(new CustomEvent('openHowItWorks'))}
         onBrowse={() => document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' })}
       />
       <AdSenseUnit slot="livestock-top-banner" />

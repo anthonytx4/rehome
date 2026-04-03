@@ -14,6 +14,8 @@ const RegisterPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+  const searchParams = new URLSearchParams(window.location.search);
+  const tier = searchParams.get('tier'); // breeder, royal, etc.
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,9 +24,9 @@ const RegisterPage = () => {
 
     setIsLoading(true);
     try {
-      await register(name, email, password, location);
-      toast.success('Account created! Welcome to Rehome.');
-      navigate('/dashboard');
+      await register(name, email, password, location, tier);
+      toast.success(tier ? `Welcome to the ${tier} Circle!` : 'Account created!');
+      navigate(tier ? '/pricing' : '/dashboard');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Registration failed');
     } finally {

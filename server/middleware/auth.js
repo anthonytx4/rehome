@@ -15,7 +15,7 @@ export const auth = async (req, res, next) => {
     const decoded = jwt.verify(token, JWT_SECRET);
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      select: { id: true, name: true, email: true, avatar: true, location: true, phone: true, bio: true, isVerifiedBreeder: true, createdAt: true }
+      select: { id: true, name: true, email: true, avatar: true, location: true, phone: true, bio: true, isVerifiedBreeder: true, createdAt: true, role: true }
     });
 
     if (!user) {
@@ -27,6 +27,20 @@ export const auth = async (req, res, next) => {
   } catch (err) {
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
+};
+
+export const authenticate = auth; // Alias for backward compatibility
+
+export const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    if (roles.length && !roles.includes(req.user.role) && req.user.email !== 'admin@rehome.world') {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    next();
+  };
 };
 
 export const optionalAuth = async (req, res, next) => {

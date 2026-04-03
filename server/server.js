@@ -11,6 +11,7 @@ import favoritesRoutes from './routes/favorites.js';
 import reviewsRoutes from './routes/reviews.js';
 import usersRoutes from './routes/users.js';
 import paymentsRoutes from './routes/payments.js';
+import biddingRoutes from './routes/bidding.js';
 import { handleWebhook } from './controllers/paymentsController.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -27,7 +28,11 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    // Allow when no origin (e.g., server-to-server), any allowedOrigins,
+    // or any localhost origin regardless of port (helps local preview/dev).
+    if (!origin ||
+        allowedOrigins.indexOf(origin) !== -1 ||
+        (typeof origin === 'string' && origin.startsWith('http://localhost'))) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -35,6 +40,7 @@ app.use(cors({
   },
   credentials: true
 }));
+
 
 // Raw body for Stripe webhook signature verification (must come before express.json)
 app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), handleWebhook);
@@ -53,6 +59,7 @@ app.use('/api/favorites', favoritesRoutes);
 app.use('/api/reviews', reviewsRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/payments', paymentsRoutes);
+app.use('/api/bidding', biddingRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

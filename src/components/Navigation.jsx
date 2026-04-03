@@ -53,7 +53,11 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
           <Search size={18} className={styles.searchIcon} />
           <input 
             type="text" 
-            placeholder="Search for pets, breeds, or shelters..." 
+            placeholder={
+              location.pathname === '/livestock' ? "Search cattle, horses, poultry..." :
+              location.pathname === '/supplies' ? "Search soaps, brushes, bulk lots..." :
+              "Search for pets, breeds, or shelters..."
+            }
             className={styles.searchInput}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -67,7 +71,9 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
             <>
               <button className={`btn ${styles.postBtn}`} onClick={onOpenPost}>
                 <PlusCircle size={18} />
-                List a Pet
+                {location.pathname === '/livestock' ? 'List Livestock' : 
+                 location.pathname === '/supplies' ? 'List Supplies' : 
+                 'List a Pet'}
               </button>
               <div className={styles.userMenuWrap}>
                 <button className={styles.avatarBtn} onClick={() => setShowUserMenu(!showUserMenu)}>
@@ -104,7 +110,9 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
             <>
               <button className={`btn ${styles.postBtn}`} onClick={onOpenPost}>
                 <PlusCircle size={18} />
-                List a Pet
+                {location.pathname === '/livestock' ? 'List Livestock' : 
+                 location.pathname === '/supplies' ? 'List Supplies' : 
+                 'List a Pet'}
               </button>
               <Link to="/login" className={styles.loginBtn}>Sign In</Link>
               <Link to="/register" className={`btn btn-primary ${styles.registerBtn}`}>Sign Up</Link>
@@ -145,7 +153,11 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
             </Link>
           </div>
           <span className={styles.mobileLink} onClick={() => { onOpenHowItWorks(); setShowMobileMenu(false); }}>About</span>
-          <span className={styles.mobileLink} onClick={() => { onOpenPost(); setShowMobileMenu(false); }}>List a Pet</span>
+          <span className={styles.mobileLink} onClick={() => { onOpenPost(); setShowMobileMenu(false); }}>
+            {location.pathname === '/livestock' ? 'List Livestock' : 
+             location.pathname === '/supplies' ? 'List Supplies' : 
+             'List a Pet'}
+          </span>
           {isAuthenticated ? (
             <>
               <Link to="/dashboard" className={styles.mobileLink} onClick={() => setShowMobileMenu(false)}>Dashboard</Link>

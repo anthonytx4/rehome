@@ -1,0 +1,126 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal {
+  width: 90%;
+  max-width: 500px;
+  background: linear-gradient(135deg, #1A1A1A, #2D3748);
+  border: 1px solid #4A5568;
+  border-radius: 20px;
+  padding: 32px;
+  position: relative;
+  box-shadow: 0 0 50px rgba(255, 215, 0, 0.1);
+  text-align: center;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.sponsorBadge {
+  background: rgba(252, 211, 77, 0.1);
+  color: #F6E05E;
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.closeBtn {
+  background: transparent;
+  color: #718096;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  font-weight: 700;
+}
+
+.closeBtn:disabled {
+  cursor: default;
+  color: #4A5568;
+}
+
+.closeBtn:hover:not(:disabled) {
+  color: white;
+}
+
+.body h2 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 12px;
+}
+
+.emoji {
+  display: inline-block;
+  font-size: 4rem;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.3));
+}
+
+.body p {
+  color: #A0AEC0;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.features {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 32px;
+  font-size: 0.85rem;
+  color: #CBD5E0;
+}
+
+.ctaBtn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 32px;
+  background: #F6E05E;
+  color: #1A202C;
+  border: none;
+  border-radius: 100px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 16px;
+  width: 100%;
+  justify-content: center;
+}
+
+.ctaBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(246, 224, 94, 0.2);
+}
+
+.disclaimer {
+  font-size: 0.7rem;
+  color: #4A5568;
+  margin: 0;
+}

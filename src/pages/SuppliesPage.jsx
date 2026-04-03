@@ -12,8 +12,11 @@ const SuppliesPage = () => {
   return (
     <div className="supplies-page">
       <Hero 
-        title="Premium Pet Supplies"
-        subtitle="Exclusive accessories, high-performance nutrition, and elite habitat solutions for your companions."
+        badge="Premium Market Supplies — Built for Champions"
+        title={<>Luxury <span className="highlight">Market</span> Supplies.</>}
+        subtitle="Exclusive accessories, high-performance nutrition, and elite habitat solutions for your companions. Bulk options available."
+        ctaText="Shop Supplies"
+        onOpenHowItWorks={() => document.dispatchEvent(new CustomEvent('openHowItWorks'))}
         onBrowse={() => document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' })}
       />
       <AdSenseUnit slot="supplies-top-banner" />

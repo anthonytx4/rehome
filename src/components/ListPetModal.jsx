@@ -25,10 +25,18 @@ const ListPetModal = ({ isOpen, onClose }) => {
   const [authPassword, setAuthPassword] = useState('');
 
   // Form state
+  const isLivestock = location.pathname === '/livestock';
+  const isSupplies = location.pathname === '/supplies';
+  const marketplace = isLivestock ? 'Livestock' : isSupplies ? 'Supplies' : 'Pets';
+
   const [form, setForm] = useState({
-    petName: '', species: 'Dog', breed: '', gender: 'Male', size: 'Medium',
+    petName: '', species: isLivestock ? 'Cattle' : isSupplies ? 'Grooming' : 'Dog', 
+    breed: '', gender: 'Male', size: 'Medium',
     description: '', price: '', location: '', phone: '', email: '',
     vaccinated: false, neutered: false,
+    listingType: isLivestock ? 'auction' : 'fixed',
+    lotSize: 'Single', reservePrice: '', auctionEndsAt: '',
+    condition: 'New', bulkQuantity: '1'
   });
   const [dob, setDob] = useState('');
   const [activeCategories, setActiveCategories] = useState([]);
@@ -59,7 +67,7 @@ const ListPetModal = ({ isOpen, onClose }) => {
 
   const handleNext = () => {
     if (step === 1) {
-      if (!form.petName || !form.breed || !form.description || !form.location) {
+      if (!form.petName || (!form.breed && !isSupplies) || !form.description || !form.location) {
         return toast.error('Please fill in all required fields');
       }
     }
@@ -127,18 +135,30 @@ const ListPetModal = ({ isOpen, onClose }) => {
       ].join('');
 
       const formData = new FormData();
-      formData.append('petName', form.petName);
+      formData.append('title', form.petName); // We mapped petName to title/item name
       formData.append('species', form.species);
-      formData.append('breed', form.breed);
+      formData.append('breed', form.breed || marketplace);
       formData.append('age', age);
       formData.append('gender', form.gender);
       formData.append('size', form.size);
       formData.append('description', fullDescription);
       formData.append('price', form.price || '0');
       formData.append('location', form.location);
-      formData.append('vaccinated', form.vaccinated);
-      formData.append('neutered', form.neutered);
+      formData.append('category', marketplace.toLowerCase());
+      formData.append('listingType', form.listingType);
       
+      // Multi-sector fields
+      if (isLivestock) {
+        formData.append('lotSize', form.lotSize);
+        if (form.listingType === 'auction') {
+          formData.append('reservePrice', form.reservePrice);
+          formData.append('auctionEndsAt', form.auctionEndsAt);
+        }
+      } else if (isSupplies) {
+        formData.append('condition', form.condition);
+        formData.append('bulkQuantity', form.bulkQuantity);
+      }
+
       imageFiles.forEach(file => {
         formData.append('images', file);
       });
@@ -200,65 +220,139 @@ const ListPetModal = ({ isOpen, onClose }) => {
           {step === 1 && (
             <div className={styles.formGrid}>
               <div className={styles.inputGroup}>
-                <label>Pet Name *</label>
-                <input type="text" placeholder="e.g. Luna" value={form.petName} onChange={(e) => updateForm('petName', e.target.value)} />
+                <label>
+                  {isLivestock ? 'Animal Name / ID *' : isSupplies ? 'Item Title *' : 'Pet Name *'}
+                </label>
+                <input 
+                  type="text" 
+                  placeholder={isLivestock ? "e.g. Angus #42" : isSupplies ? "e.g. Industrial Soap" : "e.g. Luna"} 
+                  value={form.petName} 
+                  onChange={(e) => updateForm('petName', e.target.value)} 
+                />
               </div>
+
               <div className={styles.inputGroup}>
-                <label>Animal Type *</label>
+                <label>{isSupplies ? 'Supply Category *' : 'Animal Type *'}</label>
                 <select value={form.species} onChange={(e) => updateForm('species', e.target.value)}>
-                  <option>Dog</option><option>Cat</option><option>Bird</option><option>Reptile</option><option>Other</option>
+                  {isLivestock ? (
+                    <>
+                      <option>Cattle</option><option>Horses</option><option>Poultry</option><option>Sheep/Goats</option><option>Swine</option><option>Other</option>
+                    </>
+                  ) : isSupplies ? (
+                    <>
+                      <option>Hygiene</option><option>Grooming</option><option>Healthcare</option><option>Feeding</option><option>Other</option>
+                    </>
+                  ) : (
+                    <>
+                      <option>Dog</option><option>Cat</option><option>Bird</option><option>Reptile</option><option>Small Animal</option><option>Other</option>
+                    </>
+                  )}
                 </select>
               </div>
+
+              {/* Conditional: Breed (Hide for Supplies) */}
+              {!isSupplies && (
+                <div className={styles.inputGroup}>
+                  <label>{isLivestock ? 'Breed / Genetics *' : 'Breed / Morph *'}</label>
+                  <input type="text" placeholder="e.g. Black Angus" value={form.breed} onChange={(e) => updateForm('breed', e.target.value)} />
+                </div>
+              )}
+
+              {/* Conditional: Age/DOB (Hide for Supplies) */}
+              {!isSupplies && (
+                <>
+                  <div className={styles.inputGroup}>
+                    <label>Date of Birth</label>
+                    <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
+                  </div>
+                  <div className={styles.inputGroup}>
+                    <label>Current Age</label>
+                    <input type="text" readOnly placeholder="Auto-calculated" value={calculateAge(dob)} style={{ backgroundColor: 'var(--color-surface-hover)', cursor: 'not-allowed' }} />
+                  </div>
+                </>
+              )}
+
+              {/* Conditional: Gender (Hide for Supplies) */}
+              {!isSupplies && (
+                <div className={styles.inputGroup}>
+                  <label>Gender / Mixed</label>
+                  <select value={form.gender} onChange={(e) => updateForm('gender', e.target.value)}>
+                    <option>Male</option><option>Female</option><option>Mixed Lot</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Conditional: Size/Condition */}
               <div className={styles.inputGroup}>
-                <label>Breed / Morph *</label>
-                <input type="text" placeholder="e.g. Golden Retriever" value={form.breed} onChange={(e) => updateForm('breed', e.target.value)} />
+                <label>{isSupplies ? 'Condition' : 'Size'}</label>
+                {isSupplies ? (
+                  <select value={form.condition} onChange={(e) => updateForm('condition', e.target.value)}>
+                    <option>New</option><option>Used - Like New</option><option>Used - Good</option><option>Refurbished</option>
+                  </select>
+                ) : (
+                  <select value={form.size} onChange={(e) => updateForm('size', e.target.value)}>
+                    <option>Small</option><option>Medium</option><option>Large</option><option>Extra Large</option>
+                  </select>
+                )}
               </div>
+
+              {/* Pricing Section - Dynamic for Auctions */}
               <div className={styles.inputGroup}>
-                <label>Date of Birth</label>
-                <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
-              </div>
-              <div className={styles.inputGroup}>
-                <label>Current Age</label>
-                <input type="text" readOnly placeholder="Auto-calculated" value={calculateAge(dob)} style={{ backgroundColor: 'var(--color-surface-hover)', cursor: 'not-allowed' }} />
-              </div>
-              <div className={styles.inputGroup}>
-                <label>Gender</label>
-                <select value={form.gender} onChange={(e) => updateForm('gender', e.target.value)}>
-                  <option>Male</option><option>Female</option>
-                </select>
-              </div>
-              <div className={styles.inputGroup}>
-                <label>Size</label>
-                <select value={form.size} onChange={(e) => updateForm('size', e.target.value)}>
-                  <option>Small</option><option>Medium</option><option>Large</option><option>Extra Large</option>
-                </select>
-              </div>
-              <div className={styles.inputGroup}>
-                <label>Rehoming Fee ($)</label>
+                <label>
+                  {isLivestock ? (form.listingType === 'auction' ? 'Starting Bid ($)' : 'Price ($)') : 
+                   isSupplies ? 'Market Price ($)' : 'Rehoming Fee ($)'}
+                </label>
                 <input type="number" placeholder="0 for free" value={form.price} onChange={(e) => updateForm('price', e.target.value)} />
-                <span className={styles.note}>Payments secured via Escrow.</span>
+                <span className={styles.note}>
+                  {isLivestock ? 'Verified secure escrow required.' : 'Payments secured via Escrow.'}
+                </span>
               </div>
+
+              {/* Livestock Specific: Listing Type */}
+              {isLivestock && (
+                <div className={styles.inputGroup}>
+                  <label>Listing Format</label>
+                  <select value={form.listingType} onChange={(e) => updateForm('listingType', e.target.value)}>
+                    <option value="auction">Live Auction</option>
+                    <option value="fixed">Fixed Price Sale</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Supplies Specific: Bulk Quantity */}
+              {isSupplies && (
+                <div className={styles.inputGroup}>
+                  <label>Bulk Quantity</label>
+                  <input type="number" min="1" value={form.bulkQuantity} onChange={(e) => updateForm('bulkQuantity', e.target.value)} />
+                </div>
+              )}
+
               <div className={`${styles.inputGroup} ${styles.fullWidth}`}>
                 <label>Description *</label>
-                <textarea rows={3} placeholder="Tell us about this pet..." value={form.description} onChange={(e) => updateForm('description', e.target.value)} />
+                <textarea rows={3} placeholder={isLivestock ? "Describe pedigrees, records..." : "Product details..."} value={form.description} onChange={(e) => updateForm('description', e.target.value)} />
               </div>
+
               <div className={styles.inputGroup}>
                 <label>Location *</label>
                 <input type="text" placeholder="e.g. Austin, TX" value={form.location} onChange={(e) => updateForm('location', e.target.value)} />
               </div>
-              <div className={styles.inputGroup}>
-                <label>Health</label>
-                <div style={{ display: 'flex', gap: '16px', paddingTop: '8px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', cursor: 'pointer' }}>
-                    <input type="checkbox" checked={form.vaccinated} onChange={(e) => updateForm('vaccinated', e.target.checked)} />
-                    Vaccinated
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', cursor: 'pointer' }}>
-                    <input type="checkbox" checked={form.neutered} onChange={(e) => updateForm('neutered', e.target.checked)} />
-                    Spayed/Neutered
-                  </label>
+
+              {/* Conditional: Health (Only for Pets/Livestock) */}
+              {!isSupplies && (
+                <div className={styles.inputGroup}>
+                  <label>Health Records</label>
+                  <div style={{ display: 'flex', gap: '16px', paddingTop: '8px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={form.vaccinated} onChange={(e) => updateForm('vaccinated', e.target.checked)} />
+                      {isLivestock ? 'Records Available' : 'Vaccinated'}
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={form.neutered} onChange={(e) => updateForm('neutered', e.target.checked)} />
+                      {isLivestock ? 'Breeding Quality' : 'Spayed/Neutered'}
+                    </label>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -370,21 +464,41 @@ const ListPetModal = ({ isOpen, onClose }) => {
                   <div className={`${styles.boostOption} ${selectedMonetize === 'none' ? styles.boostActive : ''}`}
                     onClick={() => setSelectedMonetize('none')}>
                     <h3>Free Listing</h3>
-                    <p>Standard visibility. Your listing will appear in search results.</p>
+                    <p>
+                      {isLivestock ? 'Standard auction visibility. Your lot will appear in the livestock feed.' : 
+                       isSupplies ? 'Standard market visibility. Your products will appear in search results.' : 
+                       'Standard visibility. Your listing will appear in search results.'}
+                    </p>
                     <span className={styles.boostPrice}>$0</span>
                   </div>
                   <div className={`${styles.boostOption} ${selectedMonetize === 'featured' ? styles.boostActive : ''}`}
                     onClick={() => setSelectedMonetize('featured')}>
                     <div className={styles.boostBadge}><Rocket size={16} /> Recommended</div>
-                    <h3>Featured Listing</h3>
-                    <p>Gold border, top of search results, and 7 days of premium placement.</p>
+                    <h3>
+                      {isLivestock ? 'Elite Auction Placement' : 
+                       isSupplies ? 'Premium Shelf Space' : 
+                       'Featured Listing'}
+                    </h3>
+                    <p>
+                      {isLivestock ? 'Gold border, top of the auction feed, and 7 days of elite positioning.' : 
+                       isSupplies ? 'Gold border, top of the marketplace, and 7 days of premium placement.' : 
+                       'Gold border, top of search results, and 7 days of premium placement.'}
+                    </p>
                     <span className={styles.boostPrice}>$15</span>
                   </div>
                   <div className={`${styles.boostOption} ${selectedMonetize === 'urgent' ? styles.boostActive : ''}`}
                     onClick={() => setSelectedMonetize('urgent')}>
                     <div className={styles.boostBadge}><Zap size={16} /> Fastest</div>
-                    <h3>Urgent Network Blast</h3>
-                    <p>Send to all users in your area + email blast to matching seekers.</p>
+                    <h3>
+                      {isLivestock ? 'Global Breeder Blast' : 
+                       isSupplies ? 'Wholesale Network Blast' : 
+                       'Urgent Network Blast'}
+                    </h3>
+                    <p>
+                      {isLivestock ? 'Direct SMS to registered breeders + priority email to matching investors.' : 
+                       isSupplies ? 'Direct email to bulk buyers + priority positioning in the wholesale feed.' : 
+                       'Send to all users in your area + email blast to matching seekers.'}
+                    </p>
                     <span className={styles.boostPrice}>$50</span>
                   </div>
                 </>

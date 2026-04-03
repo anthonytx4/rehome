@@ -68,9 +68,9 @@ const DashboardPage = () => {
             <h1 className={styles.title}>Dashboard</h1>
             <p className={styles.subtitle}>Welcome back, {user?.name}!</p>
           </div>
-          <Link to="/create-listing" className="btn btn-primary">
+          <button onClick={() => document.dispatchEvent(new CustomEvent('openPostModal'))} className="btn btn-primary">
             <Plus size={18} /> New Listing
-          </Link>
+          </button>
         </div>
 
         <div className={styles.tabs}>
@@ -103,7 +103,7 @@ const DashboardPage = () => {
                     <Package size={48} />
                     <h3>No listings yet</h3>
                     <p>Create your first pet listing to get started.</p>
-                    <Link to="/create-listing" className="btn btn-primary">Create Listing</Link>
+                    <button onClick={() => document.dispatchEvent(new CustomEvent('openPostModal'))} className="btn btn-primary">Create Listing</button>
                   </div>
                 ) : listings.map(listing => (
                   <div key={listing.id} className={styles.listingCard}>

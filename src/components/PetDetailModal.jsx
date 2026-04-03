@@ -4,9 +4,13 @@ import ContextualRecommendations from './ads/ContextualRecommendations';
 import analytics from '../hooks/useAnalytics';
 import styles from './PetDetailModal.module.css';
 
+import api from '../api/client';
+import AdSenseUnit from './ads/AdSenseUnit';
+
 const PetDetailModal = ({ pet, onClose, onPostAction }) => {
   const [hasSkippedQueue, setHasSkippedQueue] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     if (pet) {
@@ -16,34 +20,34 @@ const PetDetailModal = ({ pet, onClose, onPostAction }) => {
 
   if (!pet) return null;
 
-  // Calculate fees
-  const baseFee = pet.fee || 0;
-  const escrowFee = baseFee > 0 ? (baseFee * 0.05).toFixed(2) : '2.00';
-  const total = (parseFloat(baseFee) + parseFloat(escrowFee)).toFixed(2);
+  const handleStripeCheckout = async (type, amount, metadata = {}) => {
+    try {
+      setIsProcessing(true);
+      const res = await api.post('/api/payments/checkout', {
+        type,
+        amount,
+        listingId: pet.id,
+        metadata: { ...metadata, listingId: pet.id },
+        successPath: `/dashboard`,
+        cancelPath: `/dashboard`
+      });
 
-  const handleSkipQueue = () => {
-    setHasSkippedQueue(true);
-    analytics.skipQueue(pet.id, 9);
-  };
-
-  const handleFavorite = () => {
-    setIsFavorited(!isFavorited);
-    if (!isFavorited) {
-      analytics.addToFavorites(pet.id, pet.type);
-      onPostAction?.('favorite');
-    } else {
-      analytics.removeFromFavorites(pet.id);
+      if (res.data.url) {
+        window.location.href = res.data.url;
+      }
+    } catch (err) {
+      console.error('Checkout error:', err);
+      alert('Payment failed to initialize. Please try again.');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  const handleCheckout = () => {
-    analytics.beginCheckout(parseFloat(total));
-    analytics.escrowPayment(pet.id, baseFee, parseFloat(escrowFee));
-  };
-
-  const handlePriorityApp = () => {
-    analytics.priorityApplication(pet.id);
-  };
+  // Calculate fees
+  const baseFee = pet.fee || 0;
+  const isAuction = pet.listingType === 'auction';
+  const escrowFee = !isAuction && baseFee > 0 ? (baseFee * 0.05).toFixed(2) : '0.00';
+  const total = (parseFloat(baseFee) + parseFloat(escrowFee)).toFixed(2);
 
   return (
     <div className={styles.overlay}>
@@ -61,7 +65,7 @@ const PetDetailModal = ({ pet, onClose, onPostAction }) => {
               <img src={pet.image} alt={pet.name} className={styles.mainImage} />
               <button 
                 className={`${styles.favoriteBtn} ${isFavorited ? styles.favoriteBtnActive : ''}`}
-                onClick={handleFavorite}
+                onClick={() => setIsFavorited(!isFavorited)}
               >
                 <Heart size={20} fill={isFavorited ? 'currentColor' : 'none'} />
               </button>
@@ -79,18 +83,22 @@ const PetDetailModal = ({ pet, onClose, onPostAction }) => {
                   <ShieldAlert size={20} className={styles.warningIcon} />
                   <div>
                     <strong>Unverified Seller</strong>
-                    <p>This seller has not paid for an Ethical Breeder Check. Proceed with extreme caution.</p>
+                    <p>This seller hasn't completed an Ethical Check. Proceed with caution.</p>
                   </div>
                 </div>
               )}
 
               <div className={styles.description}>
                 <h3>About {pet.name}</h3>
-                <p>This is a healthy, active {pet.type.toLowerCase()} looking for a forever home. Highly sociable and up to date on shots.</p>
+                <p>Premium {pet.type.toLowerCase()} listing. This is a highly sought-after specimen with verified health records.</p>
               </div>
 
               {/* Contextual Product Recommendations */}
               <ContextualRecommendations petType={pet.type} petName={pet.name} />
+              
+              <div style={{ marginTop: '32px' }}>
+                <AdSenseUnit slot="modal-bottom-native" />
+              </div>
             </div>
           </div>
 
@@ -98,87 +106,93 @@ const PetDetailModal = ({ pet, onClose, onPostAction }) => {
           <div className={styles.rightCol}>
             
             {/* Queue Jump */}
-            {!hasSkippedQueue ? (
+            {!hasSkippedQueue && (
               <div className={styles.actionCard}>
                 <div className={styles.queueHeader}>
                   <Clock size={20} className={styles.queueIcon} />
                   <h3>Review Queue Active</h3>
                 </div>
-                <p className={styles.queueText}>
-                  This is a high-demand listing. New listings are locked in a 24-hour review queue before you can submit an application to the seller.
-                </p>
-                <div className={styles.queueTimer}>Time remaining: <strong>23h 45m 12s</strong></div>
+                <p className={styles.queueText}>Locked for 24 hours. Priority users skip the wait.</p>
                 <button 
                   className={`btn btn-premium ${styles.fullWidthBtn}`}
-                  onClick={handleSkipQueue}
+                  disabled={isProcessing}
+                  onClick={() => handleStripeCheckout('skip_queue', 9)}
                 >
-                  Pay $9.00 to Skip Queue
+                  {isProcessing ? 'Processing...' : 'Pay $9.00 to Skip Queue'}
                 </button>
-              </div>
-            ) : (
-              <div className={`${styles.actionCard} ${styles.actionCardSuccess}`}>
-                <h3>Queue Skipped!</h3>
-                <p>You now have priority access to contact this seller.</p>
               </div>
             )}
 
-            {/* Message Seller */}
+            {/* Auction vs Fixed Price */}
+            {isAuction ? (
+              <div className={styles.actionCard}>
+                <div className={styles.queueHeader} style={{ color: 'var(--color-primary)' }}>
+                  <Clock size={20} />
+                  <h3>High Stakes Auction</h3>
+                </div>
+                <div className={styles.auctionStats}>
+                  <div className={styles.statLine}>
+                    <span>Current Bid</span>
+                    <span className={styles.currentBid}>${pet.currentBid?.toLocaleString() || '0'}</span>
+                  </div>
+                  <div className={styles.statLine}>
+                    <span>Time Left</span>
+                    <span>2d 14h</span>
+                  </div>
+                </div>
+                <p className={styles.escrowText}>A refundable $50.00 deposit is required to participate in this auction.</p>
+                <button 
+                  className={`btn btn-primary ${styles.fullWidthBtn}`}
+                  disabled={isProcessing}
+                  onClick={() => handleStripeCheckout('bid_deposit', 50)}
+                >
+                  {isProcessing ? 'Initializing...' : 'Pay $50.00 to Place Bid'}
+                </button>
+              </div>
+            ) : (
+              <div className={styles.actionCard}>
+                <h3>Secure Escrow Payment</h3>
+                <p className={styles.escrowText}>Mandatory 5% safety fee. Funds held until delivery.</p>
+                
+                <div className={styles.receipt}>
+                  <div className={styles.receiptLine}>
+                    <span>Base Fee</span>
+                    <span>${baseFee.toFixed(2)}</span>
+                  </div>
+                  <div className={styles.receiptLine}>
+                    <span>Safety Fee (5%)</span>
+                    <span>${escrowFee}</span>
+                  </div>
+                  <div className={styles.receiptTotal}>
+                    <span>Total Due</span>
+                    <span>${total}</span>
+                  </div>
+                </div>
+
+                <button 
+                  className={`btn btn-primary ${styles.fullWidthBtn}`}
+                  disabled={isProcessing}
+                  onClick={() => handleStripeCheckout('escrow', total)}
+                >
+                  {isProcessing ? 'Processing...' : `Pay $${total} via Escrow`}
+                </button>
+              </div>
+            )}
+
+            {/* Support/Questions */}
             <div className={styles.actionCard}>
-              <h3>Contact Seller</h3>
-              <p className={styles.escrowText}>
-                Have questions about {pet.name}? Message the seller directly to discuss rehoming.
-              </p>
+              <h3>Contact Questions</h3>
               <button 
                 className={`btn btn-secondary ${styles.fullWidthBtn}`}
-                disabled={!hasSkippedQueue}
-                onClick={() => window.location.href = `/messages/${pet.id}?sellerId=${pet.userId || 'seller-1'}`}
+                onClick={() => window.location.href = `/messages/${pet.id}`}
               >
                 <MessageSquare size={18} />
                 Message Seller
               </button>
-              {!hasSkippedQueue && (
-                <p className={styles.disabledNote}>Skip the Review Queue to unlock messaging.</p>
-              )}
-            </div>
-
-            {/* Escrow Checkout */}
-            <div className={styles.actionCard}>
-              <h3>Secure Escrow Payment</h3>
-              <p className={styles.escrowText}>
-                We guarantee your payment until you physically pick up {pet.name}. A mandatory 5% safety fee applies.
-              </p>
-              
-              <div className={styles.receipt}>
-                <div className={styles.receiptLine}>
-                  <span>Rehoming Fee</span>
-                  <span>${baseFee.toFixed(2)}</span>
-                </div>
-                <div className={styles.receiptLine}>
-                  <span>Rehome Safety Fee (5%) <ShieldAlert size={12} className={styles.infoIcon} /></span>
-                  <span>${escrowFee}</span>
-                </div>
-                <div className={styles.receiptTotal}>
-                  <span>Total Due Today</span>
-                  <span>${total}</span>
-                </div>
-              </div>
-
-              <button 
-                className={`btn btn-primary ${styles.fullWidthBtn}`}
-                disabled={!hasSkippedQueue}
-                onClick={handleCheckout}
-              >
-                <CreditCard size={18} />
-                Pay ${total} via Escrow
-              </button>
-              
-              {!hasSkippedQueue && (
-                <p className={styles.disabledNote}>You must wait out the Review Queue or Skip the Queue to proceed.</p>
-              )}
             </div>
 
             {/* Priority Application */}
-            <div className={styles.secondaryActionCard} onClick={handlePriorityApp}>
+            <div className={styles.secondaryActionCard} onClick={() => handleStripeCheckout('priority_app', 5)}>
               <div className={styles.appRow}>
                 <div>
                   <strong>Priority Application ($5)</strong>
@@ -190,7 +204,6 @@ const PetDetailModal = ({ pet, onClose, onPostAction }) => {
 
           </div>
         </div>
-        
       </div>
     </div>
   );

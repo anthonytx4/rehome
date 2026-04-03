@@ -9,20 +9,30 @@
   --color-secondary: #0F172A;
 }
 
-/* Livestock theme — red */
+/* Livestock theme — Royal Casino Red */
 [data-marketplace="livestock"] {
-  --color-primary: #dc2626;
-  --color-primary-dark: #991b1b;
-  --color-primary-light: #fee2e2;
-  --color-primary-glow: rgba(220, 38, 38, 0.3);
+  --color-primary: #c0392b; /* Ruby Red */
+  --color-primary-dark: #8e1b10;
+  --color-primary-light: #fdedec;
+  --color-primary-glow: rgba(192, 57, 43, 0.4);
+  --color-accent: #f1c40f; /* Casino Gold */
+  --color-secondary: #1a0505; /* Blackish red */
+  --color-surface-hover: #fff5f5;
+  --color-premium: #f1c40f;
+  --shadow-premium: 0 10px 25px -5px rgba(192, 57, 43, 0.3), 0 8px 10px -6px rgba(241, 196, 15, 0.2);
 }
 
-/* Supplies theme — blue */
+/* Supplies theme — Luxury Market Blue */
 [data-marketplace="supplies"] {
-  --color-primary: #3B82F6;
-  --color-primary-dark: #1D4ED8;
-  --color-primary-light: #DBEAFE;
-  --color-primary-glow: rgba(59, 130, 246, 0.3);
+  --color-primary: #2c3e50; /* Charcoal Blue */
+  --color-primary-dark: #1a252f;
+  --color-primary-light: #ebf5fb;
+  --color-primary-glow: rgba(44, 62, 80, 0.3);
+  --color-accent: #3498db; /* Bright Blue */
+  --color-secondary: #0a1118;
+  --color-surface-hover: #f4f8fb;
+  --color-premium: #3498db;
+  --shadow-premium: 0 10px 25px -5px rgba(44, 62, 80, 0.3), 0 8px 10px -6px rgba(52, 152, 219, 0.2);
 }
 
 :root {
@@ -38,7 +48,8 @@
   --color-premium: #F59E0B; /* Amber/Gold */
   --color-premium-light: #FEF3C7;
   --color-premium-border: #FBBF24;
-  
+  --highlight-color: var(--color-primary);
+
   /* Radii */
   --radius-sm: 8px;
   --radius-md: 16px;
@@ -53,6 +64,11 @@
   
   /* Typography */
   --font-sans: 'Outfit', system-ui, -apple-system, sans-serif;
+}
+
+.highlight {
+  color: var(--color-primary);
+  font-weight: 800;
 }
 
 * {

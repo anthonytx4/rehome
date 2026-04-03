@@ -31,7 +31,7 @@ const CAMPAIGNS = [
     cta: 'Boost Now — $15',
     action: 'route',
     requiresAuth: true,
-    url: '/dashboard?action=boost',
+    url: '/dashboard?tab=listings&action=boost',
     gradient: 'linear-gradient(135deg, #312E81 0%, #4338CA 50%, #312E81 100%)',
     accent: '#818CF8',
     emoji: '🚀',
@@ -55,7 +55,6 @@ const PremiumBanner = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, user } = useAuth();
-  const hasStoredSession = Boolean(localStorage.getItem('rehome_token'));
   const [currentIndex, setCurrentIndex] = useState(0);
   const [dismissed, setDismissed] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -96,7 +95,7 @@ const PremiumBanner = () => {
     analytics.adClick('premium_banner', 'homepage', campaign.id, campaign.url);
 
     const loginRedirect = `/login?redirect=${encodeURIComponent(campaign.url)}`;
-    const canUseAccountActions = isAuthenticated || hasStoredSession;
+    const canUseAccountActions = isAuthenticated;
 
     if (campaign.requiresAuth && !canUseAccountActions) {
       navigate(loginRedirect);
@@ -117,6 +116,10 @@ const PremiumBanner = () => {
           cancelPath: `${location.pathname}${location.search || ''}` || '/',
         });
       } catch (err) {
+        if (err.response?.status === 401) {
+          navigate(loginRedirect);
+          return;
+        }
         toast.error(err.response?.data?.error || 'Unable to start checkout');
         setProcessingId(null);
       }

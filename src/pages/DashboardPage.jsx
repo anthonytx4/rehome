@@ -229,6 +229,10 @@ const DashboardPage = () => {
         cancelPath: '/dashboard',
       });
     } catch (err) {
+      if (err.response?.status === 401) {
+        navigate(`/login?redirect=${encodeURIComponent('/dashboard?purchase=membership&tier=breeder')}`);
+        return;
+      }
       toast.error(err.response?.data?.error || 'Unable to start membership checkout.');
       setCheckoutLoading('');
     }
@@ -246,9 +250,13 @@ const DashboardPage = () => {
           boostType: 'featured',
         },
         successPath: '/dashboard',
-        cancelPath: '/dashboard?action=boost',
+        cancelPath: '/dashboard?tab=listings&action=boost',
       });
     } catch (err) {
+      if (err.response?.status === 401) {
+        navigate(`/login?redirect=${encodeURIComponent('/dashboard?tab=listings&action=boost')}`);
+        return;
+      }
       toast.error(err.response?.data?.error || 'Unable to start boost checkout.');
       setCheckoutLoading('');
     }

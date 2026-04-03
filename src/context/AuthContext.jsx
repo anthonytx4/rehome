@@ -15,14 +15,34 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('rehome_token');
-    if (token) {
-      refreshUser()
-        .catch(() => {})
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
+    let cancelled = false;
+
+    const bootstrapSession = async () => {
+      try {
+        await refreshUser();
+      } catch {
+        // refreshUser already clears bad tokens; loading is still resolved below
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    const handleAuthInvalidated = () => {
+      setUser(null);
+      setAuthActionPending(false);
+      localStorage.removeItem('rehome_token');
+      localStorage.removeItem('rehome_user');
+    };
+
+    bootstrapSession();
+    window.addEventListener('rehome:auth-invalidated', handleAuthInvalidated);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('rehome:auth-invalidated', handleAuthInvalidated);
+    };
   }, []);
 
   const refreshUser = async () => {

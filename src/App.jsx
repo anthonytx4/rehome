@@ -38,9 +38,8 @@ const RouteLoading = ({ message }) => (
 const ProtectedRoute = ({ children }) => {
   const location = useLocation();
   const { isAuthenticated, loading, authActionPending } = useAuth();
-  const hasStoredSession = Boolean(localStorage.getItem('rehome_token'));
   if (loading || authActionPending) return <RouteLoading message="Loading your account" />;
-  if (isAuthenticated || hasStoredSession) return children;
+  if (isAuthenticated) return children;
   const redirect = `${location.pathname}${location.search}${location.hash}`;
   return <Navigate to={`/login?redirect=${encodeURIComponent(redirect)}`} replace />;
 };

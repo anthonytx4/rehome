@@ -213,11 +213,15 @@ const ListPetModal = ({ isOpen, onClose }) => {
             boostType: selectedMonetize,
           },
           successPath: '/dashboard',
-          cancelPath: '/dashboard?action=boost',
+          cancelPath: '/dashboard?tab=listings&action=boost',
         });
       } catch (checkoutError) {
+        if (checkoutError.response?.status === 401) {
+          navigate(`/login?redirect=${encodeURIComponent('/dashboard?tab=listings&action=boost')}`);
+          return;
+        }
         toast.error(checkoutError.response?.data?.error || 'Listing published, but boost checkout could not start.');
-        navigate('/dashboard?action=boost');
+        navigate('/dashboard?tab=listings&action=boost');
       }
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to publish listing');

@@ -40,8 +40,7 @@ const tiles = [
 const RevenueStack = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const hasStoredSession = Boolean(localStorage.getItem('rehome_token'));
-  const canUseAccountActions = isAuthenticated || hasStoredSession;
+  const canUseAccountActions = isAuthenticated;
 
   const handleMembership = async () => {
     analytics.beginCheckout(25, 'USD');
@@ -57,6 +56,10 @@ const RevenueStack = () => {
         cancelPath: '/dashboard',
       });
     } catch (err) {
+      if (err.response?.status === 401) {
+        navigate('/login?redirect=%2Fdashboard%3Fpurchase%3Dmembership%26tier%3Dbreeder');
+        return;
+      }
       toast.error(err.response?.data?.error || 'Unable to start membership checkout');
     }
   };
@@ -64,10 +67,10 @@ const RevenueStack = () => {
   const handleBoost = () => {
     analytics.purchaseBoost('dashboard', 'featured', 15);
     if (!canUseAccountActions) {
-      navigate('/login?redirect=%2Fdashboard%3Faction%3Dboost');
+      navigate('/login?redirect=%2Fdashboard%3Ftab%3Dlistings%26action%3Dboost');
       return;
     }
-    navigate('/dashboard?action=boost');
+    navigate('/dashboard?tab=listings&action=boost');
   };
 
   const handleAffiliate = () => {

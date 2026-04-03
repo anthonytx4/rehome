@@ -29,7 +29,7 @@ const BANNERS = {
     message: 'Manage your listing, watch messages, or upgrade it to a paid boost from the dashboard.',
     cta: 'Boost for $15',
     action: 'route',
-    url: '/dashboard?action=boost',
+    url: '/dashboard?tab=listings&action=boost',
     gradient: 'linear-gradient(135deg, #F59E0B, #D97706)',
   },
 };

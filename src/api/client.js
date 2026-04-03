@@ -27,6 +27,12 @@ api.interceptors.response.use(
     // If we catch a 500 error on boot, we should log it but NOT unmount the React app
     console.error('API Error:', err.response?.status, err.message);
     if (err.response?.status === 401) {
+      window.dispatchEvent(new CustomEvent('rehome:auth-invalidated', {
+        detail: {
+          url: err.config?.url || null,
+          method: err.config?.method || null,
+        }
+      }));
       localStorage.removeItem('rehome_token');
       localStorage.removeItem('rehome_user');
     }

@@ -57,6 +57,10 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
       }
     } catch (err) {
       console.error('Checkout error:', err);
+      if (err.response?.status === 401) {
+        navigate(`/login?redirect=${encodeURIComponent(`/listing/${displayPet.id}`)}`);
+        return;
+      }
       toast.error(err.response?.data?.error || 'Payment failed to initialize. Please try again.');
     } finally {
       setIsProcessing(false);

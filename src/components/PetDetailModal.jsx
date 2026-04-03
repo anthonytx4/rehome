@@ -1,39 +1,60 @@
-import React, { useState, useEffect } from 'react';
-import { X, Clock, ShieldAlert, CreditCard, ChevronRight, Heart, MessageSquare } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { X, Clock, ShieldAlert, ChevronRight, Heart, MessageSquare } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import ContextualRecommendations from './ads/ContextualRecommendations';
 import analytics from '../hooks/useAnalytics';
 import styles from './PetDetailModal.module.css';
 
 import api from '../api/client';
 import AdSenseUnit from './ads/AdSenseUnit';
+import { normalizeListing } from '../utils/listings';
 
-const PetDetailModal = ({ pet, onClose, onPostAction }) => {
+const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
   const [hasSkippedQueue, setHasSkippedQueue] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const navigate = useNavigate();
+  const displayPet = useMemo(() => normalizeListing(pet), [pet]);
 
   useEffect(() => {
-    if (pet) {
-      analytics.viewListing(pet.id, pet.type, pet.breed);
+    if (displayPet) {
+      analytics.viewListing(displayPet.id, displayPet.type, displayPet.breed);
     }
-  }, [pet]);
+  }, [displayPet]);
 
-  if (!pet) return null;
+  if (!displayPet) return null;
 
   const handleStripeCheckout = async (type, amount, metadata = {}) => {
     try {
       setIsProcessing(true);
-      const res = await api.post('/api/payments/checkout', {
+      const successPath = '/dashboard';
+      const cancelPath = `/listing/${displayPet.id}`;
+
+      const res = await api.post('/payments/checkout', {
         type,
         amount,
-        listingId: pet.id,
-        metadata: { ...metadata, listingId: pet.id },
-        successPath: `/dashboard`,
-        cancelPath: `/dashboard`
+        listingId: displayPet.id,
+        metadata: { ...metadata, listingId: displayPet.id },
+        successPath,
+        cancelPath
       });
 
-      if (res.data.url) {
-        window.location.href = res.data.url;
+      const destination = res.data.url || res.data.redirectUrl;
+      if (destination) {
+        if (destination.startsWith('http')) {
+          window.location.assign(destination);
+        } else {
+          navigate(destination);
+        }
+        return;
+      }
+
+      if (res.data.success) {
+        if (type === 'skip_queue') {
+          setHasSkippedQueue(true);
+        }
+        onPostAction?.(type === 'priority_app' ? 'favorite' : type === 'skip_queue' ? 'message' : 'listing');
+        navigate(`${successPath}?payment=success&type=${type}&session_id=${res.data.payment?.stripePaymentId || ''}`);
       }
     } catch (err) {
       console.error('Checkout error:', err);
@@ -44,15 +65,20 @@ const PetDetailModal = ({ pet, onClose, onPostAction }) => {
   };
 
   // Calculate fees
-  const baseFee = pet.fee || 0;
-  const isAuction = pet.listingType === 'auction';
+  const baseFee = displayPet.fee || 0;
+  const isAuction = displayPet.listingType === 'auction';
   const escrowFee = !isAuction && baseFee > 0 ? (baseFee * 0.05).toFixed(2) : '0.00';
   const total = (parseFloat(baseFee) + parseFloat(escrowFee)).toFixed(2);
+  const description = displayPet.description || `A well cared-for ${String(displayPet.type || 'listing').toLowerCase()} with verified details and a clear handoff process.`;
+  const messageUrl = displayPet.sellerId ? `/messages/${displayPet.id}?sellerId=${displayPet.sellerId}` : '/messages';
+  const timeLeftLabel = displayPet.raw?.auctionEndsAt
+    ? new Date(displayPet.raw.auctionEndsAt).toLocaleString()
+    : 'Ending soon';
 
   return (
-    <div className={styles.overlay}>
-      <div className={styles.modalBg} onClick={onClose} />
-      <div className={styles.modalContent}>
+    <div className={isPage ? styles.pageShell : styles.overlay}>
+      {!isPage && <div className={styles.modalBg} onClick={onClose} />}
+      <div className={`${styles.modalContent} ${isPage ? styles.pageContent : ''}`}>
         
         <button className={styles.closeBtn} onClick={onClose}>
           <X size={24} />
@@ -62,7 +88,7 @@ const PetDetailModal = ({ pet, onClose, onPostAction }) => {
           {/* Left Column: Pet Media & Info */}
           <div className={styles.leftCol}>
             <div className={styles.imageGallery}>
-              <img src={pet.image} alt={pet.name} className={styles.mainImage} />
+              <img src={displayPet.image} alt={displayPet.name} className={styles.mainImage} />
               <button 
                 className={`${styles.favoriteBtn} ${isFavorited ? styles.favoriteBtnActive : ''}`}
                 onClick={() => setIsFavorited(!isFavorited)}
@@ -73,12 +99,12 @@ const PetDetailModal = ({ pet, onClose, onPostAction }) => {
             
             <div className={styles.petInfo}>
               <div className={styles.header}>
-                <h2 className={styles.name}>{pet.name}</h2>
-                <span className={styles.typeBadge}>{pet.breed}</span>
+                <h2 className={styles.name}>{displayPet.name}</h2>
+                <span className={styles.typeBadge}>{displayPet.breed}</span>
               </div>
-              <p className={styles.location}>{pet.location} • {pet.age} • {pet.gender}</p>
+              <p className={styles.location}>{displayPet.location} • {displayPet.age} • {displayPet.gender}</p>
               
-              {!pet.verified && (
+              {!displayPet.verified && (
                 <div className={styles.warningBox}>
                   <ShieldAlert size={20} className={styles.warningIcon} />
                   <div>
@@ -89,12 +115,12 @@ const PetDetailModal = ({ pet, onClose, onPostAction }) => {
               )}
 
               <div className={styles.description}>
-                <h3>About {pet.name}</h3>
-                <p>Premium {pet.type.toLowerCase()} listing. This is a highly sought-after specimen with verified health records.</p>
+                <h3>About {displayPet.name}</h3>
+                <p>{description}</p>
               </div>
 
               {/* Contextual Product Recommendations */}
-              <ContextualRecommendations petType={pet.type} petName={pet.name} />
+              <ContextualRecommendations petType={displayPet.type} petName={displayPet.name} />
               
               <div style={{ marginTop: '32px' }}>
                 <AdSenseUnit slot="modal-bottom-native" />
@@ -133,11 +159,11 @@ const PetDetailModal = ({ pet, onClose, onPostAction }) => {
                 <div className={styles.auctionStats}>
                   <div className={styles.statLine}>
                     <span>Current Bid</span>
-                    <span className={styles.currentBid}>${pet.currentBid?.toLocaleString() || '0'}</span>
+                    <span className={styles.currentBid}>${displayPet.currentBid?.toLocaleString() || '0'}</span>
                   </div>
                   <div className={styles.statLine}>
-                    <span>Time Left</span>
-                    <span>2d 14h</span>
+                    <span>Ends</span>
+                    <span>{timeLeftLabel}</span>
                   </div>
                 </div>
                 <p className={styles.escrowText}>A refundable $50.00 deposit is required to participate in this auction.</p>
@@ -184,10 +210,10 @@ const PetDetailModal = ({ pet, onClose, onPostAction }) => {
               <h3>Contact Questions</h3>
               <button 
                 className={`btn btn-secondary ${styles.fullWidthBtn}`}
-                onClick={() => window.location.href = `/messages/${pet.id}`}
+                onClick={() => navigate(messageUrl)}
               >
                 <MessageSquare size={18} />
-                Message Seller
+                Message {displayPet.sellerName || 'Seller'}
               </button>
             </div>
 

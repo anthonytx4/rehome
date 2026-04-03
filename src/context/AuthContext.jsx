@@ -11,6 +11,7 @@ export const AuthProvider = ({ children }) => {
     } catch { return null; }
   });
   const [loading, setLoading] = useState(true);
+  const [authActionPending, setAuthActionPending] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -33,30 +34,49 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    const res = await api.post('/auth/login', { email, password });
-    setUser(res.data.user);
-    localStorage.setItem('rehome_token', res.data.token);
-    localStorage.setItem('rehome_user', JSON.stringify(res.data.user));
-    return res.data;
+    setAuthActionPending(true);
+    try {
+      const res = await api.post('/auth/login', { email, password });
+      setUser(res.data.user);
+      localStorage.setItem('rehome_token', res.data.token);
+      localStorage.setItem('rehome_user', JSON.stringify(res.data.user));
+      return res.data;
+    } catch (err) {
+      setAuthActionPending(false);
+      throw err;
+    }
   };
 
   const register = async (name, email, password, location) => {
-    const res = await api.post('/auth/register', { name, email, password, location });
-    setUser(res.data.user);
-    localStorage.setItem('rehome_token', res.data.token);
-    localStorage.setItem('rehome_user', JSON.stringify(res.data.user));
-    return res.data;
+    setAuthActionPending(true);
+    try {
+      const res = await api.post('/auth/register', { name, email, password, location });
+      setUser(res.data.user);
+      localStorage.setItem('rehome_token', res.data.token);
+      localStorage.setItem('rehome_user', JSON.stringify(res.data.user));
+      return res.data;
+    } catch (err) {
+      setAuthActionPending(false);
+      throw err;
+    }
   };
 
   const logout = async () => {
     try { await api.post('/auth/logout'); } catch {}
     setUser(null);
+    setAuthActionPending(false);
     localStorage.removeItem('rehome_token');
     localStorage.removeItem('rehome_user');
   };
 
+  useEffect(() => {
+    if (authActionPending && user) {
+      setAuthActionPending(false);
+    }
+  }, [authActionPending, user]);
+
   return (
-    <AuthContext.Provider value={{ user, loading, error, setError, login, register, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, loading, authActionPending, error, setError, login, register, logout, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );

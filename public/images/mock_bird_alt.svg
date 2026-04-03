@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Bird placeholder variant">
+  <rect width="800" height="600" rx="40" fill="#F2FAF0"/>
+  <ellipse cx="410" cy="330" rx="150" ry="120" fill="#E3B24E"/>
+  <circle cx="360" cy="250" r="78" fill="#F1C967"/>
+  <path d="M300 238l-52-54 56 10z" fill="#D78B34"/>
+  <path d="M476 238l52-54-56 10z" fill="#D78B34"/>
+  <circle cx="340" cy="242" r="10" fill="#2F2A25"/>
+  <circle cx="382" cy="242" r="10" fill="#2F2A25"/>
+  <path d="M370 270l30 10-30 15z" fill="#C96B2C"/>
+  <rect x="262" y="365" width="40" height="120" rx="16" fill="#8C6A3D"/>
+  <rect x="336" y="392" width="40" height="100" rx="16" fill="#8C6A3D"/>
+  <rect x="430" y="392" width="40" height="100" rx="16" fill="#8C6A3D"/>
+  <rect x="506" y="365" width="40" height="120" rx="16" fill="#8C6A3D"/>
+  <path d="M548 280c50 24 72 68 62 110" stroke="#D78B34" stroke-width="12" stroke-linecap="round" fill="none"/>
+</svg>

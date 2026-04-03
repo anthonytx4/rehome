@@ -82,3 +82,13 @@
   display: flex;
   justify-content: center;
 }
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.72;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}

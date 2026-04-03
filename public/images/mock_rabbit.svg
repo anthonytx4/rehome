@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Rabbit placeholder">
+  <rect width="800" height="600" rx="40" fill="#F8F1E8"/>
+  <ellipse cx="400" cy="360" rx="170" ry="140" fill="#D8B89A"/>
+  <ellipse cx="335" cy="220" rx="42" ry="125" fill="#CFA681" transform="rotate(-18 335 220)"/>
+  <ellipse cx="465" cy="220" rx="42" ry="125" fill="#CFA681" transform="rotate(18 465 220)"/>
+  <circle cx="400" cy="305" r="78" fill="#E8C9A8"/>
+  <circle cx="372" cy="292" r="10" fill="#4E342E"/>
+  <circle cx="428" cy="292" r="10" fill="#4E342E"/>
+  <ellipse cx="400" cy="323" rx="22" ry="16" fill="#B07A5A"/>
+  <path d="M388 338c6 10 18 10 24 0" stroke="#7B4F39" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <ellipse cx="303" cy="441" rx="46" ry="26" fill="#C89E7D"/>
+  <ellipse cx="497" cy="441" rx="46" ry="26" fill="#C89E7D"/>
+  <path d="M260 475c100 48 180 48 280 0" stroke="#B88867" stroke-width="10" stroke-linecap="round" fill="none"/>
+</svg>

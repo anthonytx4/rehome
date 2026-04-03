@@ -26,7 +26,7 @@ const RegisterPage = () => {
     try {
       await register(name, email, password, location, tier);
       toast.success(tier ? `Welcome to the ${tier} Circle!` : 'Account created!');
-      navigate(tier ? '/pricing' : '/dashboard');
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       toast.error(err.response?.data?.error || 'Registration failed');
     } finally {

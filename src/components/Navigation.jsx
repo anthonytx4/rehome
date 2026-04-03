@@ -65,7 +65,7 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
         </div>
 
         <div className={styles.actions}>
-          <span className={styles.navLink} onClick={onOpenHowItWorks}>About</span>
+          <button type="button" className={styles.navLink} onClick={onOpenHowItWorks}>About</button>
           
           {isAuthenticated ? (
             <>
@@ -152,12 +152,12 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
               <ShoppingBag size={16} /> Supplies
             </Link>
           </div>
-          <span className={styles.mobileLink} onClick={() => { onOpenHowItWorks(); setShowMobileMenu(false); }}>About</span>
-          <span className={styles.mobileLink} onClick={() => { onOpenPost(); setShowMobileMenu(false); }}>
+          <button type="button" className={styles.mobileLink} onClick={() => { onOpenHowItWorks(); setShowMobileMenu(false); }}>About</button>
+          <button type="button" className={styles.mobileLink} onClick={() => { onOpenPost(); setShowMobileMenu(false); }}>
             {location.pathname === '/livestock' ? 'List Livestock' : 
              location.pathname === '/supplies' ? 'List Supplies' : 
              'List a Pet'}
-          </span>
+          </button>
           {isAuthenticated ? (
             <>
               <Link to="/dashboard" className={styles.mobileLink} onClick={() => setShowMobileMenu(false)}>Dashboard</Link>

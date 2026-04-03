@@ -15,29 +15,38 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadData();
-  }, [tab]);
-
-  const loadData = async () => {
-    if (!user) return; // Prevent crash if redirect happens before context is updated
-    setLoading(true);
-    try {
-      if (tab === 'listings') {
-        const res = await api.get(`/listings/user/${user.id}`);
-        setListings(res.data);
-      } else if (tab === 'favorites') {
-        const res = await api.get('/favorites');
-        setFavorites(res.data);
-      } else if (tab === 'insights') {
-        const res = await api.get('/users/insights');
-        setInsights(res.data);
-      }
-    } catch (err) {
-      toast.error('Failed to load data');
-    } finally {
+    if (!user?.id) {
       setLoading(false);
+      return;
     }
-  };
+    let ignore = false;
+
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        if (tab === 'listings') {
+          const res = await api.get(`/listings/user/${user.id}`);
+          if (!ignore) setListings(res.data);
+        } else if (tab === 'favorites') {
+          const res = await api.get('/favorites');
+          if (!ignore) setFavorites(res.data);
+        } else if (tab === 'insights') {
+          const res = await api.get('/users/insights');
+          if (!ignore) setInsights(res.data);
+        }
+      } catch {
+        if (!ignore) toast.error('Failed to load data');
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
+
+    loadData();
+
+    return () => {
+      ignore = true;
+    };
+  }, [tab, user?.id]);
 
   const handleDelete = async (id) => {
     if (!confirm('Delete this listing?')) return;

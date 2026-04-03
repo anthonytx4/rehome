@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { Send, Image as ImageIcon, Video, Paperclip, MoreVertical, Search, ArrowLeft, Loader2 } from 'lucide-react';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { Send, Paperclip, MoreVertical, Search, ArrowLeft, Loader2, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import toast from 'react-hot-toast';
@@ -11,7 +11,6 @@ const MessagesPage = () => {
   const { listingId: routeListingId } = useParams();
   const [searchParams] = useSearchParams();
   const sellerId = searchParams.get('sellerId');
-  const navigate = useNavigate();
 
   const [conversations, setConversations] = useState([]);
   const [activeConv, setActiveConv] = useState(null);
@@ -33,26 +32,36 @@ const MessagesPage = () => {
         setConversations(res.data);
         
         // If we came from a listing, find or prep that conversation
-        if (routeListingId && sellerId) {
-          const existing = res.data.find(c => c.listingId === routeListingId && c.otherUser.id === sellerId);
+        if (routeListingId) {
+          const existing = sellerId
+            ? res.data.find(c => c.listingId === routeListingId && c.otherUser.id === sellerId)
+            : res.data.find(c => c.listingId === routeListingId);
           if (existing) {
             setActiveConv(existing);
           } else {
             // Prep a "virtual" conversation for a new thread
             try {
               const listingRes = await api.get(`/listings/${routeListingId}`);
+              const resolvedSellerId = sellerId || listingRes.data?.seller?.id || listingRes.data?.userId;
+              if (!resolvedSellerId) {
+                toast.error('Seller information is unavailable for this listing');
+                return;
+              }
               setActiveConv({
                 listingId: routeListingId,
                 listing: listingRes.data,
-                otherUser: { id: sellerId, name: 'Seller' }, // Real name will come from listing if possible
+                otherUser: {
+                  id: resolvedSellerId,
+                  name: listingRes.data?.seller?.name || listingRes.data?.user?.name || 'Seller',
+                },
                 isNew: true
               });
-            } catch (err) {
+            } catch {
               toast.error('Listing not found');
             }
           }
         }
-      } catch (err) {
+      } catch {
         toast.error('Failed to load messages');
       } finally {
         setLoading(false);
@@ -69,7 +78,7 @@ const MessagesPage = () => {
       try {
         const res = await api.get(`/messages/${activeConv.listingId}?userId=${activeConv.otherUser.id}`);
         setMessages(res.data);
-      } catch (err) {
+      } catch {
         if (!activeConv.isNew) toast.error('Failed to load conversation');
       }
     };
@@ -123,7 +132,7 @@ const MessagesPage = () => {
         const realConv = inboxRes.data.find(c => c.listingId === activeConv.listingId && c.otherUser.id === activeConv.otherUser.id);
         if (realConv) setActiveConv(realConv);
       }
-    } catch (err) {
+    } catch {
       toast.error('Failed to send message');
     } finally {
       setSending(false);
@@ -211,7 +220,11 @@ const MessagesPage = () => {
                       {msg.mediaUrl && (
                         <div className={styles.mediaContent}>
                           {msg.mediaType === 'image' ? (
-                            <img src={`${import.meta.env.VITE_API_URL || ''}${msg.mediaUrl}`} alt="Sent media" onClick={() => window.open(`${import.meta.env.VITE_API_URL || ''}${msg.mediaUrl}`)} />
+                            <img
+                              src={`${import.meta.env.VITE_API_URL || ''}${msg.mediaUrl}`}
+                              alt="Sent media"
+                              onClick={() => window.open(`${import.meta.env.VITE_API_URL || ''}${msg.mediaUrl}`, '_blank', 'noopener')}
+                            />
                           ) : (
                             <div className={styles.videoContainer}>
                               <video controls>

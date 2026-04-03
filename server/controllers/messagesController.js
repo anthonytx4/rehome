@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { handleUpload } from '../middleware/upload.js';
 
 const prisma = new PrismaClient();
 
@@ -16,7 +17,7 @@ export const getInbox = async (req, res, next) => {
       include: {
         sender: { select: { id: true, name: true, avatar: true } },
         receiver: { select: { id: true, name: true, avatar: true } },
-        listing: { select: { id: true, petName: true, images: true, species: true } }
+        listing: { select: { id: true, petName: true, breed: true, price: true, images: true, species: true } }
       }
     });
 

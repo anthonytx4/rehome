@@ -6,10 +6,10 @@ import { upload } from '../middleware/upload.js';
 const router = Router();
 
 router.get('/', getListings);
+router.get('/user/:userId', getUserListings);
 router.get('/:id', getListingById);
 router.post('/', auth, upload.array('images', 8), createListing);
 router.put('/:id', auth, upload.array('images', 8), updateListing);
 router.delete('/:id', auth, deleteListing);
-router.get('/user/:userId', getUserListings);
 
 export default router;

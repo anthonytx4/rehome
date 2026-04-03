@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Cookie, ShieldCheck } from 'lucide-react';
 import styles from './CookieConsent.module.css';
 
@@ -49,7 +50,7 @@ const CookieConsent = () => {
           <strong>We value your privacy</strong>
           <p>
             We use cookies to improve your experience, analyze traffic, and show relevant ads.
-            Read our <a href="#privacy" className={styles.link}>Privacy Policy</a>.
+            Read our <Link to="/privacy" className={styles.link}>Privacy Policy</Link>.
           </p>
         </div>
         <div className={styles.actions}>

@@ -5,28 +5,28 @@ import styles from './ContextualRecommendations.module.css';
 
 const PRODUCT_DATA = {
   Dog: [
-    { id: 'dog-crate', name: 'Premium Dog Crate', brand: 'Chewy', price: '$89', emoji: '🏠', url: '#', tag: 'Essential' },
-    { id: 'dog-food', name: 'Organic Dry Food', brand: 'Chewy', price: '$54', emoji: '🍖', url: '#', tag: 'Top Rated' },
-    { id: 'dog-leash', name: 'No-Pull Harness', brand: 'Amazon', price: '$28', emoji: '🦮', url: '#', tag: 'Best Seller' },
-    { id: 'dog-bed', name: 'Orthopedic Dog Bed', brand: 'Chewy', price: '$65', emoji: '🛏️', url: '#', tag: 'Comfort' },
+    { id: 'dog-crate', name: 'Premium Dog Crate', brand: 'Chewy', price: '$89', emoji: '🏠', url: 'https://www.chewy.com', tag: 'Essential' },
+    { id: 'dog-food', name: 'Organic Dry Food', brand: 'Chewy', price: '$54', emoji: '🍖', url: 'https://www.chewy.com', tag: 'Top Rated' },
+    { id: 'dog-leash', name: 'No-Pull Harness', brand: 'Amazon', price: '$28', emoji: '🦮', url: 'https://www.amazon.com', tag: 'Best Seller' },
+    { id: 'dog-bed', name: 'Orthopedic Dog Bed', brand: 'Chewy', price: '$65', emoji: '🛏️', url: 'https://www.chewy.com', tag: 'Comfort' },
   ],
   Cat: [
-    { id: 'cat-tree', name: 'Cat Tower & Scratcher', brand: 'Chewy', price: '$120', emoji: '🌳', url: '#', tag: 'Essential' },
-    { id: 'cat-litter', name: 'Self-Cleaning Litter Box', brand: 'Petco', price: '$350', emoji: '✨', url: '#', tag: 'Premium' },
-    { id: 'cat-food', name: 'Grain-Free Wet Food', brand: 'Chewy', price: '$36', emoji: '🐟', url: '#', tag: 'Top Rated' },
-    { id: 'cat-toy', name: 'Interactive Laser Toy', brand: 'Amazon', price: '$18', emoji: '🔴', url: '#', tag: 'Fun' },
+    { id: 'cat-tree', name: 'Cat Tower & Scratcher', brand: 'Chewy', price: '$120', emoji: '🌳', url: 'https://www.chewy.com', tag: 'Essential' },
+    { id: 'cat-litter', name: 'Self-Cleaning Litter Box', brand: 'Petco', price: '$350', emoji: '✨', url: 'https://www.petco.com', tag: 'Premium' },
+    { id: 'cat-food', name: 'Grain-Free Wet Food', brand: 'Chewy', price: '$36', emoji: '🐟', url: 'https://www.chewy.com', tag: 'Top Rated' },
+    { id: 'cat-toy', name: 'Interactive Laser Toy', brand: 'Amazon', price: '$18', emoji: '🔴', url: 'https://www.amazon.com', tag: 'Fun' },
   ],
   Bird: [
-    { id: 'bird-cage', name: 'Flight Cage XL', brand: 'Petco', price: '$199', emoji: '🏠', url: '#', tag: 'Essential' },
-    { id: 'bird-food', name: 'Seed & Pellet Mix', brand: 'Chewy', price: '$24', emoji: '🌾', url: '#', tag: 'Nutrition' },
-    { id: 'bird-perch', name: 'Natural Wood Perch Set', brand: 'Amazon', price: '$15', emoji: '🌿', url: '#', tag: 'Comfort' },
-    { id: 'bird-toy', name: 'Foraging Toy Bundle', brand: 'Chewy', price: '$22', emoji: '🧩', url: '#', tag: 'Enrichment' },
+    { id: 'bird-cage', name: 'Flight Cage XL', brand: 'Petco', price: '$199', emoji: '🏠', url: 'https://www.petco.com', tag: 'Essential' },
+    { id: 'bird-food', name: 'Seed & Pellet Mix', brand: 'Chewy', price: '$24', emoji: '🌾', url: 'https://www.chewy.com', tag: 'Nutrition' },
+    { id: 'bird-perch', name: 'Natural Wood Perch Set', brand: 'Amazon', price: '$15', emoji: '🌿', url: 'https://www.amazon.com', tag: 'Comfort' },
+    { id: 'bird-toy', name: 'Foraging Toy Bundle', brand: 'Chewy', price: '$22', emoji: '🧩', url: 'https://www.chewy.com', tag: 'Enrichment' },
   ],
   default: [
-    { id: 'gen-carrier', name: 'Travel Carrier', brand: 'Chewy', price: '$45', emoji: '🧳', url: '#', tag: 'Essential' },
-    { id: 'gen-insurance', name: 'Pet Insurance Plan', brand: 'Lemonade', price: '$12/mo', emoji: '🛡️', url: '#', tag: 'Protection' },
-    { id: 'gen-treats', name: 'Training Treats Variety', brand: 'Amazon', price: '$16', emoji: '🦴', url: '#', tag: 'Training' },
-    { id: 'gen-grooming', name: 'Grooming Kit', brand: 'Petco', price: '$32', emoji: '✂️', url: '#', tag: 'Care' },
+    { id: 'gen-carrier', name: 'Travel Carrier', brand: 'Chewy', price: '$45', emoji: '🧳', url: 'https://www.chewy.com', tag: 'Essential' },
+    { id: 'gen-insurance', name: 'Pet Insurance Plan', brand: 'Lemonade', price: '$12/mo', emoji: '🛡️', url: 'https://www.lemonade.com/pet', tag: 'Protection' },
+    { id: 'gen-treats', name: 'Training Treats Variety', brand: 'Amazon', price: '$16', emoji: '🦴', url: 'https://www.amazon.com', tag: 'Training' },
+    { id: 'gen-grooming', name: 'Grooming Kit', brand: 'Petco', price: '$32', emoji: '✂️', url: 'https://www.petco.com', tag: 'Care' },
   ],
 };
 

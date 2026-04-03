@@ -8,6 +8,17 @@ const stripe = process.env.STRIPE_SECRET_KEY
   : null;
 
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+const DEFAULT_RETURN_PATH = '/dashboard';
+
+function buildClientUrl(pathname = DEFAULT_RETURN_PATH, params = {}) {
+  const url = new URL(pathname, CLIENT_URL);
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      url.searchParams.set(key, String(value));
+    }
+  });
+  return url.toString();
+}
 
 // Create a Stripe Checkout Session (hosted payment page)
 export const createCheckoutSession = async (req, res, next) => {
@@ -32,7 +43,17 @@ export const createCheckoutSession = async (req, res, next) => {
         }
       });
       await applySideEffects(type, metadata, req.user.id, payment.stripePaymentId);
-      return res.json({ mock: true, success: true, payment, message: 'Mock payment completed' });
+      return res.json({
+        mock: true,
+        success: true,
+        payment,
+        message: 'Mock payment completed',
+        redirectUrl: buildClientUrl(successPath || DEFAULT_RETURN_PATH, {
+          payment: 'success',
+          type,
+          session_id: payment.stripePaymentId,
+        }),
+      });
     }
 
     // Get or create Stripe customer
@@ -55,8 +76,15 @@ export const createCheckoutSession = async (req, res, next) => {
     }
 
     const isSubscription = type === 'membership';
-    const successUrl = `${CLIENT_URL}${successPath || '/account'}?payment=success&type=${type}&session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = `${CLIENT_URL}${cancelPath || '/account'}?payment=cancelled`;
+    const successUrl = buildClientUrl(successPath || DEFAULT_RETURN_PATH, {
+      payment: 'success',
+      type,
+      session_id: '{CHECKOUT_SESSION_ID}',
+    });
+    const cancelUrl = buildClientUrl(cancelPath || DEFAULT_RETURN_PATH, {
+      payment: 'cancelled',
+      type,
+    });
 
     const sessionConfig = {
       customer: stripeCustomerId,
@@ -245,12 +273,12 @@ async function applySideEffects(type, metadata, userId, paymentId) {
 
 export const createPortalSession = async (req, res, next) => {
   try {
-    if (!stripe) return res.json({ url: '/account', mock: true });
+    if (!stripe) return res.json({ url: buildClientUrl(DEFAULT_RETURN_PATH), mock: true });
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
     if (!user.stripeCustomerId) return res.status(400).json({ error: 'No Stripe customer found' });
     const session = await stripe.billingPortal.sessions.create({
       customer: user.stripeCustomerId,
-      return_url: `${CLIENT_URL}/account`,
+      return_url: buildClientUrl(DEFAULT_RETURN_PATH),
     });
     res.json({ url: session.url });
   } catch (err) { next(err); }

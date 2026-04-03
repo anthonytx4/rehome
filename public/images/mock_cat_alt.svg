@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Cat placeholder variant">
+  <rect width="800" height="600" rx="40" fill="#F4F7FB"/>
+  <ellipse cx="400" cy="360" rx="155" ry="128" fill="#A7B2C3"/>
+  <circle cx="400" cy="260" r="95" fill="#C3CDDA"/>
+  <polygon points="330,205 285,130 355,155" fill="#B1BBCB"/>
+  <polygon points="470,205 515,130 445,155" fill="#B1BBCB"/>
+  <circle cx="365" cy="250" r="10" fill="#263238"/>
+  <circle cx="435" cy="250" r="10" fill="#263238"/>
+  <ellipse cx="400" cy="292" rx="18" ry="14" fill="#8A5A44"/>
+  <path d="M388 305c7 8 17 8 24 0" stroke="#7A4A39" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <path d="M270 345h-80M270 365h-75M270 385h-65" stroke="#93A0B4" stroke-width="6" stroke-linecap="round"/>
+  <path d="M530 345h80M530 365h75M530 385h65" stroke="#93A0B4" stroke-width="6" stroke-linecap="round"/>
+  <rect x="310" y="402" width="34" height="102" rx="14" fill="#9FA9BA"/>
+  <rect x="372" y="414" width="34" height="96" rx="14" fill="#9FA9BA"/>
+  <rect x="434" y="414" width="34" height="96" rx="14" fill="#9FA9BA"/>
+  <rect x="496" y="402" width="34" height="102" rx="14" fill="#9FA9BA"/>
+</svg>

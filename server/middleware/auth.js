@@ -15,7 +15,7 @@ export const auth = async (req, res, next) => {
     const decoded = jwt.verify(token, JWT_SECRET);
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      select: { id: true, name: true, email: true, avatar: true, location: true, phone: true, bio: true, isVerifiedBreeder: true, createdAt: true, role: true }
+      select: { id: true, name: true, email: true, avatar: true, location: true, phone: true, bio: true, isVerifiedBreeder: true, createdAt: true }
     });
 
     if (!user) {
@@ -36,7 +36,8 @@ export const authorize = (...roles) => {
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
     }
-    if (roles.length && !roles.includes(req.user.role) && req.user.email !== 'admin@rehome.world') {
+    const userRole = req.user.role;
+    if (roles.length && !roles.includes(userRole) && req.user.email !== 'admin@rehome.world') {
       return res.status(403).json({ error: 'Access denied' });
     }
     next();

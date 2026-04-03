@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Link, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react';
 import { useEffect, useState } from 'react';
 import { useAuth } from './context/AuthContext';
@@ -23,17 +23,27 @@ import ListingDetailPage from './pages/ListingDetailPage';
 import PrivacyPage from './pages/PrivacyPage';
 import './App.css';
 
+const RouteLoading = ({ message }) => (
+  <div style={{ minHeight: '55vh', display: 'grid', placeItems: 'center', padding: '48px 24px' }}>
+    <div style={{ textAlign: 'center', padding: '32px 28px', borderRadius: '24px', background: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-md)', minWidth: '280px' }}>
+      <div style={{ width: '52px', height: '52px', margin: '0 auto 16px', borderRadius: '999px', background: 'linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))', opacity: 0.9 }} />
+      <h2 style={{ fontSize: '1.3rem', marginBottom: '8px' }}>{message}</h2>
+      <p style={{ color: 'var(--color-text-muted)' }}>Just a moment while we prepare your session.</p>
+    </div>
+  </div>
+);
+
 // Protected route wrapper
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
-  if (loading) return <div style={{ padding: '100px', textAlign: 'center' }}>Loading...</div>;
+  const { isAuthenticated, loading, authActionPending } = useAuth();
+  if (loading || authActionPending) return <RouteLoading message="Loading your account" />;
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
 // Admin route wrapper
 const AdminRoute = ({ children }) => {
-  const { user, isAuthenticated, loading } = useAuth();
-  if (loading) return <div style={{ padding: '100px', textAlign: 'center' }}>Loading...</div>;
+  const { user, isAuthenticated, loading, authActionPending } = useAuth();
+  if (loading || authActionPending) return <RouteLoading message="Loading admin tools" />;
   if (!isAuthenticated || user?.email !== 'admin@rehome.world') {
     return <Navigate to="/" replace />;
   }
@@ -41,8 +51,7 @@ const AdminRoute = ({ children }) => {
 };
 
 // Homepage component (existing layout)
-const HomePage = () => {
-  const [searchQuery, setSearchQuery] = useState('');
+const HomePage = ({ searchQuery }) => {
   const [postAction, setPostAction] = useState(null);
 
   return (
@@ -66,9 +75,9 @@ const HomePage = () => {
       <footer style={{ padding: '64px 24px', textAlign: 'center', color: 'var(--color-text-muted)', borderTop: '1px solid var(--color-border)' }}>
         <p>&copy; 2026 Rehome Marketplace. Secure Escrow & Registered Breeders.</p>
         <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center', gap: '24px', fontSize: '0.9rem' }}>
-          <span>Terms</span>
-          <a href="/privacy" style={{ color: 'inherit' }}>Privacy Policy</a>
-          <span>Trust & Safety</span>
+          <Link to="/privacy#collection" style={{ color: 'inherit' }}>Terms</Link>
+          <Link to="/privacy" style={{ color: 'inherit' }}>Privacy Policy</Link>
+          <Link to="/privacy#rights" style={{ color: 'inherit' }}>Trust & Safety</Link>
         </div>
       </footer>
       {postAction && (
@@ -77,6 +86,22 @@ const HomePage = () => {
     </>
   );
 };
+
+const NotFoundPage = () => (
+  <div style={{ minHeight: '70vh', display: 'grid', placeItems: 'center', padding: '48px 24px' }}>
+    <div style={{ maxWidth: '640px', width: '100%', padding: '48px 32px', borderRadius: '28px', background: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-lg)', textAlign: 'center' }}>
+      <p style={{ textTransform: 'uppercase', letterSpacing: '0.18em', color: 'var(--color-primary)', fontWeight: 800, fontSize: '0.8rem', marginBottom: '12px' }}>404</p>
+      <h1 style={{ fontSize: '2.2rem', marginBottom: '12px' }}>That page wandered off.</h1>
+      <p style={{ color: 'var(--color-text-muted)', lineHeight: 1.7, marginBottom: '28px' }}>
+        The link may be outdated or the page may have moved. Head back to the marketplace or check the privacy page if you were looking for policy details.
+      </p>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        <Link to="/" className="btn btn-primary">Back to Marketplace</Link>
+        <Link to="/privacy" className="btn btn-secondary">Privacy Policy</Link>
+      </div>
+    </div>
+  </div>
+);
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -88,15 +113,16 @@ function App() {
   // Dynamic Marketplace Theming & Aggressive Monetization
   useEffect(() => {
     let theme = 'pets';
+    const shouldShowInterstitial = location.pathname === '/livestock' || location.pathname === '/supplies';
     if (location.pathname === '/livestock') {
       theme = 'livestock';
-      setShowInterstitial(true);
     }
     if (location.pathname === '/supplies') { 
       theme = 'supplies';
-      setShowInterstitial(true);
     }
+    const timer = setTimeout(() => setShowInterstitial(shouldShowInterstitial), 0);
     document.documentElement.setAttribute('data-marketplace', theme);
+    return () => clearTimeout(timer);
   }, [location.pathname]);
 
   // Listen for HowItWorks events from HomePage
@@ -122,17 +148,18 @@ function App() {
       />
       <main>
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<HomePage searchQuery={searchQuery} />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
           <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
           <Route path="/messages/:listingId" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
           <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
-          <Route path="/livestock" element={<LivestockPage />} />
-          <Route path="/supplies" element={<SuppliesPage />} />
+          <Route path="/livestock" element={<LivestockPage searchQuery={searchQuery} />} />
+          <Route path="/supplies" element={<SuppliesPage searchQuery={searchQuery} />} />
           <Route path="/listing/:id" element={<ListingDetailPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
 

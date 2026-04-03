@@ -21,7 +21,7 @@ const CAMPAIGNS = [
     headline: 'Protect Your New Companion',
     subline: 'Comprehensive pet insurance from $12/mo. Instant coverage for all species including elite livestock.',
     cta: 'Get a Free Quote',
-    url: 'https://petinsurance.com/?ref=rehome',
+    url: 'https://www.lemonade.com/pet',
     gradient: 'linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%)',
     accent: '#10B981',
     emoji: '🛡️',

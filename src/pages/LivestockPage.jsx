@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Hero from '../components/Hero';
 import PetGallery from '../components/PetGallery';
 import AdSenseUnit from '../components/ads/AdSenseUnit';
@@ -7,9 +7,7 @@ import FooterPartnerStrip from '../components/ads/FooterPartnerStrip';
 import styles from './LivestockPage.module.css'; // Changed to local module
 import '../App.css'; 
 
-const LivestockPage = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  
+const LivestockPage = ({ searchQuery }) => {
   return (
     <div className="livestock-page">
       <Hero 
@@ -25,7 +23,7 @@ const LivestockPage = () => {
       <div id="gallery">
         <PetGallery 
           searchQuery={searchQuery}
-          overrideType="Livestock" // We'll need to update PetGallery to accept this
+          overrideType="Livestock"
         />
       </div>
       <AdSenseUnit slot="livestock-bottom-native" />

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Dog placeholder variant">
+  <rect width="800" height="600" rx="40" fill="#F4EFE8"/>
+  <ellipse cx="400" cy="360" rx="175" ry="138" fill="#B88A64"/>
+  <circle cx="350" cy="250" r="92" fill="#C99A72"/>
+  <ellipse cx="300" cy="165" rx="42" ry="120" fill="#A97852" transform="rotate(-22 300 165)"/>
+  <ellipse cx="452" cy="165" rx="42" ry="120" fill="#A97852" transform="rotate(22 452 165)"/>
+  <circle cx="318" cy="242" r="10" fill="#3E2723"/>
+  <circle cx="386" cy="242" r="10" fill="#3E2723"/>
+  <ellipse cx="352" cy="280" rx="24" ry="18" fill="#8B5E43"/>
+  <path d="M335 308c8 10 23 10 31 0" stroke="#6D4C41" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <rect x="250" y="398" width="34" height="98" rx="14" fill="#9D7252"/>
+  <rect x="332" y="408" width="34" height="96" rx="14" fill="#9D7252"/>
+  <rect x="428" y="408" width="34" height="96" rx="14" fill="#9D7252"/>
+  <rect x="510" y="398" width="34" height="98" rx="14" fill="#9D7252"/>
+</svg>

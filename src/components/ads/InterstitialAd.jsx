@@ -2,15 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { X, ExternalLink } from 'lucide-react';
 import styles from './InterstitialAd.module.css';
 
-const InterstitialAd = ({ isOpen, onClose, campaign = 'default' }) => {
+const InterstitialAd = ({ isOpen, onClose }) => {
   const [countdown, setCountdown] = useState(5);
   const [canClose, setCanClose] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
-    setCountdown(5);
-    setCanClose(false);
-    
+    const resetTimer = setTimeout(() => {
+      setCountdown(5);
+      setCanClose(false);
+    }, 0);
+
     const timer = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) {
@@ -22,7 +24,10 @@ const InterstitialAd = ({ isOpen, onClose, campaign = 'default' }) => {
       });
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      clearTimeout(resetTimer);
+    };
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -52,7 +57,7 @@ const InterstitialAd = ({ isOpen, onClose, campaign = 'default' }) => {
             </div>
           </div>
           
-          <button className={styles.ctaBtn} onClick={() => window.open('https://partners.rehome.world/insurance', '_blank')}>
+          <button className={styles.ctaBtn} onClick={() => window.open('https://www.lemonade.com/pet', '_blank', 'noopener')}>
             Get Instant Quote <ExternalLink size={16} />
           </button>
         </div>

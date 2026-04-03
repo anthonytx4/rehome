@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, ArrowRight, ShieldCheck, Sparkles, Heart } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import analytics from '../../hooks/useAnalytics';
 import styles from './PostActionBanner.module.css';
 
@@ -9,7 +10,7 @@ const BANNERS = {
     title: 'Protect Your Future Pet',
     message: 'Get pet insurance coverage from day one — plans starting at $12/month.',
     cta: 'Get a Quote',
-    url: '#',
+    url: '/register?tier=royal',
     gradient: 'linear-gradient(135deg, #10B981, #059669)',
   },
   message: {
@@ -17,7 +18,7 @@ const BANNERS = {
     title: 'While You Wait...',
     message: 'Gear up for your new companion — browse supplies with free shipping.',
     cta: 'Shop Supplies',
-    url: '#',
+    url: '/supplies',
     gradient: 'linear-gradient(135deg, #667EEA, #764BA2)',
   },
   listing: {
@@ -25,7 +26,7 @@ const BANNERS = {
     title: 'Listing Published!',
     message: 'Boost your listing to the top of every search for 7 days.',
     cta: 'Boost for $15',
-    url: '#',
+    url: '/dashboard',
     gradient: 'linear-gradient(135deg, #F59E0B, #D97706)',
   },
 };
@@ -33,11 +34,31 @@ const BANNERS = {
 const PostActionBanner = ({ type = 'favorite', onDismiss }) => {
   const [visible, setVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
+  const navigate = useNavigate();
   const banner = BANNERS[type] || BANNERS.favorite;
+  const onDismissRef = useRef(onDismiss);
+
+  useEffect(() => {
+    onDismissRef.current = onDismiss;
+  }, [onDismiss]);
+
+  const dismiss = () => {
+    setExiting(true);
+    setTimeout(() => {
+      setVisible(false);
+      onDismissRef.current?.();
+    }, 400);
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => setVisible(true), 300);
-    const autoClose = setTimeout(() => dismiss(), 8000);
+    const autoClose = setTimeout(() => {
+      setExiting(true);
+      setTimeout(() => {
+        setVisible(false);
+        onDismissRef.current?.();
+      }, 400);
+    }, 8000);
 
     analytics.adImpression('post_action', type, `post_${type}`);
 
@@ -47,16 +68,9 @@ const PostActionBanner = ({ type = 'favorite', onDismiss }) => {
     };
   }, [type]);
 
-  const dismiss = () => {
-    setExiting(true);
-    setTimeout(() => {
-      setVisible(false);
-      onDismiss?.();
-    }, 400);
-  };
-
   const handleClick = () => {
     analytics.adClick('post_action', type, `post_${type}`, banner.url);
+    navigate(banner.url);
     dismiss();
   };
 

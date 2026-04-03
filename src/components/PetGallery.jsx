@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useDeferredValue, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import api from '../api/client';
 import PetCard from './PetCard';
 import PetDetailModal from './PetDetailModal';
 import AdSenseUnit from './ads/AdSenseUnit';
 import styles from './PetGallery.module.css';
+import { normalizeListing } from '../utils/listings';
 
 const mockPets = [
   { id: 1, name: 'Cooper', type: 'Dog', breed: 'Golden Retriever', age: '3 Months', gender: 'Male', location: 'Austin, TX', fee: 450, verified: true, isPremium: true, image: '/images/mock_dog_1775037305181.png', category: 'pets' },
@@ -28,26 +29,103 @@ const categoryMaps = {
   'supplies': ['All Supplies', 'Hygiene', 'Grooming', 'Healthcare', 'Feeding', 'Other']
 };
 
-const PetGallery = ({ searchQuery, onPostAction, overrideType }) => {
+const matchesActiveCategory = (item, activeCategory, marketplaceContext) => {
+  if (activeCategory.startsWith('All')) return true;
+
+  const type = item.type.toLowerCase();
+  switch (marketplaceContext) {
+    case 'pets':
+      if (activeCategory === 'Dogs') return type === 'dog';
+      if (activeCategory === 'Cats') return type === 'cat';
+      if (activeCategory === 'Birds') return type === 'bird';
+      if (activeCategory === 'Reptiles') return type.includes('reptile');
+      if (activeCategory === 'Other') return !['dog', 'cat', 'bird'].includes(type) && !type.includes('reptile');
+      return false;
+    case 'livestock':
+      if (activeCategory === 'Cattle') return type.includes('cattle') || type.includes('cow');
+      if (activeCategory === 'Horses') return type.includes('horse');
+      if (activeCategory === 'Poultry') return ['poultry', 'chicken', 'duck', 'turkey'].some((value) => type.includes(value));
+      if (activeCategory === 'Sheep') return ['sheep', 'goat'].some((value) => type.includes(value));
+      if (activeCategory === 'Other') {
+        return !['cattle', 'cow', 'horse', 'poultry', 'chicken', 'duck', 'turkey', 'sheep', 'goat'].some((value) => type.includes(value));
+      }
+      return false;
+    case 'supplies':
+      if (activeCategory === 'Hygiene') return type.includes('hygiene');
+      if (activeCategory === 'Grooming') return type.includes('grooming');
+      if (activeCategory === 'Healthcare') return type.includes('healthcare');
+      if (activeCategory === 'Feeding') return type.includes('feeding') || type.includes('feed');
+      if (activeCategory === 'Other') {
+        return !['hygiene', 'grooming', 'healthcare', 'feeding', 'feed'].some((value) => type.includes(value));
+      }
+      return false;
+    default:
+      return true;
+  }
+};
+
+const PetGallery = ({ searchQuery = '', onPostAction, overrideType = '' }) => {
   const location = useLocation();
   const path = location.pathname;
   const urlMarketplace = path === '/livestock' ? 'livestock' : path === '/supplies' ? 'supplies' : 'pets';
-  
   const marketplaceContext = (overrideType || urlMarketplace).toLowerCase();
   const categories = categoryMaps[marketplaceContext] || categoryMaps['pets'];
   const [activeCat, setActiveCat] = useState(categories[0]);
   const [selectedPet, setSelectedPet] = useState(null);
+  const [listings, setListings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [reloadToken, setReloadToken] = useState(0);
+  const deferredSearchQuery = useDeferredValue(searchQuery);
 
-  const filteredPets = mockPets.filter(item => {
+  useEffect(() => {
+    setActiveCat(categories[0]);
+    setSelectedPet(null);
+  }, [categories, marketplaceContext]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadListings = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get('/listings', {
+          params: {
+            category: marketplaceContext,
+            limit: 100,
+          },
+        });
+        if (cancelled) return;
+        const liveListings = (res.data.listings || []).map(normalizeListing);
+        setListings(liveListings);
+        setError(null);
+      } catch {
+        if (cancelled) return;
+        setError('Live listings are temporarily unavailable. Showing curated demo content instead.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadListings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [marketplaceContext, reloadToken]);
+
+  const hasMarketplaceListings = listings.some((item) => item.category === marketplaceContext);
+  const sourcePets = hasMarketplaceListings ? listings : mockPets;
+
+  const filteredPets = sourcePets.filter(item => {
     // Stage 1: Market Isolation
     if (item.category !== marketplaceContext) return false;
 
     // Stage 2: Category Filter
-    const isAll = activeCat.startsWith('All');
-    const matchesCat = isAll || item.type === activeCat;
+    const matchesCat = matchesActiveCategory(item, activeCat, marketplaceContext);
     
     // Stage 3: Search Filter
-    const searchLower = searchQuery.toLowerCase();
+    const searchLower = (deferredSearchQuery || '').toLowerCase();
     const matchesSearch = 
       item.name.toLowerCase().includes(searchLower) ||
       (item.breed && item.breed.toLowerCase().includes(searchLower)) ||
@@ -65,7 +143,7 @@ const PetGallery = ({ searchQuery, onPostAction, overrideType }) => {
       items.push({ type: 'pet', data: pet });
       
       // Insert a native sponsored card after every 6th pet
-      if ((i + 1) % 12 === 0 && searchQuery === '') {
+      if ((i + 1) % 12 === 0 && deferredSearchQuery === '') {
         items.push({ type: 'sponsored', index: adIndex++ });
       }
     });
@@ -74,15 +152,66 @@ const PetGallery = ({ searchQuery, onPostAction, overrideType }) => {
   };
 
   const feedItems = buildFeedItems();
+  const title = marketplaceContext === 'livestock'
+    ? 'Elite Livestock'
+    : marketplaceContext === 'supplies'
+      ? "Today's Premium Market"
+      : 'Pets closest to you';
+
+  if (loading && listings.length === 0) {
+    return (
+      <section className={`container ${styles.gallerySection}`}>
+        <div className={styles.header}>
+          <div>
+            <h2 className={styles.title}>{title}</h2>
+            <p style={{ marginTop: '8px', color: 'var(--color-text-muted)' }}>Loading the latest listings...</p>
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
+          {[0, 1, 2, 3].map((index) => (
+            <div
+              key={index}
+              style={{
+                minHeight: '320px',
+                borderRadius: '24px',
+                background: 'linear-gradient(180deg, rgba(255,255,255,0.85), rgba(243,244,246,0.95))',
+                border: '1px solid var(--color-border)',
+                boxShadow: 'var(--shadow-sm)',
+                overflow: 'hidden',
+              }}
+            >
+              <div style={{ aspectRatio: '4 / 3', background: 'linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 50%, #e5e7eb 100%)', animation: 'pulse 1.4s ease-in-out infinite' }} />
+              <div style={{ padding: '18px' }}>
+                <div style={{ height: '16px', width: '65%', borderRadius: '999px', background: '#e5e7eb', marginBottom: '12px' }} />
+                <div style={{ height: '14px', width: '45%', borderRadius: '999px', background: '#e5e7eb', marginBottom: '8px' }} />
+                <div style={{ height: '14px', width: '30%', borderRadius: '999px', background: '#e5e7eb' }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className={`container ${styles.gallerySection}`}>
       <div className={styles.header}>
-        <h2 className={styles.title}>
-          {marketplaceContext === 'Livestock' ? 'Elite Auctions' : 
-           marketplaceContext === 'Supplies' ? 'Today\'s Premium Market' : 
-           'Pets closest to you'}
-        </h2>
+        <div>
+          <h2 className={styles.title}>{title}</h2>
+          {error && (
+            <p style={{ marginTop: '8px', color: 'var(--color-text-muted)', fontSize: '0.95rem' }}>
+              {error}{' '}
+              <button
+                type="button"
+                onClick={() => setReloadToken((value) => value + 1)}
+                className="btn btn-secondary"
+                style={{ marginLeft: '8px', padding: '8px 14px' }}
+              >
+                Retry
+              </button>
+            </p>
+          )}
+        </div>
         <div className={styles.categoryFilters}>
           {categories.map((cat) => (
             <button 
@@ -97,7 +226,7 @@ const PetGallery = ({ searchQuery, onPostAction, overrideType }) => {
       </div>
 
       <div className={styles.grid}>
-        {feedItems.map((item, i) => {
+        {feedItems.map((item) => {
           if (item.type === 'sponsored') {
             return <AdSenseUnit key={`ad-${item.index}`} slot="pet-gallery-native" />;
           }
@@ -113,10 +242,13 @@ const PetGallery = ({ searchQuery, onPostAction, overrideType }) => {
           <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Try adjusting your filters or search query.</p>
         </div>
       )}
-
-      <div className={styles.loadMore}>
-        <button className="btn btn-secondary">Load More</button>
-      </div>
+      {!loading && filteredPets.length > 0 && (
+        <div className={styles.loadMore}>
+          <span style={{ color: 'var(--color-text-muted)', fontSize: '0.95rem' }}>
+            Showing {filteredPets.length} listing{filteredPets.length === 1 ? '' : 's'}
+          </span>
+        </div>
+      )}
 
       <PetDetailModal 
         pet={selectedPet} 

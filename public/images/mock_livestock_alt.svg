@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Livestock placeholder variant">
+  <rect width="800" height="600" rx="40" fill="#F0F6EE"/>
+  <rect x="100" y="335" width="600" height="110" rx="55" fill="#CDAE84"/>
+  <ellipse cx="395" cy="275" rx="170" ry="110" fill="#8F6A48"/>
+  <circle cx="280" cy="230" r="32" fill="#8F6A48"/>
+  <circle cx="510" cy="230" r="32" fill="#8F6A48"/>
+  <circle cx="335" cy="255" r="11" fill="#231815"/>
+  <circle cx="445" cy="255" r="11" fill="#231815"/>
+  <path d="M336 300h120" stroke="#6E4E34" stroke-width="14" stroke-linecap="round"/>
+  <rect x="258" y="395" width="30" height="96" rx="14" fill="#70543A"/>
+  <rect x="330" y="405" width="30" height="90" rx="14" fill="#70543A"/>
+  <rect x="430" y="405" width="30" height="90" rx="14" fill="#70543A"/>
+  <rect x="502" y="395" width="30" height="96" rx="14" fill="#70543A"/>
+  <path d="M175 190h450" stroke="#B7D3B7" stroke-width="14" stroke-linecap="round"/>
+  <path d="M225 155h350" stroke="#B7D3B7" stroke-width="10" stroke-linecap="round"/>
+</svg>

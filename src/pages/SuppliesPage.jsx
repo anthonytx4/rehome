@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Hero from '../components/Hero';
 import PetGallery from '../components/PetGallery';
 import AdSenseUnit from '../components/ads/AdSenseUnit';
@@ -6,9 +6,7 @@ import PremiumBanner from '../components/ads/PremiumBanner';
 import FooterPartnerStrip from '../components/ads/FooterPartnerStrip';
 import '../App.css';
 
-const SuppliesPage = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  
+const SuppliesPage = ({ searchQuery }) => {
   return (
     <div className="supplies-page">
       <Hero 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Users, Package, Eye, MessageSquare, Heart, TrendingUp, DollarSign, BarChart3, ShieldCheck, AlertCircle, Search, Filter } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
@@ -18,7 +19,7 @@ const AdminPage = () => {
     try {
       const res = await api.get('/users/insights');
       setInsights(res.data);
-    } catch (err) {
+    } catch {
       toast.error('Failed to load admin insights');
     } finally {
       setLoading(false);
@@ -31,7 +32,7 @@ const AdminPage = () => {
         <AlertCircle size={48} />
         <h2>Access Denied</h2>
         <p>This page is restricted to platform administrators only.</p>
-        <button onClick={() => window.location.href = '/'} className="btn btn-primary">Back to Home</button>
+        <Link to="/" className="btn btn-primary">Back to Home</Link>
       </div>
     );
   }

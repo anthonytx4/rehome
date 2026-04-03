@@ -1,32 +1,35 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, ArrowRight, ShieldCheck, Sparkles, Heart } from 'lucide-react';
+import { X, ArrowRight, BookmarkCheck, Sparkles, Rocket } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import analytics from '../../hooks/useAnalytics';
 import styles from './PostActionBanner.module.css';
 
 const BANNERS = {
   favorite: {
-    icon: <ShieldCheck size={20} />,
-    title: 'Protect Your Future Pet',
-    message: 'Get pet insurance coverage from day one — plans starting at $12/month.',
-    cta: 'Get a Quote',
-    url: '/register?tier=royal',
-    gradient: 'linear-gradient(135deg, #10B981, #059669)',
+    icon: <BookmarkCheck size={20} />,
+    title: 'Saved to Favorites',
+    message: 'Open your saved listings whenever you want to compare pets, livestock, or supplies.',
+    cta: 'View Saved',
+    action: 'route',
+    url: '/dashboard?tab=favorites',
+    gradient: 'linear-gradient(135deg, #0F766E, #14B8A6)',
   },
   message: {
     icon: <Sparkles size={20} />,
-    title: 'While You Wait...',
-    message: 'Gear up for your new companion — browse supplies with free shipping.',
-    cta: 'Shop Supplies',
-    url: '/supplies',
-    gradient: 'linear-gradient(135deg, #667EEA, #764BA2)',
+    title: 'Message Sent',
+    message: 'Your inbox is ready if the seller replies or wants to send photos, videos, or pickup details.',
+    cta: 'Open Messages',
+    action: 'route',
+    url: '/messages',
+    gradient: 'linear-gradient(135deg, #1D4ED8, #4F46E5)',
   },
   listing: {
-    icon: <Heart size={20} />,
+    icon: <Rocket size={20} />,
     title: 'Listing Published!',
-    message: 'Boost your listing to the top of every search for 7 days.',
+    message: 'Manage your listing, watch messages, or upgrade it to a paid boost from the dashboard.',
     cta: 'Boost for $15',
-    url: '/dashboard',
+    action: 'route',
+    url: '/dashboard?action=boost',
     gradient: 'linear-gradient(135deg, #F59E0B, #D97706)',
   },
 };

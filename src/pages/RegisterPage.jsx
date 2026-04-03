@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { UserPlus, Mail, Lock, User, MapPin, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -14,8 +14,14 @@ const RegisterPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
-  const searchParams = new URLSearchParams(window.location.search);
+  const [searchParams] = useSearchParams();
   const tier = searchParams.get('tier'); // breeder, royal, etc.
+  const redirectPath = searchParams.get('redirect');
+  const normalizedTier = tier === 'royal' ? 'breeder' : tier;
+  const loginRedirect = normalizedTier
+    ? `/dashboard?purchase=membership&tier=${encodeURIComponent(normalizedTier)}`
+    : (redirectPath || '/dashboard');
+  const loginLink = `/login${loginRedirect ? `?redirect=${encodeURIComponent(loginRedirect)}` : ''}`;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,8 +31,12 @@ const RegisterPage = () => {
     setIsLoading(true);
     try {
       await register(name, email, password, location, tier);
-      toast.success(tier ? `Welcome to the ${tier} Circle!` : 'Account created!');
-      navigate('/dashboard', { replace: true });
+      toast.success(normalizedTier ? `Welcome to the ${normalizedTier} Circle!` : 'Account created!');
+      if (normalizedTier) {
+        navigate(`/dashboard?purchase=membership&tier=${encodeURIComponent(normalizedTier)}`, { replace: true });
+      } else {
+        navigate(redirectPath || '/dashboard', { replace: true });
+      }
     } catch (err) {
       toast.error(err.response?.data?.error || 'Registration failed');
     } finally {
@@ -114,7 +124,7 @@ const RegisterPage = () => {
         </form>
 
         <div className={styles.footer}>
-          <p>Already have an account? <Link to="/login" className={styles.link}>Sign in</Link></p>
+          <p>Already have an account? <Link to={loginLink} className={styles.link}>Sign in</Link></p>
         </div>
       </div>
     </div>

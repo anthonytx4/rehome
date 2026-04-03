@@ -1,3 +1,5 @@
+/* global process */
+
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
@@ -134,62 +136,153 @@ const buildListing = (item, userId, index) => {
   };
 };
 
-async function seed() {
-  console.log('Seeding database...');
+const ensureUser = async ({ email, passwordHash, resetPassword = false, ...profile }) => {
+  const existing = await prisma.user.findUnique({ where: { email } });
 
-  await prisma.review.deleteMany();
-  await prisma.favorite.deleteMany();
-  await prisma.message.deleteMany();
-  await prisma.bid.deleteMany();
-  await prisma.payment.deleteMany();
-  await prisma.listing.deleteMany();
-  await prisma.user.deleteMany();
+  if (existing) {
+    const updateData = {
+      name: profile.name,
+      location: profile.location,
+      bio: profile.bio,
+      isVerifiedBreeder: profile.isVerifiedBreeder,
+    };
 
-  const password = await bcrypt.hash('password123', 12);
+    if (resetPassword) {
+      updateData.password = passwordHash;
+    }
 
-  const sarah = await prisma.user.create({
+    return prisma.user.update({
+      where: { id: existing.id },
+      data: updateData,
+    });
+  }
+
+  return prisma.user.create({
     data: {
+      ...profile,
+      email,
+      password: passwordHash,
+    },
+  });
+};
+
+const syncListing = async (item, userId, index) => {
+  const data = buildListing(item, userId, index);
+  const existingListings = await prisma.listing.findMany({
+    where: { userId, title: item.title },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  if (existingListings.length > 0) {
+    const [existing, ...duplicates] = existingListings;
+
+    if (duplicates.length > 0) {
+      await prisma.listing.deleteMany({
+        where: { id: { in: duplicates.map((listing) => listing.id) } },
+      });
+    }
+
+    const listing = await prisma.listing.update({
+      where: { id: existing.id },
+      data,
+    });
+    return { listing, action: duplicates.length > 0 ? 'deduped' : 'updated' };
+  }
+
+  const listing = await prisma.listing.create({ data });
+  return { listing, action: 'created' };
+};
+
+const ensureReview = async (data) => {
+  const existing = await prisma.review.findFirst({
+    where: {
+      reviewerId: data.reviewerId,
+      sellerId: data.sellerId,
+      comment: data.comment ?? null,
+    },
+  });
+
+  if (existing) {
+    return prisma.review.update({
+      where: { id: existing.id },
+      data: {
+        rating: data.rating,
+        comment: data.comment ?? null,
+      },
+    });
+  }
+
+  return prisma.review.create({ data });
+};
+
+const ensureMessage = async (data) => {
+  const existing = await prisma.message.findFirst({
+    where: {
+      senderId: data.senderId,
+      receiverId: data.receiverId,
+      listingId: data.listingId,
+      content: data.content ?? null,
+    },
+  });
+
+  if (existing) {
+    return existing;
+  }
+
+  return prisma.message.create({ data });
+};
+
+const ensureFavorite = async (userId, listingId) => prisma.favorite.upsert({
+  where: {
+    userId_listingId: { userId, listingId },
+  },
+  update: {},
+  create: { userId, listingId },
+});
+
+async function seed() {
+  console.log('Syncing demo marketplace catalog without deleting existing data...');
+
+  const passwordHash = await bcrypt.hash('password123', 12);
+
+  const [sarah, james, maria, admin] = await Promise.all([
+    ensureUser({
       name: 'Sarah Mitchell',
       email: 'sarah@example.com',
-      password,
+      passwordHash,
+      resetPassword: true,
       location: 'Austin, TX',
       bio: 'Family-first breeder focused on dogs, barnyard starters, and well-socialized young animals.',
       isVerifiedBreeder: true,
-    },
-  });
-
-  const james = await prisma.user.create({
-    data: {
+    }),
+    ensureUser({
       name: 'James Cooper',
       email: 'james@example.com',
-      password,
+      passwordHash,
+      resetPassword: true,
       location: 'Seattle, WA',
       bio: 'Practical homestead seller with a soft spot for cats, rabbits, and small-farm animals.',
       isVerifiedBreeder: true,
-    },
-  });
-
-  const maria = await prisma.user.create({
-    data: {
+    }),
+    ensureUser({
       name: 'Maria Santos',
       email: 'maria@example.com',
-      password,
+      passwordHash,
+      resetPassword: true,
       location: 'Miami, FL',
       bio: 'Livestock and farm-supply specialist with a clean, steady inventory of larger animals and gear.',
       isVerifiedBreeder: true,
-    },
-  });
-
-  const admin = await prisma.user.create({
-    data: {
+    }),
+    ensureUser({
       name: 'Admin',
       email: 'admin@rehome.world',
-      password,
+      passwordHash,
+      resetPassword: false,
       location: 'New York, NY',
       bio: 'Rehome Marketplace Administrator',
       isVerifiedBreeder: true,
-    },
-  });
+    }),
+  ]);
 
   const sarahItems = [
     {
@@ -1470,8 +1563,8 @@ async function seed() {
 
   const mariaBirdItems = [
     {
-      title: 'Bluebell - Parakeet Pair',
-      petName: 'Bluebell',
+      title: 'Azure - Parakeet Pair',
+      petName: 'Azure',
       species: 'Bird',
       breed: 'Budgerigar Pair',
       age: '8 Months',
@@ -1487,8 +1580,8 @@ async function seed() {
       fit: 'Best for a home that wants a small, lively pet bird with a steady soundtrack.',
     },
     {
-      title: 'Cedar - Cockatiel',
-      petName: 'Cedar',
+      title: 'Harbor - Cockatiel',
+      petName: 'Harbor',
       species: 'Bird',
       breed: 'Cockatiel',
       age: '2 Years',
@@ -1504,8 +1597,8 @@ async function seed() {
       fit: 'A practical pick for someone who wants a responsive bird without jumping straight to a larger parrot.',
     },
     {
-      title: 'Indigo - Sun Conure',
-      petName: 'Indigo',
+      title: 'Solstice - Sun Conure',
+      petName: 'Solstice',
       species: 'Bird',
       breed: 'Sun Conure',
       age: '15 Months',
@@ -2217,51 +2310,52 @@ async function seed() {
     ...extraPetItems.map(({ item, userId }) => ({ item, userId })),
   ];
 
-  const listings = await Promise.all(
-    allItems.map(({ item, userId }, index) => prisma.listing.create({
-      data: buildListing(item, userId, index),
-    }))
+  const listingResults = await Promise.all(
+    allItems.map(({ item, userId }, index) => syncListing(item, userId, index))
   );
+  const listings = listingResults.map(({ listing }) => listing);
+  const createdListings = listingResults.filter(({ action }) => action === 'created').length;
+  const updatedListings = listingResults.filter(({ action }) => action === 'updated').length;
 
-  await prisma.review.createMany({
-    data: [
-      { rating: 5, comment: 'Sarah was organized, warm, and sent exactly the animal we discussed.', reviewerId: james.id, sellerId: sarah.id },
-      { rating: 5, comment: 'James gave clear answers and kept the whole pickup process easy.', reviewerId: maria.id, sellerId: james.id },
-      { rating: 4, comment: 'Maria had clean supplies, solid photos, and practical product notes.', reviewerId: sarah.id, sellerId: maria.id },
-      { rating: 5, comment: 'Great communication and healthy animals that matched the listing photos.', reviewerId: admin.id, sellerId: sarah.id },
-    ],
-  });
+  await Promise.all([
+    ensureReview({ rating: 5, comment: 'Sarah was organized, warm, and sent exactly the animal we discussed.', reviewerId: james.id, sellerId: sarah.id }),
+    ensureReview({ rating: 5, comment: 'James gave clear answers and kept the whole pickup process easy.', reviewerId: maria.id, sellerId: james.id }),
+    ensureReview({ rating: 4, comment: 'Maria had clean supplies, solid photos, and practical product notes.', reviewerId: sarah.id, sellerId: maria.id }),
+    ensureReview({ rating: 5, comment: 'Great communication and healthy animals that matched the listing photos.', reviewerId: admin.id, sellerId: sarah.id }),
+  ]);
 
-  await prisma.favorite.createMany({
-    data: [
-      { userId: james.id, listingId: listings[0].id },
-      { userId: maria.id, listingId: listings[1].id },
-      { userId: sarah.id, listingId: listings[20].id },
-      { userId: admin.id, listingId: listings[32].id },
-      { userId: james.id, listingId: listings[45].id },
-    ],
-  });
+  await Promise.all([
+    ensureFavorite(james.id, listings[0].id),
+    ensureFavorite(maria.id, listings[1].id),
+    ensureFavorite(sarah.id, listings[20].id),
+    ensureFavorite(admin.id, listings[32].id),
+    ensureFavorite(james.id, listings[45].id),
+  ]);
 
-  await prisma.message.createMany({
-    data: [
-      { content: 'Hi Sarah, I am interested in Sunny. Is he still available?', senderId: james.id, receiverId: sarah.id, listingId: listings[0].id },
-      { content: 'Yes, Sunny is available and ready for a meeting this weekend.', senderId: sarah.id, receiverId: james.id, listingId: listings[0].id },
-      { content: "James, can you share a little more about Marlow's routine?", senderId: maria.id, receiverId: james.id, listingId: listings[16].id },
-      { content: 'Absolutely. He does best with a steady feeding time and a quiet room.', senderId: james.id, receiverId: maria.id, listingId: listings[16].id },
-      { content: 'Maria, I love the Jersey cow listing. How is Maribel on the halter?', senderId: sarah.id, receiverId: maria.id, listingId: listings[30].id },
-    ],
-  });
+  await Promise.all([
+    ensureMessage({ content: 'Hi Sarah, I am interested in Sunny. Is he still available?', senderId: james.id, receiverId: sarah.id, listingId: listings[0].id }),
+    ensureMessage({ content: 'Yes, Sunny is available and ready for a meeting this weekend.', senderId: sarah.id, receiverId: james.id, listingId: listings[0].id }),
+    ensureMessage({ content: "James, can you share a little more about Marlow's routine?", senderId: maria.id, receiverId: james.id, listingId: listings[16].id }),
+    ensureMessage({ content: 'Absolutely. He does best with a steady feeding time and a quiet room.', senderId: james.id, receiverId: maria.id, listingId: listings[16].id }),
+    ensureMessage({ content: 'Maria, I love the Jersey cow listing. How is Maribel on the halter?', senderId: sarah.id, receiverId: maria.id, listingId: listings[30].id }),
+  ]);
 
   const categoryCounts = allItems.reduce((acc, { item }) => {
     acc[item.category] = (acc[item.category] || 0) + 1;
     return acc;
   }, {});
 
-  console.log('Seed complete.');
-  console.log(`Users: 4 (3 sellers plus admin)`);
-  console.log(`Listings: ${listings.length}`);
-  console.log(`Mix: ${categoryCounts.pets || 0} pets, ${categoryCounts.livestock || 0} livestock, ${categoryCounts.supplies || 0} supplies`);
-  console.log('Login hint: any seeded email with password123');
+  const sellerIds = [sarah.id, james.id, maria.id];
+  const sellerListingCount = await prisma.listing.count({
+    where: { userId: { in: sellerIds } },
+  });
+
+  console.log('Catalog sync complete.');
+  console.log(`Users ensured: 4 (3 sellers plus admin)`);
+  console.log(`Listings synced this run: ${listings.length} (${createdListings} created, ${updatedListings} updated)`);
+  console.log(`Seller listings now present: ${sellerListingCount}`);
+  console.log(`Mix target: ${categoryCounts.pets || 0} pets, ${categoryCounts.livestock || 0} livestock, ${categoryCounts.supplies || 0} supplies`);
+  console.log('Login hint: sarah@example.com, james@example.com, and maria@example.com use password123 after sync.');
 
   await prisma.$disconnect();
 }

@@ -1,60 +1,68 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { X, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
+import toast from 'react-hot-toast';
 import analytics from '../../hooks/useAnalytics';
+import { useAuth } from '../../context/AuthContext';
+import { startMembershipCheckout } from '../../utils/payments';
 import styles from './PremiumBanner.module.css';
 
 const CAMPAIGNS = [
   {
-    id: 'royal-membership',
-    headline: '👑 Join the Royal Circle — $25/mo',
-    subline: 'The ultimate badge of honor. 0% safety fees, unlimited priority applications, and featured profile status across all marketplaces.',
-    cta: 'Become a Royal Partner',
-    url: '/register?tier=royal',
-    gradient: 'linear-gradient(135deg, #1A1A1A 0%, #374151 50%, #111827 100%)',
-    accent: '#FCD34D',
-    emoji: '👑',
-    flashy: true,
-  },
-  {
-    id: 'insurance-promo',
-    headline: 'Protect Your New Companion',
-    subline: 'Comprehensive pet insurance from $12/mo. Instant coverage for all species including elite livestock.',
-    cta: 'Get a Free Quote',
-    url: 'https://www.lemonade.com/pet',
-    gradient: 'linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%)',
-    accent: '#10B981',
-    emoji: '🛡️',
-  },
-  {
-    id: 'breeder-sub',
-    headline: 'Are You a Verified Breeder?',
-    subline: 'Get the Gold Badge of Trust. 4x higher trust rating and direct buyer access for $19/mo.',
+    id: 'breeder-membership',
+    label: 'Marketplace Upgrade',
+    headline: 'Verified Breeder Membership',
+    subline: 'Upgrade your account for $25/month to unlock the trust badge, ad-free browsing, and premium placement across Rehome.',
     cta: 'Join as Breeder',
-    url: '/register?tier=breeder',
-    gradient: 'linear-gradient(135deg, #78350F 0%, #92400E 50%, #78350F 100%)',
+    action: 'membership',
+    requiresAuth: true,
+    url: '/dashboard?purchase=membership&tier=breeder',
+    tier: 'breeder',
+    amount: 25,
+    gradient: 'linear-gradient(135deg, #1F2937 0%, #111827 55%, #0F172A 100%)',
     accent: '#F59E0B',
     emoji: '⭐',
   },
   {
     id: 'premium-boost',
-    headline: 'Elite Listing Boost — Triple Your Bids',
-    subline: 'Pin your auction to the top. Gold border highlighting and maximum search relevance for 7 days.',
+    label: 'Seller Tools',
+    headline: 'Feature a Listing for 7 Days',
+    subline: 'Take an active listing to the top of search and give it a premium badge with a $15 boost checkout.',
     cta: 'Boost Now — $15',
+    action: 'route',
+    requiresAuth: true,
     url: '/dashboard?action=boost',
     gradient: 'linear-gradient(135deg, #312E81 0%, #4338CA 50%, #312E81 100%)',
     accent: '#818CF8',
     emoji: '🚀',
   },
+  {
+    id: 'seller-dashboard',
+    label: 'Seller Dashboard',
+    headline: 'Manage Listings, Messages, and Billing',
+    subline: 'Jump into your dashboard to update prices, answer buyers, or review payments and account status.',
+    cta: 'Open Dashboard',
+    action: 'route',
+    requiresAuth: true,
+    url: '/dashboard',
+    gradient: 'linear-gradient(135deg, #134E4A 0%, #115E59 50%, #0F766E 100%)',
+    accent: '#14B8A6',
+    emoji: '📈',
+  },
 ];
 
 const PremiumBanner = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated, user } = useAuth();
+  const hasStoredSession = Boolean(localStorage.getItem('rehome_token'));
   const [currentIndex, setCurrentIndex] = useState(0);
   const [dismissed, setDismissed] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [processingId, setProcessingId] = useState(null);
   const intervalRef = useRef(null);
   const bannerRef = useRef(null);
+  const hasPaidMembership = Boolean(user?.membershipTier && user.membershipTier !== 'free');
 
   const campaign = CAMPAIGNS[currentIndex];
 
@@ -84,13 +92,38 @@ const PremiumBanner = () => {
     return () => observer.disconnect();
   }, [campaign.id]);
 
-  const handleClick = () => {
+  const handleClick = async () => {
     analytics.adClick('premium_banner', 'homepage', campaign.id, campaign.url);
-    if (campaign.url.startsWith('http')) {
-      window.open(campaign.url, '_blank');
-    } else {
-      navigate(campaign.url);
+
+    const loginRedirect = `/login?redirect=${encodeURIComponent(campaign.url)}`;
+    const canUseAccountActions = isAuthenticated || hasStoredSession;
+
+    if (campaign.requiresAuth && !canUseAccountActions) {
+      navigate(loginRedirect);
+      return;
     }
+
+    if (campaign.action === 'membership') {
+      if (hasPaidMembership) {
+        navigate('/dashboard');
+        return;
+      }
+
+      setProcessingId(campaign.id);
+      try {
+        await startMembershipCheckout({
+          tier: campaign.tier,
+          amount: campaign.amount,
+          cancelPath: `${location.pathname}${location.search || ''}` || '/',
+        });
+      } catch (err) {
+        toast.error(err.response?.data?.error || 'Unable to start checkout');
+        setProcessingId(null);
+      }
+      return;
+    }
+
+    navigate(campaign.url);
   };
 
   const goTo = (direction) => {
@@ -126,6 +159,7 @@ const PremiumBanner = () => {
         <div className={`${styles.campaignBody} ${isTransitioning ? styles.fadeOut : styles.fadeIn} ${campaign.flashy ? styles.isFlashy : ''}`}>
           <span className={styles.emoji}>{campaign.emoji}</span>
           <div className={styles.textBlock}>
+            <div className={styles.eyebrow}>{campaign.label}</div>
             <h3 className={`${styles.headline} ${campaign.flashy ? styles.isFlashyTitle : ''}`}>{campaign.headline}</h3>
             <p className={styles.subline}>{campaign.subline}</p>
           </div>
@@ -133,8 +167,13 @@ const PremiumBanner = () => {
             className={styles.ctaBtn}
             style={{ backgroundColor: campaign.accent }}
             onClick={handleClick}
+            disabled={processingId === campaign.id}
           >
-            {campaign.cta}
+            {processingId === campaign.id
+              ? 'Opening checkout...'
+              : campaign.action === 'membership' && hasPaidMembership
+                ? 'Membership Active'
+                : campaign.cta}
             <ArrowRight size={16} />
           </button>
         </div>

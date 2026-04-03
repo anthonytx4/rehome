@@ -1,44 +1,62 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import toast from 'react-hot-toast';
+import { ADSENSE_CLIENT_ID, getAdSlot } from '../../config/ads';
 import styles from './AdSenseUnit.module.css';
 
-// type: 'square' | 'horizontal'  (maps to AdSense data-ad-format)
-const AdSenseUnit = ({ slot, type = 'square' }) => {
+const FORMAT_MAP = {
+  square: 'auto',
+  horizontal: 'horizontal',
+  rectangle: 'rectangle',
+  fluid: 'autorelaxed',
+};
+
+// placement maps to a configured AdSense slot id in env.
+const AdSenseUnit = ({
+  slot,
+  placement,
+  type = 'square',
+  label = 'Advertisement',
+  className = '',
+  minHeight,
+}) => {
   const { user } = useAuth();
-  const isAdFree = user?.membershipTier === 'breeder';
+  const insRef = useRef(null);
+  const isAdFree = Boolean(user?.membershipTier && user.membershipTier !== 'free');
+  const resolvedPlacement = placement || slot;
+  const resolvedSlot = useMemo(() => getAdSlot(resolvedPlacement), [resolvedPlacement]);
+  const format = FORMAT_MAP[type] || 'auto';
 
   useEffect(() => {
-    if (isAdFree) return;
+    if (isAdFree || !resolvedSlot || !ADSENSE_CLIENT_ID || !insRef.current) return;
+
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch (e) {}
-  }, [isAdFree]);
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.warn('AdSense push skipped:', error);
+      }
+    }
+  }, [isAdFree, resolvedSlot, format]);
 
-  if (isAdFree) return null;
-
-  const handleClaimBonus = () => {
-    toast.success('💎 Diamond Boost activated! Your listings are boosted for 30 minutes.', {
-      duration: 4000,
-    });
-  };
+  if (isAdFree || !resolvedSlot || !ADSENSE_CLIENT_ID) {
+    if (import.meta.env.DEV && !resolvedSlot) {
+      console.warn(`AdSense slot not configured for "${resolvedPlacement}"`);
+    }
+    return null;
+  }
 
   return (
-    <div className={`${styles.adWrapper} ${type === 'horizontal' ? styles.horizontal : ''}`}>
-      <div className={styles.adLabel}>Official Sponsor</div>
+    <div className={`${styles.adWrapper} ${type === 'horizontal' ? styles.horizontal : ''} ${className}`}>
+      <div className={styles.adLabel}>{label}</div>
       <ins
+        ref={insRef}
         className="adsbygoogle"
-        style={{ display: 'block' }}
-        data-ad-client="ca-pub-7995028462770772"
-        data-ad-slot={slot}
-        data-ad-format={type === 'horizontal' ? 'horizontal' : 'auto'}
+        style={{ display: 'block', minHeight }}
+        data-ad-client={ADSENSE_CLIENT_ID}
+        data-ad-slot={resolvedSlot}
+        data-ad-format={format}
         data-full-width-responsive="true"
       />
-      <div className={styles.gamificationFooter}>
-        <button className={styles.claimBonusBtn} onClick={handleClaimBonus}>
-          💎 Claim Diamond Bonus
-        </button>
-      </div>
     </div>
   );
 };

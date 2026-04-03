@@ -5,6 +5,10 @@ let stripeClientPromise;
 
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 const DEFAULT_RETURN_PATH = '/dashboard';
+const normalizeMembershipTier = (tier) => {
+  if (!tier || tier === 'royal') return 'breeder';
+  return tier;
+};
 
 async function getStripeClient() {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -247,11 +251,12 @@ export const releaseEscrow = async (req, res, next) => {
 async function applySideEffects(type, metadata, userId, paymentId) {
   try {
     if (type === 'membership') {
+      const membershipTier = normalizeMembershipTier(metadata?.tier);
       await prisma.user.update({
         where: { id: userId },
         data: {
           isVerifiedBreeder: true,
-          membershipTier: 'breeder',
+          membershipTier,
           membershipExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         }
       });

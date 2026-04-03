@@ -39,7 +39,18 @@ export const register = async (req, res, next) => {
 
     const user = await prisma.user.create({
       data: { name, email, password: hashedPassword, location: location || null },
-      select: { id: true, name: true, email: true, avatar: true, location: true, isVerifiedBreeder: true, createdAt: true }
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatar: true,
+        location: true,
+        isVerifiedBreeder: true,
+        membershipTier: true,
+        membershipExpiresAt: true,
+        remainingSkips: true,
+        createdAt: true,
+      }
     });
 
     const token = generateToken(user.id);

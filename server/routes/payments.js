@@ -6,7 +6,8 @@ import {
   processPaymentMock,
   getPaymentHistory,
   releaseEscrow,
-  getStripeConfig
+  getStripeConfig,
+  createPortalSession
 } from '../controllers/paymentsController.js';
 
 const router = express.Router();
@@ -21,6 +22,7 @@ router.post('/checkout', createCheckoutSession);
 router.get('/verify', verifySession);
 router.post('/process-mock', processPaymentMock);
 router.get('/history', getPaymentHistory);
+router.post('/portal', createPortalSession);
 
 // Admin / Escrow management
 router.post('/escrow/:paymentId/release', authorize('admin'), releaseEscrow);

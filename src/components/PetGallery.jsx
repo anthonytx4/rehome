@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import api from '../api/client';
 import PetCard from './PetCard';
 import PetDetailModal from './PetDetailModal';
-import AdSenseUnit from './ads/AdSenseUnit';
+import NativeSponsoredCard from './ads/NativeSponsoredCard';
 import styles from './PetGallery.module.css';
 import { dedupeListings, normalizeListing } from '../utils/listings';
 
@@ -631,7 +631,7 @@ const PetGallery = ({ searchQuery = '', onPostAction, overrideType = '' }) => {
     return matchesCat && matchesSearch;
   });
 
-  // Build mixed items: pets + native sponsored cards every 6th position
+  // Build mixed items: pets + native sponsored cards every 8th position
   const buildFeedItems = () => {
     const items = [];
     let adIndex = 0;
@@ -639,8 +639,8 @@ const PetGallery = ({ searchQuery = '', onPostAction, overrideType = '' }) => {
     filteredPets.forEach((pet, i) => {
       items.push({ type: 'pet', data: pet });
       
-      // Insert a native sponsored card after every 6th pet
-      if ((i + 1) % 12 === 0 && deferredSearchQuery === '') {
+      // Insert a native sponsored card after every 8th pet
+      if ((i + 1) % 8 === 0 && deferredSearchQuery === '') {
         items.push({ type: 'sponsored', index: adIndex++ });
       }
     });
@@ -725,7 +725,7 @@ const PetGallery = ({ searchQuery = '', onPostAction, overrideType = '' }) => {
       <div className={styles.grid}>
         {feedItems.map((item) => {
           if (item.type === 'sponsored') {
-            return <AdSenseUnit key={`ad-${item.index}`} slot="pet-gallery-native" />;
+            return <NativeSponsoredCard key={`ad-${item.index}`} index={item.index} />;
           }
           return (
             <PetCard key={item.data.id} pet={item.data} onClick={setSelectedPet} />

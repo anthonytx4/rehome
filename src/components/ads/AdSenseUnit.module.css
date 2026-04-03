@@ -20,28 +20,17 @@
   border-bottom: 1px solid var(--color-border);
 }
 
-.gamificationFooter {
-  padding: 12px 16px;
-  background: linear-gradient(to right, #fee2e2, #fef2f2);
-  display: flex;
-  justify-content: center;
-  border-top: 1px solid var(--color-border);
+.horizontal {
+  min-height: 140px;
 }
 
-.claimBonusBtn {
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: var(--radius-full);
-  font-size: 0.85rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+.devPlaceholder {
+  padding: 18px 16px;
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
 }
 
-.claimBonusBtn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+.adWrapper :global(ins.adsbygoogle[data-ad-status='unfilled']) {
+  display: none !important;
 }

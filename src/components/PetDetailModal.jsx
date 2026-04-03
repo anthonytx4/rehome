@@ -1,19 +1,23 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { X, Clock, ShieldAlert, ChevronRight, Heart, MessageSquare } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import ContextualRecommendations from './ads/ContextualRecommendations';
 import analytics from '../hooks/useAnalytics';
+import { useAuth } from '../context/AuthContext';
 import styles from './PetDetailModal.module.css';
 
-import api from '../api/client';
 import AdSenseUnit from './ads/AdSenseUnit';
 import { normalizeListing } from '../utils/listings';
+import { startCheckout } from '../utils/payments';
 
 const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
   const [hasSkippedQueue, setHasSkippedQueue] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated } = useAuth();
   const displayPet = useMemo(() => normalizeListing(pet), [pet]);
 
   useEffect(() => {
@@ -25,40 +29,36 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
   if (!displayPet) return null;
 
   const handleStripeCheckout = async (type, amount, metadata = {}) => {
+    if (!isAuthenticated) {
+      toast('Sign in to continue to checkout.', { icon: '🔐' });
+      navigate(`/login?redirect=${encodeURIComponent(`/listing/${displayPet.id}`)}`);
+      return;
+    }
+
     try {
       setIsProcessing(true);
       const successPath = '/dashboard';
       const cancelPath = `/listing/${displayPet.id}`;
 
-      const res = await api.post('/payments/checkout', {
+      const res = await startCheckout({
         type,
         amount,
-        listingId: displayPet.id,
+        description: `${displayPet.name} ${type.replaceAll('_', ' ')}`,
         metadata: { ...metadata, listingId: displayPet.id },
         successPath,
-        cancelPath
+        cancelPath,
       });
 
-      const destination = res.data.url || res.data.redirectUrl;
-      if (destination) {
-        if (destination.startsWith('http')) {
-          window.location.assign(destination);
-        } else {
-          navigate(destination);
-        }
-        return;
-      }
-
-      if (res.data.success) {
+      if (res.success) {
         if (type === 'skip_queue') {
           setHasSkippedQueue(true);
         }
         onPostAction?.(type === 'priority_app' ? 'favorite' : type === 'skip_queue' ? 'message' : 'listing');
-        navigate(`${successPath}?payment=success&type=${type}&session_id=${res.data.payment?.stripePaymentId || ''}`);
+        navigate(`${successPath}?payment=success&type=${type}&session_id=${res.payment?.stripePaymentId || ''}`);
       }
     } catch (err) {
       console.error('Checkout error:', err);
-      alert('Payment failed to initialize. Please try again.');
+      toast.error(err.response?.data?.error || 'Payment failed to initialize. Please try again.');
     } finally {
       setIsProcessing(false);
     }
@@ -210,7 +210,13 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
               <h3>Contact Questions</h3>
               <button 
                 className={`btn btn-secondary ${styles.fullWidthBtn}`}
-                onClick={() => navigate(messageUrl)}
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    navigate(`/login?redirect=${encodeURIComponent(`${location.pathname}${location.search}`)}`);
+                    return;
+                  }
+                  navigate(messageUrl);
+                }}
               >
                 <MessageSquare size={18} />
                 Message {displayPet.sellerName || 'Seller'}

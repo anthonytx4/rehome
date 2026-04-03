@@ -7,6 +7,7 @@ import Hero from './components/Hero';
 import PetGallery from './components/PetGallery';
 import ListPetModal from './components/ListPetModal';
 import HowItWorksModal from './components/HowItWorksModal';
+import AdSenseUnit from './components/ads/AdSenseUnit';
 import PremiumBanner from './components/ads/PremiumBanner';
 import FooterPartnerStrip from './components/ads/FooterPartnerStrip';
 import CookieConsent from './components/ads/CookieConsent';
@@ -35,9 +36,13 @@ const RouteLoading = ({ message }) => (
 
 // Protected route wrapper
 const ProtectedRoute = ({ children }) => {
+  const location = useLocation();
   const { isAuthenticated, loading, authActionPending } = useAuth();
+  const hasStoredSession = Boolean(localStorage.getItem('rehome_token'));
   if (loading || authActionPending) return <RouteLoading message="Loading your account" />;
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  if (isAuthenticated || hasStoredSession) return children;
+  const redirect = `${location.pathname}${location.search}${location.hash}`;
+  return <Navigate to={`/login?redirect=${encodeURIComponent(redirect)}`} replace />;
 };
 
 // Admin route wrapper
@@ -65,19 +70,21 @@ const HomePage = ({ searchQuery }) => {
         onBrowse={() => document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' })}
       />
       <PremiumBanner />
+      <AdSenseUnit slot="homepage-top-banner" type="horizontal" />
       <div id="gallery">
         <PetGallery 
           searchQuery={searchQuery}
           onPostAction={(type) => setPostAction(type)}
         />
       </div>
+      <AdSenseUnit slot="homepage-bottom-native" />
       <FooterPartnerStrip />
       <footer style={{ padding: '64px 24px', textAlign: 'center', color: 'var(--color-text-muted)', borderTop: '1px solid var(--color-border)' }}>
         <p>&copy; 2026 Rehome Marketplace. Secure Escrow & Registered Breeders.</p>
         <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center', gap: '24px', fontSize: '0.9rem' }}>
-          <Link to="/privacy#collection" style={{ color: 'inherit' }}>Terms</Link>
+          <Link to="/privacy#terms" style={{ color: 'inherit' }}>Terms</Link>
           <Link to="/privacy" style={{ color: 'inherit' }}>Privacy Policy</Link>
-          <Link to="/privacy#rights" style={{ color: 'inherit' }}>Trust & Safety</Link>
+          <Link to="/privacy#trust-safety" style={{ color: 'inherit' }}>Trust & Safety</Link>
         </div>
       </footer>
       {postAction && (
@@ -137,6 +144,18 @@ function App() {
     document.addEventListener('openPostModal', handler);
     return () => document.removeEventListener('openPostModal', handler);
   }, []);
+
+  useEffect(() => {
+    if (location.hash) {
+      requestAnimationFrame(() => {
+        const target = document.getElementById(location.hash.slice(1));
+        target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      return;
+    }
+
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [location.hash, location.pathname]);
 
   return (
     <div className="app-container">

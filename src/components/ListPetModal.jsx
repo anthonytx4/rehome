@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { X, UploadCloud, Rocket, Zap, Plus, Trash2, Image as ImageIcon, AlertTriangle, LogIn } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import toast from 'react-hot-toast';
+import { startCheckout } from '../utils/payments';
 import styles from './ListPetModal.module.css';
 
 const OPTIONAL_CATEGORIES = [
@@ -11,9 +12,31 @@ const OPTIONAL_CATEGORIES = [
   'Genetic Profile', 'Genealogy', 'Fun Facts'
 ];
 
+const createInitialForm = ({ isLivestock, isSupplies }) => ({
+  petName: '',
+  species: isLivestock ? 'Cattle' : isSupplies ? 'Grooming' : 'Dog',
+  breed: '',
+  gender: 'Male',
+  size: 'Medium',
+  description: '',
+  price: '',
+  location: '',
+  phone: '',
+  email: '',
+  vaccinated: false,
+  neutered: false,
+  listingType: isLivestock ? 'auction' : 'fixed',
+  lotSize: 'Single',
+  reservePrice: '',
+  auctionEndsAt: '',
+  condition: 'New',
+  bulkQuantity: '1',
+});
+
 const ListPetModal = ({ isOpen, onClose }) => {
-  const { user, isAuthenticated, register } = useAuth();
+  const { isAuthenticated, register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [step, setStep] = useState(1);
   const [selectedMonetize, setSelectedMonetize] = useState('none');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,15 +52,7 @@ const ListPetModal = ({ isOpen, onClose }) => {
   const isSupplies = location.pathname === '/supplies';
   const marketplace = isLivestock ? 'Livestock' : isSupplies ? 'Supplies' : 'Pets';
 
-  const [form, setForm] = useState({
-    petName: '', species: isLivestock ? 'Cattle' : isSupplies ? 'Grooming' : 'Dog', 
-    breed: '', gender: 'Male', size: 'Medium',
-    description: '', price: '', location: '', phone: '', email: '',
-    vaccinated: false, neutered: false,
-    listingType: isLivestock ? 'auction' : 'fixed',
-    lotSize: 'Single', reservePrice: '', auctionEndsAt: '',
-    condition: 'New', bulkQuantity: '1'
-  });
+  const [form, setForm] = useState(() => createInitialForm({ isLivestock, isSupplies }));
   const [dob, setDob] = useState('');
   const [activeCategories, setActiveCategories] = useState([]);
   const [categoryNotes, setCategoryNotes] = useState({});
@@ -119,6 +134,18 @@ const ListPetModal = ({ isOpen, onClose }) => {
     }
   };
 
+  const resetFormState = () => {
+    setStep(1);
+    setForm(createInitialForm({ isLivestock, isSupplies }));
+    setDob('');
+    setActiveCategories([]);
+    setCategoryNotes({});
+    setImages([]);
+    setImageFiles([]);
+    setSelectedMonetize('none');
+    setShowInlineAuth(false);
+  };
+
   const finishAndPublish = async () => {
     // If not authenticated, show inline auth or submit as guest warning
     if (!isAuthenticated && !showInlineAuth) {
@@ -163,23 +190,35 @@ const ListPetModal = ({ isOpen, onClose }) => {
         formData.append('images', file);
       });
 
-      await api.post('/listings', formData, {
+      const { data: createdListing } = await api.post('/listings', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
       toast.success('Listing published! 🎉');
-      
-      // Reset form
-      setStep(1);
-      setForm({ petName: '', species: 'Dog', breed: '', gender: 'Male', size: 'Medium', description: '', price: '', location: '', phone: '', email: '', vaccinated: false, neutered: false });
-      setDob('');
-      setActiveCategories([]);
-      setCategoryNotes({});
-      setImages([]);
-      setImageFiles([]);
-      setSelectedMonetize('none');
+      resetFormState();
       onClose();
-      navigate('/dashboard');
+
+      if (selectedMonetize === 'none') {
+        navigate('/dashboard');
+        return;
+      }
+
+      try {
+        await startCheckout({
+          type: 'boost',
+          amount: selectedMonetize === 'urgent' ? 50 : 15,
+          description: `${createdListing.petName || createdListing.title} listing boost`,
+          metadata: {
+            listingId: createdListing.id,
+            boostType: selectedMonetize,
+          },
+          successPath: '/dashboard',
+          cancelPath: '/dashboard?action=boost',
+        });
+      } catch (checkoutError) {
+        toast.error(checkoutError.response?.data?.error || 'Listing published, but boost checkout could not start.');
+        navigate('/dashboard?action=boost');
+      }
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to publish listing');
     } finally {
@@ -209,7 +248,7 @@ const ListPetModal = ({ isOpen, onClose }) => {
           <div className={styles.guestWarning}>
             <AlertTriangle size={18} />
             <span>You're not signed in. Your listing will be marked as <strong>Unverified</strong>.</span>
-            <button onClick={() => { onClose(); navigate('/login'); }} className={styles.guestLoginBtn}>
+            <button onClick={() => { onClose(); navigate(`/login?redirect=${encodeURIComponent(location.pathname)}`); }} className={styles.guestLoginBtn}>
               <LogIn size={14} /> Sign In
             </button>
           </div>
@@ -452,7 +491,7 @@ const ListPetModal = ({ isOpen, onClose }) => {
                     Create Account & Publish
                   </button>
                   <div style={{ textAlign: 'center', marginTop: '12px' }}>
-                    <button onClick={() => { onClose(); navigate('/login'); }} style={{ background: 'none', border: 'none', color: 'var(--color-primary-dark)', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    <button onClick={() => { onClose(); navigate(`/login?redirect=${encodeURIComponent(location.pathname)}`); }} style={{ background: 'none', border: 'none', color: 'var(--color-primary-dark)', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                       Already have an account? Sign in
                     </button>
                   </div>

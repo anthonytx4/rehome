@@ -15,7 +15,21 @@ export const auth = async (req, res, next) => {
     const decoded = jwt.verify(token, JWT_SECRET);
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      select: { id: true, name: true, email: true, avatar: true, location: true, phone: true, bio: true, isVerifiedBreeder: true, createdAt: true }
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatar: true,
+        location: true,
+        phone: true,
+        bio: true,
+        isVerifiedBreeder: true,
+        membershipTier: true,
+        membershipExpiresAt: true,
+        remainingSkips: true,
+        stripeCustomerId: true,
+        createdAt: true,
+      }
     });
 
     if (!user) {

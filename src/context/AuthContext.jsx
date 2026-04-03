@@ -17,21 +17,27 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('rehome_token');
     if (token) {
-      api.get('/auth/me')
-        .then(res => {
-          setUser(res.data.user);
-          localStorage.setItem('rehome_user', JSON.stringify(res.data.user));
-        })
-        .catch(() => {
-          setUser(null);
-          localStorage.removeItem('rehome_token');
-          localStorage.removeItem('rehome_user');
-        })
+      refreshUser()
+        .catch(() => {})
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
     }
   }, []);
+
+  const refreshUser = async () => {
+    try {
+      const res = await api.get('/auth/me');
+      setUser(res.data.user);
+      localStorage.setItem('rehome_user', JSON.stringify(res.data.user));
+      return res.data.user;
+    } catch (err) {
+      setUser(null);
+      localStorage.removeItem('rehome_token');
+      localStorage.removeItem('rehome_user');
+      throw err;
+    }
+  };
 
   const login = async (email, password) => {
     setAuthActionPending(true);
@@ -76,7 +82,7 @@ export const AuthProvider = ({ children }) => {
   }, [authActionPending, user]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, authActionPending, error, setError, login, register, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, loading, authActionPending, error, setError, login, register, logout, refreshUser, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );

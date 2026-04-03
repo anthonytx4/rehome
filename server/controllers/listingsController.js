@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { handleUpload } from '../middleware/upload.js';
 import { decorateListingWithArtwork } from '../../src/utils/listingArtwork.js';
+import { dedupeListings } from '../../src/utils/listings.js';
 
 const prisma = new PrismaClient();
 
@@ -108,10 +109,11 @@ export const getListings = async (req, res, next) => {
     const parsed = listings.map(l => serializeListing(l, {
       favoritesCount: l._count.favorites,
     }));
+    const uniqueListings = dedupeListings(parsed);
 
     res.json({
-      listings: parsed,
-      total,
+      listings: uniqueListings,
+      total: uniqueListings.length,
       page: parseInt(page),
       totalPages: Math.ceil(total / parseInt(limit))
     });
@@ -323,9 +325,11 @@ export const getUserListings = async (req, res, next) => {
       }
     });
 
-    res.json(listings.map(l => serializeListing(l, {
+    const uniqueListings = dedupeListings(listings.map(l => serializeListing(l, {
       favoritesCount: l._count.favorites,
     })));
+
+    res.json(uniqueListings);
   } catch (err) {
     next(err);
   }

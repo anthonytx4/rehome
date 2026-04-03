@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { LogIn, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -12,6 +12,9 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectPath = searchParams.get('redirect') || '/dashboard';
+  const registerLink = `/register${redirectPath ? `?redirect=${encodeURIComponent(redirectPath)}` : ''}`;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,7 +24,7 @@ const LoginPage = () => {
     try {
       await login(email, password);
       toast.success('Welcome back!');
-      navigate('/dashboard', { replace: true });
+      navigate(redirectPath, { replace: true });
     } catch (err) {
       toast.error(err.response?.data?.error || 'Login failed');
     } finally {
@@ -80,7 +83,7 @@ const LoginPage = () => {
         </form>
 
         <div className={styles.footer}>
-          <p>Don't have an account? <Link to="/register" className={styles.link}>Create one</Link></p>
+          <p>Don't have an account? <Link to={registerLink} className={styles.link}>Create one</Link></p>
         </div>
 
         <div className={styles.demoHint}>

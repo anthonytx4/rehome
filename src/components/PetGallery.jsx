@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import PetCard from './PetCard';
 import PetDetailModal from './PetDetailModal';
-import NativeSponsoredCard from './ads/NativeSponsoredCard';
+import AdSenseUnit from './ads/AdSenseUnit';
 import styles from './PetGallery.module.css';
 
 const mockPets = [
@@ -48,8 +49,8 @@ const mockPets = [
 
 const categories = ['All Pets', 'Dogs', 'Cats', 'Birds', 'Reptiles', 'Other'];
 
-const PetGallery = ({ searchQuery, onPostAction }) => {
-  const [activeCat, setActiveCat] = useState('All Pets');
+const PetGallery = ({ searchQuery, onPostAction, overrideType }) => {
+  const [activeCat, setActiveCat] = useState(overrideType || 'All Pets');
   const [selectedPet, setSelectedPet] = useState(null);
 
   const filteredPets = mockPets.filter(pet => {
@@ -63,7 +64,7 @@ const PetGallery = ({ searchQuery, onPostAction }) => {
     return matchesCat && matchesSearch;
   });
 
-  // Build mixed items: pets + native sponsored cards every 4th position
+  // Build mixed items: pets + native sponsored cards every 6th position
   const buildFeedItems = () => {
     const items = [];
     let adIndex = 0;
@@ -71,8 +72,8 @@ const PetGallery = ({ searchQuery, onPostAction }) => {
     filteredPets.forEach((pet, i) => {
       items.push({ type: 'pet', data: pet });
       
-      // Insert a native sponsored card after every 3rd pet
-      if ((i + 1) % 3 === 0 && searchQuery === '') {
+      // Insert a native sponsored card after every 6th pet
+      if ((i + 1) % 6 === 0 && searchQuery === '') {
         items.push({ type: 'sponsored', index: adIndex++ });
       }
     });
@@ -107,7 +108,7 @@ const PetGallery = ({ searchQuery, onPostAction }) => {
       <div className={styles.grid}>
         {feedItems.map((item, i) => {
           if (item.type === 'sponsored') {
-            return <NativeSponsoredCard key={`ad-${item.index}`} index={item.index} />;
+            return <AdSenseUnit key={`ad-${item.index}`} slot="pet-gallery-native" />;
           }
           return (
             <PetCard key={item.data.id} pet={item.data} onClick={setSelectedPet} />

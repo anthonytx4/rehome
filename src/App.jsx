@@ -16,6 +16,8 @@ import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import MessagesPage from './pages/MessagesPage';
 import AdminPage from './pages/AdminPage';
+import LivestockPage from './pages/LivestockPage';
+import SuppliesPage from './pages/SuppliesPage';
 import './App.css';
 
 // Protected route wrapper
@@ -98,6 +100,8 @@ function App() {
           <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
           <Route path="/messages/:listingId" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
           <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+          <Route path="/livestock" element={<LivestockPage />} />
+          <Route path="/supplies" element={<SuppliesPage />} />
         </Routes>
       </main>
 

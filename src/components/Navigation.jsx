@@ -49,28 +49,6 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
           />
         </div>
 
-        {/* Elite Marketplace Switcher */}
-        <div className={styles.marketplaceSwitcher}>
-          <Link to="/" className={`${styles.switchItem} ${location.pathname === '/' ? styles.switchActive : ''}`}>
-            <PawPrint size={18} />
-            <span>Pets</span>
-          </Link>
-          <Link to="/livestock" className={`${styles.switchItem} ${location.pathname === '/livestock' ? styles.switchActive : ''}`}>
-            <LayoutDashboard size={18} />
-            <span>Livestock</span>
-          </Link>
-          <Link to="/supplies" className={`${styles.switchItem} ${location.pathname === '/supplies' ? styles.switchActive : ''}`}>
-            <PlusCircle size={18} />
-            <span>Supplies</span>
-          </Link>
-          <div 
-            className={styles.switchGlow} 
-            style={{ 
-              transform: `translateX(${location.pathname === '/livestock' ? '100%' : location.pathname === '/supplies' ? '200%' : '0%'})` 
-            }} 
-          />
-        </div>
-        
         <div className={styles.searchBar}>
           <Search size={18} className={styles.searchIcon} />
           <input 

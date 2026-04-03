@@ -22,6 +22,12 @@ const hashString = (value) => {
   return hash;
 };
 
+const safeText = (value, fallback = '') => {
+  if (value === null || value === undefined) return fallback;
+  const text = String(value).trim();
+  return text || fallback;
+};
+
 const makeMockArtwork = (pet, index) => {
   const palette = [
     ['#F59E0B', '#FB7185'],
@@ -30,10 +36,10 @@ const makeMockArtwork = (pet, index) => {
     ['#8B5CF6', '#A78BFA'],
     ['#E11D48', '#F97316'],
   ];
-  const [accent, accent2] = palette[hashString(`${pet.name}|${pet.type}|${index}`) % palette.length];
-  const title = escapeXml(pet.name);
-  const subtitle = escapeXml(`${pet.breed} · ${pet.location}`);
-  const footer = escapeXml(`${pet.category.toUpperCase()} · ${pet.fee}`);
+  const [accent, accent2] = palette[hashString(`${safeText(pet.name)}|${safeText(pet.type)}|${index}`) % palette.length];
+  const title = escapeXml(safeText(pet.name, 'Listing'));
+  const subtitle = escapeXml(`${safeText(pet.breed, 'Mixed breed')} · ${safeText(pet.location, 'Location available')}`);
+  const footer = escapeXml(`${safeText(pet.category, 'market').toUpperCase()} · ${safeText(pet.fee, 'Contact seller')}`);
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="${title}">
       <defs>
@@ -88,6 +94,373 @@ const mockPets = mockPetBlueprints.map((pet, index) => {
   };
 });
 
+const buildMockCatalog = (families, variants, category, idBase) => families.flatMap((family, familyIndex) => variants.map((variant, variantIndex) => {
+  const index = familyIndex * variants.length + variantIndex;
+  const price = family.fee + (variant.feeDelta || 0);
+  const item = {
+    id: idBase + index,
+    name: `${family.name} - ${family.breed} (${variant.suffix})`,
+    type: family.type,
+    breed: family.breed,
+    age: variant.age || family.age,
+    gender: variant.gender || family.gender,
+    location: variant.location || family.location,
+    fee: price,
+    verified: family.verified,
+    isPremium: family.isPremium,
+    category,
+    listingType: family.listingType || 'fixed',
+    lotSize: variant.lotSize || family.lotSize || null,
+    currentBid: variant.currentBid || null,
+    bidCount: variant.bidCount || 0,
+    description: `${variant.lead} ${family.care} ${variant.fit}`.trim(),
+  };
+  const image = makeMockArtwork(item, index + idBase);
+  return {
+    ...item,
+    image,
+    images: [image],
+  };
+}));
+
+const livestockFamilies = [
+  {
+    name: 'Maribel',
+    type: 'Cattle',
+    breed: 'Jersey Milk Cow',
+    age: '3 Years',
+    gender: 'Female',
+    location: 'Fresno, CA',
+    fee: 6850,
+    verified: true,
+    isPremium: true,
+    listingType: 'auction',
+    lotSize: 1,
+    care: 'She is used to a twice-daily milking rhythm, calm handling, and easy trailer loading.',
+    fit: 'A practical fit for a small dairy that wants a dependable cow with a gentle barn-side manner.',
+  },
+  {
+    name: 'Bramble',
+    type: 'Cattle',
+    breed: 'Black Angus Heifer',
+    age: '16 Months',
+    gender: 'Female',
+    location: 'Omaha, NE',
+    fee: 5200,
+    verified: true,
+    isPremium: true,
+    listingType: 'auction',
+    lotSize: 1,
+    care: 'She moves cleanly through gates, settles quickly in a lot, and keeps a steady feed routine.',
+    fit: 'A solid ranch pick for buyers who want a calm beef animal with room to finish out well.',
+  },
+  {
+    name: 'Nora',
+    type: 'Cattle',
+    breed: 'Highland Heifer',
+    age: '2 Years',
+    gender: 'Female',
+    location: 'Asheville, NC',
+    fee: 9100,
+    verified: true,
+    isPremium: true,
+    listingType: 'auction',
+    lotSize: 1,
+    care: 'Her thick coat and easy walk make her comfortable in wet weather, brush, and regular herd movement.',
+    fit: 'Best for a farm that wants a hardy, showy heifer with a very steady pasture temperament.',
+  },
+  {
+    name: 'Pine',
+    type: 'Goat',
+    breed: 'Nubian Doe',
+    age: '2 Years',
+    gender: 'Female',
+    location: 'Raleigh, NC',
+    fee: 430,
+    verified: true,
+    isPremium: false,
+    listingType: 'auction',
+    lotSize: 1,
+    care: 'She is herd-socialized, comfortable at the stanchion, and used to browse, grain, and daily checks.',
+    fit: 'A good choice for a small dairy setup that wants a personable doe with long ears and a bright voice.',
+  },
+  {
+    name: 'Sage',
+    type: 'Goat',
+    breed: 'Boer Wether',
+    age: '10 Months',
+    gender: 'Male',
+    location: 'Tulsa, OK',
+    fee: 280,
+    verified: true,
+    isPremium: false,
+    listingType: 'auction',
+    lotSize: 1,
+    care: 'He is vaccinated, easy to lead, and accustomed to brush lines, gates, and a simple feed bucket.',
+    fit: 'A practical fit for brush control, 4-H practice, or a low-key companion goat project.',
+  },
+  {
+    name: 'Pearl',
+    type: 'Poultry',
+    breed: 'Pekin Duck Pair',
+    age: '4 Months',
+    gender: 'Pair',
+    location: 'Baton Rouge, LA',
+    fee: 120,
+    verified: true,
+    isPremium: false,
+    listingType: 'auction',
+    lotSize: 2,
+    care: 'They are healthy, used to water dishes, and comfortable with a backyard trough or small pond.',
+    fit: 'A friendly pair for someone who wants ducks that settle fast and still feel practical.',
+  },
+  {
+    name: 'Willow',
+    type: 'Poultry',
+    breed: 'Rhode Island Red Trio',
+    age: '6 Months',
+    gender: 'Female',
+    location: 'Austin, TX',
+    fee: 145,
+    verified: false,
+    isPremium: false,
+    listingType: 'auction',
+    lotSize: 3,
+    care: 'They are coop trained, easy to feed, and already comfortable with roosts and daily opening checks.',
+    fit: 'A dependable starter trio for a backyard flock that wants strong layers and low fuss.',
+  },
+  {
+    name: 'Meadow',
+    type: 'Sheep',
+    breed: 'Katahdin Lamb Pair',
+    age: '5 Months',
+    gender: 'Pair',
+    location: 'Lincoln, NE',
+    fee: 260,
+    verified: true,
+    isPremium: false,
+    listingType: 'auction',
+    lotSize: 2,
+    care: 'They are low-maintenance lambs that handle hay, mineral blocks, and light sorting without stress.',
+    fit: 'A good fit for a small acreage buyer who wants practical sheep without a wool-heavy routine.',
+  },
+  {
+    name: 'Juniper',
+    type: 'Alpaca',
+    breed: 'Huacaya Pair',
+    age: '2 Years',
+    gender: 'Pair',
+    location: 'Durango, CO',
+    fee: 2400,
+    verified: true,
+    isPremium: false,
+    listingType: 'auction',
+    lotSize: 2,
+    care: 'They are halter trained, used to pasture rotation, and calm around routine shearing days.',
+    fit: 'A good fit for a fiber farm or a homestead that wants a quiet, watchful herd presence.',
+  },
+  {
+    name: 'Ash',
+    type: 'Donkey',
+    breed: 'Miniature Donkey Jenny',
+    age: '4 Years',
+    gender: 'Female',
+    location: 'Murray, KY',
+    fee: 1350,
+    verified: true,
+    isPremium: false,
+    listingType: 'auction',
+    lotSize: 1,
+    care: 'She is halter trained, vaccinated, and comfortable around goats, chickens, and daily farm traffic.',
+    fit: 'A personable guardian-style companion for a small farm that wants something alert and steady.',
+  },
+];
+
+const livestockVariants = [
+  {
+    suffix: 'Morning Lot',
+    lead: 'This listing is set up for buyers who want a smooth start to the day and a calm animal at first handling.',
+    feeDelta: 0,
+  },
+  {
+    suffix: 'Pasture Lot',
+    lead: 'This version leans toward pasture use, with an animal that settles into open-air work and regular movement.',
+    feeDelta: 220,
+  },
+  {
+    suffix: 'Evening Lot',
+    lead: 'This listing favors quieter barn routines and a steadier pace during end-of-day checks.',
+    feeDelta: 420,
+  },
+];
+
+const suppliesFamilies = [
+  {
+    name: 'CleanSweep',
+    type: 'Hygiene',
+    breed: 'Sanitizer Spray',
+    age: 'New',
+    gender: 'Case',
+    location: 'Phoenix, AZ',
+    fee: 64,
+    verified: true,
+    isPremium: false,
+    listingType: 'fixed',
+    lotSize: 12,
+    care: 'It is easy to spray, quick to wipe, and built for repeat cleanup between pens and carriers.',
+    fit: 'A clean foundation for any kennel, coop, or barn that needs a dependable sanitation routine.',
+  },
+  {
+    name: 'RidgeCut',
+    type: 'Grooming',
+    breed: 'Hoof Trimmer Kit',
+    age: 'New',
+    gender: 'Kit',
+    location: 'Bozeman, MT',
+    fee: 96,
+    verified: true,
+    isPremium: false,
+    listingType: 'fixed',
+    care: 'The kit keeps hoof care tools together so trims feel less rushed and a lot more organized.',
+    fit: 'Best for keepers who want to stay ahead of maintenance instead of waiting for a problem.',
+  },
+  {
+    name: 'VetVest',
+    type: 'Healthcare',
+    breed: 'First Aid Rollout',
+    age: 'New',
+    gender: 'Kit',
+    location: 'Kansas City, MO',
+    fee: 58,
+    verified: true,
+    isPremium: false,
+    listingType: 'fixed',
+    care: 'It keeps wrap, gauze, and small tools together so you are not hunting around during an injury scare.',
+    fit: 'A sensible safety purchase for breeders and homesteads that like to be prepared.',
+  },
+  {
+    name: 'MilkMate',
+    type: 'Feeding',
+    breed: 'Stainless Pail Set',
+    age: 'New',
+    gender: 'Set',
+    location: 'Fresno, CA',
+    fee: 88,
+    verified: true,
+    isPremium: false,
+    listingType: 'fixed',
+    care: 'The pails rinse clean, stack neatly, and hold up to daily milking or feeding work.',
+    fit: 'A practical fit for goat and cow owners who want durable, washable gear.',
+  },
+  {
+    name: 'FeatherFlow',
+    type: 'Housing',
+    breed: 'Auto Coop Door',
+    age: 'New',
+    gender: 'Unit',
+    location: 'Athens, GA',
+    fee: 189,
+    verified: true,
+    isPremium: true,
+    listingType: 'fixed',
+    care: 'It opens on schedule and closes when the light drops, which saves a lot of early-morning and evening steps.',
+    fit: 'A smart upgrade for poultry keepers who want safer nights and fewer manual chores.',
+  },
+  {
+    name: 'MossLine',
+    type: 'Hardware',
+    breed: 'Fence Energizer',
+    age: 'New',
+    gender: 'Unit',
+    location: 'Billings, MT',
+    fee: 240,
+    verified: true,
+    isPremium: false,
+    listingType: 'fixed',
+    care: 'It keeps the perimeter honest and is built for steady output on a working fence line.',
+    fit: 'A useful core tool for anyone managing goats, cattle, or rotating pasture animals.',
+  },
+  {
+    name: 'FeedVault',
+    type: 'Storage',
+    breed: 'Seal Bin',
+    age: 'New',
+    gender: 'Unit',
+    location: 'Madison, WI',
+    fee: 146,
+    verified: true,
+    isPremium: false,
+    listingType: 'fixed',
+    care: 'It keeps grain dry, clean, and away from curious pests while making bulk feed easier to manage.',
+    fit: 'A solid storage piece for barns and feed rooms that need less mess and better order.',
+  },
+  {
+    name: 'CoopCart',
+    type: 'Transport',
+    breed: 'Rolling Feed Tote',
+    age: 'New',
+    gender: 'Unit',
+    location: 'Charlotte, NC',
+    fee: 129,
+    verified: true,
+    isPremium: false,
+    listingType: 'fixed',
+    care: 'The cart rolls smoothly and holds enough to reduce back-and-forth trips between storage and pens.',
+    fit: 'A good choice for anyone who moves supplies constantly and wants fewer repeated hauls.',
+  },
+  {
+    name: 'ColostrumVault',
+    type: 'Nutrition',
+    breed: 'Starter Kit',
+    age: 'New',
+    gender: 'Kit',
+    location: 'Murray, KY',
+    fee: 62,
+    verified: true,
+    isPremium: false,
+    listingType: 'fixed',
+    care: 'It is designed for newborn calves, kids, or lambs that need a stronger first week on the ground.',
+    fit: 'A smart backup for farms that like to keep the essentials ready before a rough delivery day arrives.',
+  },
+  {
+    name: 'PawTrace',
+    type: 'Tracking',
+    breed: 'GPS Collar Bundle',
+    age: 'New',
+    gender: 'Pack',
+    location: 'Seattle, WA',
+    fee: 149,
+    verified: true,
+    isPremium: false,
+    listingType: 'fixed',
+    lotSize: 2,
+    care: 'The collars are light, rechargeable, and meant to keep curious animals a little easier to follow.',
+    fit: 'Best for homes with clever pets or pasture helpers that like to wander farther than they should.',
+  },
+];
+
+const supplyVariants = [
+  {
+    suffix: 'Starter Run',
+    lead: 'This version is set up for an easy first install and a straightforward daily workflow.',
+    feeDelta: 0,
+  },
+  {
+    suffix: 'Field Pack',
+    lead: 'This version is tuned for heavier use and a little more wear and tear around the barn.',
+    feeDelta: 18,
+  },
+];
+
+const mockLivestock = buildMockCatalog(livestockFamilies, livestockVariants, 'livestock', 100);
+const mockSupplies = buildMockCatalog(suppliesFamilies, supplyVariants, 'supplies', 200);
+
+const mockMarketplaceListings = {
+  pets: mockPets,
+  livestock: mockLivestock,
+  supplies: mockSupplies,
+};
+
 const categoryMaps = {
   'pets': ['All Pets', 'Dogs', 'Cats', 'Birds', 'Reptiles', 'Other'],
   'livestock': ['All Livestock', 'Cattle', 'Horses', 'Poultry', 'Sheep', 'Other'],
@@ -97,7 +470,7 @@ const categoryMaps = {
 const matchesActiveCategory = (item, activeCategory, marketplaceContext) => {
   if (activeCategory.startsWith('All')) return true;
 
-  const type = item.type.toLowerCase();
+  const type = safeText(item.type).toLowerCase();
   switch (marketplaceContext) {
     case 'pets':
       if (activeCategory === 'Dogs') return type === 'dog';
@@ -161,7 +534,7 @@ const PetGallery = ({ searchQuery = '', onPostAction, overrideType = '' }) => {
           },
         });
         if (cancelled) return;
-        const liveListings = (res.data.listings || []).map(normalizeListing);
+        const liveListings = (res.data.listings || []).map(normalizeListing).filter(Boolean);
         setListings(liveListings);
         setError(null);
       } catch {
@@ -179,10 +552,11 @@ const PetGallery = ({ searchQuery = '', onPostAction, overrideType = '' }) => {
     };
   }, [marketplaceContext, reloadToken]);
 
-  const hasMarketplaceListings = listings.some((item) => item.category === marketplaceContext);
-  const sourcePets = hasMarketplaceListings ? listings : mockPets;
+  const hasMarketplaceListings = listings.some((item) => item && item.category === marketplaceContext);
+  const sourcePets = hasMarketplaceListings ? listings : (mockMarketplaceListings[marketplaceContext] || mockMarketplaceListings.pets);
 
   const filteredPets = sourcePets.filter(item => {
+    if (!item) return false;
     // Stage 1: Market Isolation
     if (item.category !== marketplaceContext) return false;
 
@@ -191,10 +565,13 @@ const PetGallery = ({ searchQuery = '', onPostAction, overrideType = '' }) => {
     
     // Stage 3: Search Filter
     const searchLower = (deferredSearchQuery || '').toLowerCase();
+    const itemName = safeText(item.name).toLowerCase();
+    const itemBreed = safeText(item.breed).toLowerCase();
+    const itemType = safeText(item.type).toLowerCase();
     const matchesSearch = 
-      item.name.toLowerCase().includes(searchLower) ||
-      (item.breed && item.breed.toLowerCase().includes(searchLower)) ||
-      item.type.toLowerCase().includes(searchLower);
+      itemName.includes(searchLower) ||
+      itemBreed.includes(searchLower) ||
+      itemType.includes(searchLower);
     
     return matchesCat && matchesSearch;
   });

@@ -1,14 +1,27 @@
 import { PrismaClient } from '@prisma/client';
-import Stripe from 'stripe';
 
 const prisma = new PrismaClient();
-
-const stripe = process.env.STRIPE_SECRET_KEY
-  ? new Stripe(process.env.STRIPE_SECRET_KEY)
-  : null;
+let stripeClientPromise;
 
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 const DEFAULT_RETURN_PATH = '/dashboard';
+
+async function getStripeClient() {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return null;
+  }
+
+  if (!stripeClientPromise) {
+    stripeClientPromise = import('stripe')
+      .then(({ default: Stripe }) => new Stripe(process.env.STRIPE_SECRET_KEY))
+      .catch((error) => {
+        console.error('Stripe SDK unavailable:', error);
+        return null;
+      });
+  }
+
+  return stripeClientPromise;
+}
 
 function buildClientUrl(pathname = DEFAULT_RETURN_PATH, params = {}) {
   const url = new URL(pathname, CLIENT_URL);
@@ -24,6 +37,7 @@ function buildClientUrl(pathname = DEFAULT_RETURN_PATH, params = {}) {
 export const createCheckoutSession = async (req, res, next) => {
   try {
     const { type, amount, description, metadata, successPath, cancelPath } = req.body;
+    const stripe = await getStripeClient();
 
     if (!type || !amount) {
       return res.status(400).json({ error: 'Type and amount are required' });
@@ -158,6 +172,7 @@ export const createCheckoutSession = async (req, res, next) => {
 export const verifySession = async (req, res, next) => {
   try {
     const { sessionId } = req.query;
+    const stripe = await getStripeClient();
     if (!sessionId) return res.status(400).json({ error: 'sessionId is required' });
 
     const payment = await prisma.payment.findFirst({ where: { stripePaymentId: sessionId } });
@@ -273,6 +288,7 @@ async function applySideEffects(type, metadata, userId, paymentId) {
 
 export const createPortalSession = async (req, res, next) => {
   try {
+    const stripe = await getStripeClient();
     if (!stripe) return res.json({ url: buildClientUrl(DEFAULT_RETURN_PATH), mock: true });
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
     if (!user.stripeCustomerId) return res.status(400).json({ error: 'No Stripe customer found' });
@@ -304,6 +320,7 @@ export const getStripeConfig = async (req, res) => {
 
 export const handleWebhook = async (req, res) => {
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const stripe = await getStripeClient();
   let event;
 
   if (stripe && endpointSecret) {

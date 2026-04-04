@@ -164,6 +164,7 @@ const ListPetModal = ({ isOpen, onClose }) => {
     setIsSubmitting(true);
     try {
       const age = calculateAge(dob) || 'Unknown';
+      const resolvedListingType = isLivestock ? form.listingType : 'fixed';
       const fullDescription = [
         form.description,
         ...activeCategories.map(cat => categoryNotes[cat] ? `\n\n${cat}: ${categoryNotes[cat]}` : '')
@@ -181,12 +182,12 @@ const ListPetModal = ({ isOpen, onClose }) => {
       formData.append('price', form.price || '0');
       formData.append('location', form.location);
       formData.append('category', marketplace.toLowerCase());
-      formData.append('listingType', form.listingType);
+      formData.append('listingType', resolvedListingType);
       
       // Multi-sector fields
       if (isLivestock) {
         formData.append('lotSize', form.lotSize);
-        if (form.listingType === 'auction') {
+        if (resolvedListingType === 'auction') {
           formData.append('reservePrice', form.reservePrice);
           formData.append('auctionEndsAt', form.auctionEndsAt);
         }

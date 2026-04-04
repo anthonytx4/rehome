@@ -319,6 +319,10 @@ export const createListing = async (req, res, next) => {
     const normalizedDescription = sanitizeText(description, { maxLength: 4000 });
     const normalizedLocation = sanitizeText(location, { maxLength: 160 });
     const normalizedListingType = sanitizeText(listingType || 'fixed', { maxLength: 40 }).toLowerCase();
+    const normalizedCategory = normalizeCategoryValue(category, normalizedSpecies);
+    const finalListingType = normalizedCategory === 'livestock'
+      ? (normalizedListingType || 'fixed')
+      : 'fixed';
     const parsedPrice = normalizeMoney(price);
     const parsedReservePrice = normalizeMoney(reservePrice, { allowNull: true });
     const parsedCurrentBid = normalizeMoney(currentBid, { allowNull: true });
@@ -352,7 +356,7 @@ export const createListing = async (req, res, next) => {
       });
     }
 
-    if (normalizedListingType === 'auction') {
+    if (finalListingType === 'auction') {
       const parsedAuctionEndsAt = auctionEndsAt ? new Date(auctionEndsAt) : null;
       if (!parsedAuctionEndsAt || Number.isNaN(parsedAuctionEndsAt.getTime()) || parsedAuctionEndsAt.getTime() <= Date.now()) {
         return res.status(400).json({ error: 'Auction listings need a valid future close date.' });
@@ -371,13 +375,13 @@ export const createListing = async (req, res, next) => {
         description: normalizedDescription,
         price: parsedPrice,
         location: normalizedLocation,
-        category: normalizeCategoryValue(category, normalizedSpecies),
-        listingType: normalizedListingType || 'fixed',
+        category: normalizedCategory,
+        listingType: finalListingType,
         lotSize: parseLotSize(lotSize),
         allowPartialSale: normalizeBoolean(allowPartialSale, true),
-        reservePrice: parsedReservePrice,
-        currentBid: parsedCurrentBid,
-        auctionEndsAt: auctionEndsAt ? new Date(auctionEndsAt) : null,
+        reservePrice: finalListingType === 'auction' ? parsedReservePrice : null,
+        currentBid: finalListingType === 'auction' ? parsedCurrentBid : null,
+        auctionEndsAt: finalListingType === 'auction' && auctionEndsAt ? new Date(auctionEndsAt) : null,
         vaccinated: normalizeBoolean(vaccinated),
         neutered: normalizeBoolean(neutered),
         images: JSON.stringify(images),
@@ -480,8 +484,21 @@ export const updateListing = async (req, res, next) => {
       });
     }
 
+    const nextCategory = data.category ?? listing.category;
+    const finalListingType = nextCategory === 'livestock'
+      ? (data.listingType ?? listing.listingType)
+      : 'fixed';
+
+    data.listingType = finalListingType;
+
+    if (finalListingType !== 'auction') {
+      data.reservePrice = null;
+      data.currentBid = null;
+      data.auctionEndsAt = null;
+    }
+
     if (
-      (data.listingType ?? listing.listingType) === 'auction'
+      finalListingType === 'auction'
       && (
         hasBodyField('auctionEndsAt')
         || hasBodyField('listingType')

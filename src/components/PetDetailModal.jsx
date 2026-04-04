@@ -248,23 +248,20 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
 
             <div className={styles.petInfo}>
               <div className={styles.header}>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {displayPet.category && (
                     <span className={`${styles.categoryBadge} ${
                       displayPet.category === 'pets' ? styles.categoryPets :
                       displayPet.category === 'livestock' ? styles.categoryLivestock :
                       displayPet.category === 'supplies' ? styles.categorySupplies : ''
                     }`}>
-                      {displayPet.category === 'pets' ? 'Pets' : 
-                       displayPet.category === 'livestock' ? 'Livestock' : 
-                       displayPet.category === 'supplies' ? 'Supplies' : displayPet.category}
+                      {displayPet.category.charAt(0).toUpperCase() + displayPet.category.slice(1)}
                     </span>
                   )}
                   <h2 className={styles.name}>{displayPet.name}</h2>
                 </div>
-                <span className={styles.typeBadge}>{displayPet.breed}</span>
               </div>
-              <p className={styles.location}>{displayPet.location} • {displayPet.age} • {displayPet.gender}</p>
+              <p className={styles.location}>{displayPet.breed} • {displayPet.location} • {displayPet.age} • {displayPet.gender}</p>
 
               {!displayPet.verified && (
                 <div className={styles.warningBox}>
@@ -286,12 +283,10 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
                   <Images size={15} />
                   {galleryImages.length} photo{galleryImages.length === 1 ? '' : 's'}
                 </div>
-                {displayPet.category && (
-                  <div className={styles.factPill}>
-                    <TrendingUp size={15} />
-                    Category: {displayPet.category.charAt(0).toUpperCase() + displayPet.category.slice(1)}
-                  </div>
-                )}
+                <div className={styles.factPill}>
+                  <Images size={15} />
+                  {galleryImages.length} photo{galleryImages.length === 1 ? '' : 's'}
+                </div>
                 {displayPet.createdAt && (
                   <div className={styles.factPill}>
                     <CalendarClock size={15} />

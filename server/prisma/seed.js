@@ -84,12 +84,7 @@ const makeImageDataUrl = (item, index, variant = 0) => {
         </linearGradient>
       </defs>
       <rect width="800" height="600" rx="40" fill="url(#bg)" />
-      <image href="${base}" x="24" y="24" width="752" height="360" preserveAspectRatio="xMidYMid slice" opacity="0.92" />
-      <rect x="42" y="382" width="716" height="176" rx="28" fill="#08101C" fill-opacity="0.82" />
-      <text x="64" y="444" font-size="46" font-family="Arial, Helvetica, sans-serif" font-weight="700" fill="#FFFFFF">${headline}</text>
-      <text x="64" y="490" font-size="28" font-family="Arial, Helvetica, sans-serif" fill="#E5E7EB">${subline}</text>
-      <text x="64" y="534" font-size="22" font-family="Arial, Helvetica, sans-serif" fill="#FDE68A">${categoryLabel}</text>
-      <text x="590" y="534" font-size="22" font-family="Arial, Helvetica, sans-serif" fill="#E5E7EB" text-anchor="end">${footer}</text>
+      <image href="${base}" x="24" y="24" width="752" height="552" preserveAspectRatio="xMidYMid slice" rx="32" opacity="0.95" />
     </svg>`;
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 };

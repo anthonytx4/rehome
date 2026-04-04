@@ -150,7 +150,6 @@ const PetCard = ({ pet, isAd, onClick }) => {
             <MapPin size={14} />
             {pet.location}
           </span>
-          <span className={styles.typeBadge}>{pet.type}</span>
         </div>
       </div>
     </div>

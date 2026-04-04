@@ -274,49 +274,6 @@
   color: var(--color-primary);
 }
 
-.cardActions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 14px;
-}
-
-.quickViewBtn,
-.fullListingLink {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 36px;
-  padding: 8px 12px;
-  border-radius: var(--radius-full);
-  font-size: 0.82rem;
-  font-weight: 700;
-  transition: all 0.2s ease;
-}
-
-.quickViewBtn {
-  border: 1px solid var(--color-border);
-  background: var(--color-surface-hover);
-  color: var(--color-secondary);
-}
-
-.quickViewBtn:hover {
-  background: white;
-  border-color: var(--color-primary-light);
-}
-
-.fullListingLink {
-  background: rgba(16, 185, 129, 0.1);
-  color: var(--color-primary-dark);
-  border: 1px solid rgba(16, 185, 129, 0.16);
-  text-decoration: none;
-}
-
-.fullListingLink:hover {
-  background: rgba(16, 185, 129, 0.16);
-}
-
 .footer {
   display: flex;
   justify-content: space-between;

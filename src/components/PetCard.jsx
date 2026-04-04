@@ -120,27 +120,6 @@ const PetCard = ({ pet, isAd, onClick }) => {
           </div>
         )}
 
-        <div className={styles.cardActions}>
-          <button
-            type="button"
-            className={styles.quickViewBtn}
-            onClick={(event) => {
-              event.stopPropagation();
-              onClick(pet);
-            }}
-          >
-            Quick view
-          </button>
-          <Link
-            to={listingPath}
-            state={{ from: location.pathname }}
-            className={styles.fullListingLink}
-            onClick={(event) => event.stopPropagation()}
-          >
-            Open full listing
-          </Link>
-        </div>
-        
         <div className={styles.footer}>
           <span className={styles.location}>
             <MapPin size={14} />

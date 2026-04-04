@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import api from '../api/client';
+import { getErrorMessage } from '../utils/error';
 
 const AuthContext = createContext(null);
 const DEFAULT_AUTH_REDIRECT = '/dashboard';

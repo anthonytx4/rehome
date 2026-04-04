@@ -3,6 +3,7 @@ import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { UserPlus, Mail, Lock, User, MapPin, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import { getErrorMessage } from '../utils/error';
 import styles from './AuthPages.module.css';
 
 const DEFAULT_AUTH_REDIRECT = '/dashboard';
@@ -69,7 +70,7 @@ const RegisterPage = () => {
       await register(name.trim(), email.trim(), password, location.trim());
       toast.success(normalizedTier ? `Your ${normalizedTier} membership setup is ready.` : 'Account created!');
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Registration failed');
+      toast.error(getErrorMessage(err, 'Registration failed'));
     } finally {
       setIsLoading(false);
     }
@@ -90,7 +91,7 @@ const RegisterPage = () => {
             </div>
             <h1 className={styles.title}>Create your account</h1>
             <p className={styles.subtitle}>Create a secure account to list animals, save favorites, and keep buyer conversations organized.</p>
-            {error && <div className={styles.statusBanner} role="alert">{error}</div>}
+            {error && <div className={styles.statusBanner} role="alert">{String(error)}</div>}
           </div>
 
           <form onSubmit={handleSubmit} className={styles.form}>

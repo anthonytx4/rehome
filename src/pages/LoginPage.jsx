@@ -3,6 +3,7 @@ import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { LogIn, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import { getErrorMessage } from '../utils/error';
 import styles from './AuthPages.module.css';
 
 const DEFAULT_AUTH_REDIRECT = '/dashboard';
@@ -61,7 +62,7 @@ const LoginPage = () => {
       await login(email.trim(), password);
       toast.success('Welcome back!');
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Login failed');
+      toast.error(getErrorMessage(err, 'Login failed'));
     } finally {
       setIsLoading(false);
     }
@@ -82,7 +83,7 @@ const LoginPage = () => {
             </div>
             <h1 className={styles.title}>Welcome back</h1>
             <p className={styles.subtitle}>Sign in to manage your listings, messages, favorites, and billing.</p>
-            {error && <div className={styles.statusBanner} role="alert">{error}</div>}
+            {error && <div className={styles.statusBanner} role="alert">{String(error)}</div>}
           </div>
 
           <form onSubmit={handleSubmit} className={styles.form}>

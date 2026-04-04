@@ -483,32 +483,32 @@ const DashboardPage = () => {
                 <div className={styles.insightCard}>
                   <Users size={24} />
                   <div className={styles.insightValue}>{insights.users.total}</div>
-                  <div className={styles.insightLabel}>Total Users</div>
+                  <div className={styles.insightLabel}>{insights.labels?.users || 'Total Users'}</div>
                 </div>
                 <div className={styles.insightCard}>
                   <Package size={24} />
                   <div className={styles.insightValue}>{insights.listings.total}</div>
-                  <div className={styles.insightLabel}>Total Listings</div>
+                  <div className={styles.insightLabel}>{insights.labels?.listingsTotal || 'Total Listings'}</div>
                 </div>
                 <div className={styles.insightCard}>
                   <Eye size={24} />
                   <div className={styles.insightValue}>{insights.listings.active}</div>
-                  <div className={styles.insightLabel}>Active Listings</div>
+                  <div className={styles.insightLabel}>{insights.labels?.listingsActive || 'Active Listings'}</div>
                 </div>
                 <div className={styles.insightCard}>
                   <MessageSquare size={24} />
                   <div className={styles.insightValue}>{insights.messages.total}</div>
-                  <div className={styles.insightLabel}>Messages Sent</div>
+                  <div className={styles.insightLabel}>{insights.labels?.messages || 'Messages Sent'}</div>
                 </div>
                 <div className={styles.insightCard}>
                   <Heart size={24} />
                   <div className={styles.insightValue}>{insights.favorites.total}</div>
-                  <div className={styles.insightLabel}>Total Favorites</div>
+                  <div className={styles.insightLabel}>{insights.labels?.favorites || 'Total Favorites'}</div>
                 </div>
                 <div className={styles.insightCard}>
                   <TrendingUp size={24} />
                   <div className={styles.insightValue}>{insights.listings.thisWeek}</div>
-                  <div className={styles.insightLabel}>Listings This Week</div>
+                  <div className={styles.insightLabel}>{insights.labels?.listingsThisWeek || 'Listings This Week'}</div>
                 </div>
                   <div className={`${styles.insightCard} ${styles.revenueCard}`}>
                     <DollarSign size={24} />

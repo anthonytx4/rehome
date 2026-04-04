@@ -20,6 +20,7 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
   const handleLogout = async () => {
     await logout();
     setShowUserMenu(false);
+    setShowNotifications(false);
     toast.success('Logged out');
     navigate('/');
   };
@@ -84,7 +85,7 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
                 <button
                   className={styles.notificationBtn}
                   onClick={() => {
-                    setShowNotifications(!showNotifications);
+                    setShowNotifications((value) => !value);
                     setShowUserMenu(false);
                   }}
                   aria-label="Notifications"
@@ -101,15 +102,37 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
                     <div className={styles.menuBackdrop} onClick={() => setShowNotifications(false)} />
                     <div className={styles.notificationMenu}>
                       <div className={styles.menuHeader}>
-                        <strong>Notifications</strong>
-                        <span>{notifications.totalCount > 0 ? `${notifications.totalCount} updates waiting` : 'You are all caught up'}</span>
+                        <div>
+                          <strong>Notifications</strong>
+                          <span>{notifications.totalCount > 0 ? `${notifications.totalCount} updates waiting` : 'You are all caught up'}</span>
+                        </div>
+                        {notifications.totalCount > 0 && (
+                          <button type="button" className={styles.menuHeaderAction} onClick={notifications.markAllNotificationsRead}>
+                            Mark all read
+                          </button>
+                        )}
+                      </div>
+                      <div className={styles.notificationToolbar}>
+                        <span className={styles.notificationSummary}>
+                          {notifications.unreadMessagesCount > 0 ? `${notifications.unreadMessagesCount} unread message${notifications.unreadMessagesCount === 1 ? '' : 's'}` : 'No unread messages'}
+                          {notifications.unreadAlertsCount > 0 ? ` · ${notifications.unreadAlertsCount} alert${notifications.unreadAlertsCount === 1 ? '' : 's'}` : ''}
+                          {notifications.unreadListingsCount > 0 ? ` · ${notifications.unreadListingsCount} new listing${notifications.unreadListingsCount === 1 ? '' : 's'}` : ''}
+                        </span>
                       </div>
 
                       {notifications.alerts.length > 0 && (
                         <div className={styles.notificationSection}>
                           <div className={styles.notificationSectionLabel}><AlertTriangle size={14} /> Alerts</div>
                           {notifications.alerts.map((item) => (
-                            <Link key={item.id} to={item.href} className={styles.notificationItem} onClick={() => setShowNotifications(false)}>
+                            <Link
+                              key={item.id}
+                              to={item.href}
+                              className={`${styles.notificationItem} ${item.isRead ? styles.notificationRead : styles.notificationUnread}`}
+                              onClick={() => {
+                                notifications.markNotificationRead(item);
+                                setShowNotifications(false);
+                              }}
+                            >
                               <div className={styles.notificationIconWrap}><AlertTriangle size={16} /></div>
                               <div className={styles.notificationText}>
                                 <strong>{item.title}</strong>
@@ -125,7 +148,15 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
                         <div className={styles.notificationSection}>
                           <div className={styles.notificationSectionLabel}><MessageSquare size={14} /> Messages</div>
                           {notifications.messages.map((item) => (
-                            <Link key={item.id} to={item.href} className={styles.notificationItem} onClick={() => setShowNotifications(false)}>
+                            <Link
+                              key={item.id}
+                              to={item.href}
+                              className={`${styles.notificationItem} ${item.isRead ? styles.notificationRead : styles.notificationUnread}`}
+                              onClick={() => {
+                                notifications.markNotificationRead(item);
+                                setShowNotifications(false);
+                              }}
+                            >
                               <div className={styles.notificationIconWrap}><MessageSquare size={16} /></div>
                               <div className={styles.notificationText}>
                                 <strong>{item.title}</strong>
@@ -142,7 +173,15 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
                         <div className={styles.notificationSection}>
                           <div className={styles.notificationSectionLabel}><Sparkles size={14} /> New Listings</div>
                           {notifications.newListings.map((item) => (
-                            <Link key={item.id} to={item.href} className={styles.notificationItem} onClick={() => setShowNotifications(false)}>
+                            <Link
+                              key={item.id}
+                              to={item.href}
+                              className={`${styles.notificationItem} ${item.isRead ? styles.notificationRead : styles.notificationUnread}`}
+                              onClick={() => {
+                                notifications.markNotificationRead(item);
+                                setShowNotifications(false);
+                              }}
+                            >
                               <div className={styles.notificationThumb}>
                                 {item.image ? <img src={item.image} alt={item.title} /> : <Sparkles size={16} />}
                               </div>

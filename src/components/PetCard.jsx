@@ -1,4 +1,5 @@
 import { MapPin, ShieldCheck, Star, AlertTriangle, Gavel, Users, Boxes, TrendingUp } from 'lucide-react';
+import { resolveMediaUrl } from '../utils/media';
 import styles from './PetCard.module.css';
 
 const formatAuctionEnd = (value) => {
@@ -29,7 +30,7 @@ const PetCard = ({ pet, isAd, onClick }) => {
   const isHot = pet.bidCount > 10;
   const lotLabel = pet.lotLabel || (pet.lotSize ? `Lot of ${pet.lotSize}` : null);
   const auctionEndsAt = formatAuctionEnd(pet.auctionEndsAt || pet.raw?.auctionEndsAt);
-  const imageSource = pet.image || pet.images?.[0] || '/images/mock_dog_1775037305181.png';
+  const imageSource = resolveMediaUrl(pet.image || pet.images?.[0] || '/images/mock_dog_1775037305181.png');
 
   return (
     <div 

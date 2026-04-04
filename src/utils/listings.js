@@ -114,6 +114,8 @@ export function normalizeListing(rawListing) {
     sellerId: rawListing.userId || seller?.id || null,
     sellerName: seller?.name || null,
     seller,
+    createdAt: rawListing.createdAt || null,
+    updatedAt: rawListing.updatedAt || null,
     raw: rawListing,
   };
 }

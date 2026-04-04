@@ -79,6 +79,16 @@ const MessagesPage = () => {
       try {
         const res = await api.get(`/messages/${activeConv.listingId}?userId=${activeConv.otherUser.id}`);
         setMessages(res.data);
+
+        const inboxRes = await api.get('/messages/inbox');
+        setConversations(inboxRes.data);
+
+        const refreshedConv = inboxRes.data.find(
+          (conv) => conv.listingId === activeConv.listingId && conv.otherUser.id === activeConv.otherUser.id
+        );
+        if (refreshedConv) {
+          setActiveConv(refreshedConv);
+        }
       } catch {
         if (!activeConv.isNew) toast.error('Failed to load conversation');
       }
@@ -117,22 +127,17 @@ const MessagesPage = () => {
       if (newMessage.trim()) formData.append('content', newMessage);
       if (mediaFile) formData.append('media', mediaFile);
 
-      const res = await api.post('/messages', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const res = await api.post('/messages', formData);
 
       setMessages([...messages, res.data]);
       setNewMessage('');
       setMediaFile(null);
       setMediaPreview(null);
-      
-      // If it was a new thread, refresh inbox to make it "real"
-      if (activeConv.isNew) {
-        const inboxRes = await api.get('/messages/inbox');
-        setConversations(inboxRes.data);
-        const realConv = inboxRes.data.find(c => c.listingId === activeConv.listingId && c.otherUser.id === activeConv.otherUser.id);
-        if (realConv) setActiveConv(realConv);
-      }
+
+      const inboxRes = await api.get('/messages/inbox');
+      setConversations(inboxRes.data);
+      const realConv = inboxRes.data.find(c => c.listingId === activeConv.listingId && c.otherUser.id === activeConv.otherUser.id);
+      if (realConv) setActiveConv(realConv);
     } catch {
       toast.error('Failed to send message');
     } finally {
@@ -220,7 +225,7 @@ const MessagesPage = () => {
                     <div className={styles.bubble}>
                       {msg.mediaUrl && (
                         <div className={styles.mediaContent}>
-                          {msg.mediaType === 'image' ? (
+                          {(msg.mediaType || '').startsWith('image') || msg.mediaType === 'image' ? (
                             <img
                               src={resolveMediaUrl(msg.mediaUrl)}
                               alt="Sent media"
@@ -229,7 +234,7 @@ const MessagesPage = () => {
                           ) : (
                             <div className={styles.videoContainer}>
                               <video controls>
-                                <source src={resolveMediaUrl(msg.mediaUrl)} type="video/mp4" />
+                                <source src={resolveMediaUrl(msg.mediaUrl)} type={msg.mediaType || undefined} />
                                 Your browser does not support video.
                               </video>
                             </div>

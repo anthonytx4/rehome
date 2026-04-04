@@ -157,7 +157,7 @@ export const sendMessage = async (req, res, next) => {
 
     if (req.file) {
       mediaUrl = await handleUpload(req.file, 'messages');
-      mediaType = req.file.mimetype.startsWith('video/') ? 'video' : 'image';
+      mediaType = req.file.mimetype.startsWith('video/') ? req.file.mimetype : 'image';
     }
 
     const message = await prisma.message.create({

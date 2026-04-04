@@ -1,6 +1,4 @@
-const apiBaseUrl = import.meta.env.PROD
-  ? ''
-  : (import.meta.env.VITE_API_URL || 'http://localhost:5001');
+const apiBaseUrl = import.meta.env.VITE_API_URL || '';
 
 export const resolveMediaUrl = (value) => {
   if (!value) return '';

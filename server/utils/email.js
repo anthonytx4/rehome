@@ -1,5 +1,9 @@
-const RESEND_API_URL = 'https://api.resend.com/emails';
+import nodemailer from 'nodemailer';
+
 const SITE_NAME = 'Rehome';
+const SITE_URL = (process.env.NODE_ENV === 'production' || process.env.VERCEL)
+  ? 'https://www.rehome.world'
+  : 'http://localhost:5173';
 
 const escapeHtml = (value) => String(value ?? '')
   .replaceAll('&', '&amp;')
@@ -10,64 +14,110 @@ const escapeHtml = (value) => String(value ?? '')
 
 const getEmailConfig = () => ({
   resendApiKey: process.env.RESEND_API_KEY || '',
-  fromEmail: process.env.PASSWORD_RESET_FROM_EMAIL || process.env.SUPPORT_EMAIL || '',
-  replyTo: process.env.PASSWORD_RESET_REPLY_TO || process.env.SUPPORT_EMAIL || '',
-  supportEmail: process.env.SUPPORT_EMAIL || '',
+  smtpHost: process.env.SMTP_HOST || '',
+  smtpPort: parseInt(process.env.SMTP_PORT || '587', 10),
+  smtpUser: process.env.SMTP_USER || '',
+  smtpPass: process.env.SMTP_PASS || '',
+  fromEmail: process.env.PASSWORD_RESET_FROM_EMAIL || process.env.SUPPORT_EMAIL || 'Rehome <noreply@rehome.world>',
+  supportEmail: process.env.SUPPORT_EMAIL || 'support@rehome.world',
 });
 
 export const getPasswordResetEmailStatus = () => {
   const config = getEmailConfig();
+  const configured = Boolean(config.resendApiKey || (config.smtpHost && config.smtpUser && config.smtpPass));
   return {
-    configured: Boolean(config.resendApiKey && config.fromEmail),
-    supportEmail: config.supportEmail || null,
+    configured,
+    supportEmail: config.supportEmail,
+    method: config.resendApiKey ? 'resend' : (config.smtpHost ? 'smtp' : 'preview_only'),
   };
 };
 
 export const sendPasswordResetEmail = async ({ to, resetUrl, expiresInMinutes = 30 }) => {
-  const { resendApiKey, fromEmail, replyTo } = getEmailConfig();
-
-  if (!resendApiKey || !fromEmail) {
-    throw new Error('Password reset email delivery is not configured.');
-  }
+  const config = getEmailConfig();
+  const { configured } = getPasswordResetEmailStatus();
 
   const escapedResetUrl = escapeHtml(resetUrl);
   const escapedTo = escapeHtml(to);
-
   const subject = 'Reset your Rehome password';
+  
   const html = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #0f172a; line-height: 1.6; padding: 24px;">
-      <h1 style="margin: 0 0 12px; font-size: 24px;">Reset your password</h1>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #0f172a; line-height: 1.6; padding: 24px; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px;">
+      <h1 style="margin: 0 0 12px; font-size: 24px; color: #10b981;">Reset your password</h1>
       <p style="margin: 0 0 16px;">We received a request to reset the password for <strong>${escapedTo}</strong>.</p>
       <p style="margin: 0 0 16px;">This link expires in ${expiresInMinutes} minutes.</p>
-      <p style="margin: 24px 0;">
-        <a href="${escapedResetUrl}" style="display: inline-block; background: #10b981; color: #ffffff; padding: 12px 18px; border-radius: 999px; text-decoration: none; font-weight: 700;">
+      <div style="margin: 32px 0;">
+        <a href="${escapedResetUrl}" style="display: inline-block; background: #10b981; color: #ffffff; padding: 14px 28px; border-radius: 999px; text-decoration: none; font-weight: 700; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
           Reset Password
         </a>
-      </p>
-      <p style="margin: 0 0 12px;">If you did not request this, you can ignore this email.</p>
-      <p style="margin: 0; color: #64748b;">${SITE_NAME}</p>
+      </div>
+      <p style="margin: 0 0 12px; font-size: 14px; color: #64748b;">If you did not request this, you can ignore this email. Your password will remain unchanged.</p>
+      <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+      <p style="margin: 0; font-size: 14px; font-weight: 600; color: #10b981;">${SITE_NAME}</p>
+      <p style="margin: 4px 0 0; font-size: 12px; color: #94a3b8;">${SITE_URL}</p>
     </div>
   `;
 
-  const response = await fetch(RESEND_API_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${resendApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: fromEmail,
-      to: [to],
-      subject,
-      html,
-      ...(replyTo ? { replyTo } : {}),
-    }),
-  });
+  // 1. Try Resend if configured
+  if (config.resendApiKey) {
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${config.resendApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: config.fromEmail,
+          to: [to],
+          subject,
+          html,
+        }),
+      });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Email delivery failed (${response.status}): ${errorText}`);
+      if (response.ok) return response.json();
+      const errorText = await response.text();
+      console.error(`[email] Resend delivery failed: ${errorText}`);
+    } catch (err) {
+      console.error('[email] Resend error:', err);
+    }
   }
 
-  return response.json();
+  // 2. Try SMTP if configured
+  if (config.smtpHost && config.smtpUser && config.smtpPass) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: config.smtpHost,
+        port: config.smtpPort,
+        secure: config.smtpPort === 465,
+        auth: {
+          user: config.smtpUser,
+          pass: config.smtpPass,
+        },
+      });
+
+      return await transporter.sendMail({
+        from: config.fromEmail,
+        to,
+        subject,
+        html,
+      });
+    } catch (err) {
+      console.error('[email] SMTP error:', err);
+    }
+  }
+
+  // 3. Fallback: Always log a clear preview for the user
+  console.log('\n' + '='.repeat(60));
+  console.log('🚀 UNIFORM PASSWORD RESET DELIVERY PREVIEW');
+  console.log('='.repeat(60));
+  console.log(`TO:      ${to}`);
+  console.log(`LINK:    ${resetUrl}`);
+  console.log(`EXPIRES: ${expiresInMinutes} minutes`);
+  console.log('='.repeat(60) + '\n');
+
+  if (!configured) {
+    console.warn('[email] Password reset email was LOGGED ABOVE but NOT SENT (delivery not configured).');
+  }
+
+  return { previewed: true, url: resetUrl };
 };

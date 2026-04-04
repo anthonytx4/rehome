@@ -150,32 +150,31 @@ export const forgotPassword = async (req, res, next) => {
     const resetUrl = new URL('/reset-password', CLIENT_URL);
     resetUrl.searchParams.set('token', token);
 
-    if (deliveryStatus.configured) {
-      await sendPasswordResetEmail({
-        to: normalizedEmail,
-        resetUrl: resetUrl.toString(),
-        expiresInMinutes: PASSWORD_RESET_EXPIRY_MINUTES,
-      });
+    const emailResult = await sendPasswordResetEmail({
+      to: normalizedEmail,
+      resetUrl: resetUrl.toString(),
+      expiresInMinutes: PASSWORD_RESET_EXPIRY_MINUTES,
+    });
 
-      return res.json({
+    if (deliveryStatus.configured || emailResult.previewed) {
+      const response = {
         ...baseResponse,
-        message: 'If the account exists, a password reset email has been sent.',
-      });
-    }
+        message: deliveryStatus.configured 
+          ? 'An instruction email has been sent to your account.' 
+          : 'Password reset link generated and logged for support retrieval.',
+      };
 
-    if (PASSWORD_RESET_PREVIEW_ENABLED) {
-      return res.json({
-        ...baseResponse,
-        previewUrl: resetUrl.toString(),
-      });
-    }
+      if (PASSWORD_RESET_PREVIEW_ENABLED || (emailResult.previewed && process.env.NODE_ENV !== 'production')) {
+        response.previewUrl = resetUrl.toString();
+      }
 
-    console.warn(`[password-reset] Reset requested for ${normalizedEmail}, but email delivery is not configured.`);
+      return res.json(response);
+    }
 
     return res.json({
       ...baseResponse,
-      blockedReason: 'Password reset email delivery is not configured in this environment yet.',
-      requiredSetup: 'Set RESEND_API_KEY and PASSWORD_RESET_FROM_EMAIL before advertising live self-serve password recovery.',
+      blockedReason: 'Password reset delivery is currently in manual support mode.',
+      requiredSetup: 'Configure RESEND_API_KEY or SMTP_HOST to enable automated self-serve delivery.',
     });
   } catch (err) {
     return next(err);

@@ -65,7 +65,7 @@ const PetCard = ({ pet, isAd, onClick }) => {
         
         {pet.lotSize && (
           <div className={styles.lotBadge}>
-            <Boxes size={12} /> {pet.lotSize}
+            <Boxes size={12} /> Lot of {pet.lotSize}
           </div>
         )}
       </div>

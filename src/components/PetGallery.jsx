@@ -1,5 +1,6 @@
 import React, { useDeferredValue, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { Search, SlidersHorizontal, X } from 'lucide-react';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import PetCard from './PetCard';
@@ -517,6 +518,27 @@ const categoryMaps = {
   'supplies': ['All Supplies', 'Hygiene', 'Grooming', 'Healthcare', 'Feeding', 'Other']
 };
 
+const filterOptions = {
+  pets: {
+    gender: ['Any Gender', 'Male', 'Female'],
+    age: ['Any Age', 'Baby', 'Young', 'Adult', 'Senior'],
+    sort: ['Newest', 'Price: Low to High', 'Price: High to Low'],
+  },
+  livestock: {
+    gender: ['Any Gender', 'Male', 'Female'],
+    sort: ['Newest', 'Price: Low to High', 'Price: High to Low', 'Lot Size'],
+  },
+  supplies: {
+    sort: ['Newest', 'Price: Low to High', 'Price: High to Low'],
+  },
+};
+
+const searchPlaceholders = {
+  pets: 'Search pets by name, breed...',
+  livestock: 'Search livestock by name, breed...',
+  supplies: 'Search supplies by name, type...',
+};
+
 const matchesActiveCategory = (item, activeCategory, marketplaceContext) => {
   if (activeCategory.startsWith('All')) return true;
 
@@ -552,7 +574,7 @@ const matchesActiveCategory = (item, activeCategory, marketplaceContext) => {
   }
 };
 
-const PetGallery = ({ searchQuery = '', onPostAction, overrideType = '' }) => {
+const PetGallery = ({ searchQuery: externalSearchQuery = '', onPostAction, overrideType = '' }) => {
   const { user } = useAuth();
   const isAdFree = Boolean(user?.membershipTier && user.membershipTier !== 'free');
   const location = useLocation();
@@ -566,11 +588,18 @@ const PetGallery = ({ searchQuery = '', onPostAction, overrideType = '' }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [reloadToken, setReloadToken] = useState(0);
-  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const [localSearch, setLocalSearch] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({ gender: '', age: '', sort: '' });
+  const combinedSearch = localSearch || externalSearchQuery;
+  const deferredSearchQuery = useDeferredValue(combinedSearch);
 
   useEffect(() => {
     setActiveCat(categories[0]);
     setSelectedPet(null);
+    setLocalSearch('');
+    setFilters({ gender: '', age: '', sort: '' });
+    setShowFilters(false);
   }, [categories, marketplaceContext]);
 
   useEffect(() => {
@@ -620,18 +649,29 @@ const PetGallery = ({ searchQuery = '', onPostAction, overrideType = '' }) => {
 
     // Stage 2: Category Filter
     const matchesCat = matchesActiveCategory(item, activeCat, marketplaceContext);
-    
+
     // Stage 3: Search Filter
     const searchLower = (deferredSearchQuery || '').toLowerCase();
     const itemName = safeText(item.name).toLowerCase();
     const itemBreed = safeText(item.breed).toLowerCase();
     const itemType = safeText(item.type).toLowerCase();
-    const matchesSearch = 
+    const matchesSearch =
       itemName.includes(searchLower) ||
       itemBreed.includes(searchLower) ||
       itemType.includes(searchLower);
-    
-    return matchesCat && matchesSearch;
+
+    // Stage 4: Dropdown Filters
+    const matchesGender = !filters.gender || filters.gender === 'Any Gender'
+      || safeText(item.gender).toLowerCase() === filters.gender.toLowerCase();
+    const matchesAge = !filters.age || filters.age === 'Any Age'
+      || safeText(item.age).toLowerCase().includes(filters.age.toLowerCase());
+
+    return matchesCat && matchesSearch && matchesGender && matchesAge;
+  }).sort((a, b) => {
+    if (filters.sort === 'Price: Low to High') return (a.fee || 0) - (b.fee || 0);
+    if (filters.sort === 'Price: High to Low') return (b.fee || 0) - (a.fee || 0);
+    if (filters.sort === 'Lot Size') return (b.lotSize || 0) - (a.lotSize || 0);
+    return 0; // Newest = default order
   });
 
   // Build mixed items: pets + native sponsored cards every 8th position
@@ -714,7 +754,8 @@ const PetGallery = ({ searchQuery = '', onPostAction, overrideType = '' }) => {
         </div>
         <div className={styles.categoryFilters}>
           {categories.map((cat) => (
-            <button 
+            <button
+              type="button"
               key={cat}
               className={`${styles.filterBtn} ${activeCat === cat ? styles.activeFilter : ''}`}
               onClick={() => setActiveCat(cat)}
@@ -724,6 +765,80 @@ const PetGallery = ({ searchQuery = '', onPostAction, overrideType = '' }) => {
           ))}
         </div>
       </div>
+
+      {/* Search bar and filters */}
+      <div className={styles.searchRow}>
+        <div className={styles.searchInputWrap}>
+          <Search size={18} className={styles.searchIcon} />
+          <input
+            type="text"
+            className={styles.searchInput}
+            placeholder={searchPlaceholders[marketplaceContext] || 'Search listings...'}
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+          />
+          {localSearch && (
+            <button type="button" className={styles.searchClear} onClick={() => setLocalSearch('')}>
+              <X size={16} />
+            </button>
+          )}
+        </div>
+        <button
+          type="button"
+          className={`${styles.filterToggle} ${showFilters ? styles.filterToggleActive : ''}`}
+          onClick={() => setShowFilters(!showFilters)}
+        >
+          <SlidersHorizontal size={18} />
+          Filters
+        </button>
+      </div>
+
+      {showFilters && (
+        <div className={styles.filterRow}>
+          {filterOptions[marketplaceContext]?.gender && (
+            <select
+              className={styles.filterSelect}
+              value={filters.gender}
+              onChange={(e) => setFilters(f => ({ ...f, gender: e.target.value }))}
+            >
+              {filterOptions[marketplaceContext].gender.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          )}
+          {filterOptions[marketplaceContext]?.age && (
+            <select
+              className={styles.filterSelect}
+              value={filters.age}
+              onChange={(e) => setFilters(f => ({ ...f, age: e.target.value }))}
+            >
+              {filterOptions[marketplaceContext].age.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          )}
+          {filterOptions[marketplaceContext]?.sort && (
+            <select
+              className={styles.filterSelect}
+              value={filters.sort}
+              onChange={(e) => setFilters(f => ({ ...f, sort: e.target.value }))}
+            >
+              {filterOptions[marketplaceContext].sort.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          )}
+          {(filters.gender || filters.age || filters.sort) && (
+            <button
+              type="button"
+              className={styles.clearFilters}
+              onClick={() => setFilters({ gender: '', age: '', sort: '' })}
+            >
+              Clear all
+            </button>
+          )}
+        </div>
+      )}
 
       <div className={styles.grid}>
         {feedItems.map((item) => {

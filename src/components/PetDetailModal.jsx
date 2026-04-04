@@ -30,13 +30,23 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
 
   // Check queue status on mount — only for pets
   useEffect(() => {
-    if (!displayPet || !isAuthenticated || isOwner || !isPetCategory) {
+    if (!displayPet || isOwner) {
       setQueueStatus({ allowed: true });
+      return;
+    }
+    // Livestock and supplies skip the queue entirely
+    if (!isPetCategory) {
+      setQueueStatus({ allowed: true });
+      return;
+    }
+    // Pets: check real queue status if authenticated, otherwise show queue locked
+    if (!isAuthenticated) {
+      setQueueStatus({ allowed: false, hoursLeft: QUEUE_HOURS });
       return;
     }
     api.get(`/messages/queue/${displayPet.id}`)
       .then(res => setQueueStatus(res.data))
-      .catch(() => setQueueStatus({ allowed: true }));
+      .catch(() => setQueueStatus({ allowed: false, hoursLeft: QUEUE_HOURS }));
   }, [displayPet, isAuthenticated, isOwner, isPetCategory]);
 
   useEffect(() => {

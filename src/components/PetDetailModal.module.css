@@ -383,6 +383,31 @@
   color: var(--color-text-muted);
 }
 
+/* Auction stats */
+.auctionStats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.statLine {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.statLine span:first-child {
+  color: var(--color-text-muted);
+}
+
+.currentBid {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
 /* Social proof overlay on image */
 .socialProof {
   position: absolute;

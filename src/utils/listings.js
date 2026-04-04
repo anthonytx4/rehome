@@ -48,7 +48,7 @@ export function normalizeMarketplaceCategory(category, species = '') {
 export function formatLotSize(lotSize) {
   const numericLotSize = Number(lotSize);
   if (!Number.isFinite(numericLotSize) || numericLotSize <= 1) return null;
-  return `Lot of ${numericLotSize}`;
+  return numericLotSize;
 }
 
 const normalizeListingIdentityPart = (value) => String(value ?? '').trim().toLowerCase();

@@ -15,6 +15,22 @@ const BOOST_PRIORITY = {
 };
 const INTERNAL_REVIEW_STATUSES = new Set(['pending_review', 'removed']);
 const USER_MANAGED_STATUSES = new Set(['available', 'adopted']);
+const ALLOWED_LISTING_TYPES = new Set(['fixed', 'auction']);
+const LIVESTOCK_SPECIES_ALIASES = {
+  'beef cattle': 'Beef Cattle',
+  'dairy cattle': 'Dairy Cattle',
+  equine: 'Equine',
+  goats: 'Goats',
+  sheep: 'Sheep',
+  swine: 'Swine',
+  poultry: 'Poultry',
+  horses: 'Horses',
+  rabbits: 'Rabbits',
+  'donkeys & mules': 'Donkeys & Mules',
+  'alpacas & llamas': 'Alpacas & Llamas',
+  'specialty livestock': 'Specialty Livestock',
+  'other livestock': 'Other Livestock',
+};
 
 const normalizeCategoryValue = (value, species = '') => {
   const normalized = String(value || '').trim().toLowerCase();
@@ -59,6 +75,34 @@ const normalizeBoolean = (value, fallback = false) => {
 const normalizeSellerStatus = (value) => {
   const normalized = sanitizeText(value, { maxLength: 40 }).toLowerCase();
   return USER_MANAGED_STATUSES.has(normalized) ? normalized : null;
+};
+
+const normalizeSpeciesValue = (value, category) => {
+  const normalized = sanitizeText(value, { maxLength: 80 });
+  if (category !== 'livestock') return normalized;
+  return LIVESTOCK_SPECIES_ALIASES[normalized.toLowerCase()] || normalized;
+};
+
+const normalizeListingType = (value, category) => {
+  const normalized = sanitizeText(value, { maxLength: 40 }).toLowerCase();
+  if (ALLOWED_LISTING_TYPES.has(normalized)) return normalized;
+  return category === 'livestock' ? 'auction' : 'fixed';
+};
+
+const createDefaultAuctionCloseDate = () => {
+  const closeDate = new Date();
+  closeDate.setDate(closeDate.getDate() + 7);
+  closeDate.setMinutes(0, 0, 0);
+  return closeDate;
+};
+
+const parseAuctionCloseDate = (value, { useDefaultIfMissing = false } = {}) => {
+  if (value === undefined || value === null || value === '') {
+    return useDefaultIfMissing ? createDefaultAuctionCloseDate() : null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
 const buildListingModeration = ({ title, petName, breed, description, location, images, price }) => {
@@ -309,23 +353,29 @@ export const createListing = async (req, res, next) => {
       auctionEndsAt,
     } = req.body;
 
+    const normalizedCategory = normalizeCategoryValue(category, species);
     const normalizedPetName = sanitizeText(petName || title, { maxLength: 160 });
-    const normalizedSpecies = sanitizeText(species, { maxLength: 80 });
+    const normalizedSpecies = normalizeSpeciesValue(species, normalizedCategory);
     const normalizedTitle = sanitizeText(title || normalizedPetName, { maxLength: 160 });
     const normalizedBreed = sanitizeText(breed || normalizedSpecies || 'General', { maxLength: 160 });
     const normalizedAge = sanitizeText(age || 'Unknown', { maxLength: 80 });
     const normalizedGender = sanitizeText(gender || 'Unknown', { maxLength: 40 });
-    const normalizedSize = sanitizeText(size || 'Medium', { maxLength: 40 });
+    const normalizedSize = sanitizeText(
+      size || (normalizedCategory === 'livestock' ? 'Unspecified Livestock Class' : 'Medium'),
+      { maxLength: 40 }
+    );
     const normalizedDescription = sanitizeText(description, { maxLength: 4000 });
     const normalizedLocation = sanitizeText(location, { maxLength: 160 });
-    const normalizedListingType = sanitizeText(listingType || 'fixed', { maxLength: 40 }).toLowerCase();
-    const normalizedCategory = normalizeCategoryValue(category, normalizedSpecies);
+    const normalizedListingType = normalizeListingType(listingType, normalizedCategory);
     const finalListingType = normalizedCategory === 'livestock'
-      ? (normalizedListingType || 'fixed')
+      ? normalizedListingType
       : 'fixed';
     const parsedPrice = normalizeMoney(price);
     const parsedReservePrice = normalizeMoney(reservePrice, { allowNull: true });
     const parsedCurrentBid = normalizeMoney(currentBid, { allowNull: true });
+    const parsedAuctionEndsAt = finalListingType === 'auction'
+      ? parseAuctionCloseDate(auctionEndsAt, { useDefaultIfMissing: normalizedCategory === 'livestock' })
+      : null;
 
     if (!normalizedPetName || !normalizedSpecies || !normalizedDescription || !normalizedLocation) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -357,7 +407,6 @@ export const createListing = async (req, res, next) => {
     }
 
     if (finalListingType === 'auction') {
-      const parsedAuctionEndsAt = auctionEndsAt ? new Date(auctionEndsAt) : null;
       if (!parsedAuctionEndsAt || Number.isNaN(parsedAuctionEndsAt.getTime()) || parsedAuctionEndsAt.getTime() <= Date.now()) {
         return res.status(400).json({ error: 'Auction listings need a valid future close date.' });
       }
@@ -381,7 +430,7 @@ export const createListing = async (req, res, next) => {
         allowPartialSale: normalizeBoolean(allowPartialSale, true),
         reservePrice: finalListingType === 'auction' ? parsedReservePrice : null,
         currentBid: finalListingType === 'auction' ? parsedCurrentBid : null,
-        auctionEndsAt: finalListingType === 'auction' && auctionEndsAt ? new Date(auctionEndsAt) : null,
+        auctionEndsAt: finalListingType === 'auction' ? parsedAuctionEndsAt : null,
         vaccinated: normalizeBoolean(vaccinated),
         neutered: normalizeBoolean(neutered),
         images: JSON.stringify(images),
@@ -426,7 +475,7 @@ export const updateListing = async (req, res, next) => {
     if (hasBodyField('price')) data.price = normalizeMoney(req.body.price);
     if (hasBodyField('vaccinated')) data.vaccinated = normalizeBoolean(req.body.vaccinated, listing.vaccinated);
     if (hasBodyField('neutered')) data.neutered = normalizeBoolean(req.body.neutered, listing.neutered);
-    if (hasBodyField('listingType')) data.listingType = sanitizeText(req.body.listingType, { maxLength: 40 }).toLowerCase() || listing.listingType;
+    if (hasBodyField('listingType')) data.listingType = normalizeListingType(req.body.listingType, data.category ?? listing.category);
     if (hasBodyField('allowPartialSale')) data.allowPartialSale = normalizeBoolean(req.body.allowPartialSale, listing.allowPartialSale);
 
     if (req.body.category !== undefined) {
@@ -485,8 +534,9 @@ export const updateListing = async (req, res, next) => {
     }
 
     const nextCategory = data.category ?? listing.category;
+    data.species = normalizeSpeciesValue(data.species ?? listing.species, nextCategory);
     const finalListingType = nextCategory === 'livestock'
-      ? (data.listingType ?? listing.listingType)
+      ? normalizeListingType(data.listingType ?? listing.listingType, nextCategory)
       : 'fixed';
 
     data.listingType = finalListingType;
@@ -505,11 +555,12 @@ export const updateListing = async (req, res, next) => {
         || !listing.auctionEndsAt
       )
     ) {
-      const nextAuctionEndsAt = data.auctionEndsAt ?? listing.auctionEndsAt;
+      const nextAuctionEndsAt = data.auctionEndsAt ?? listing.auctionEndsAt ?? createDefaultAuctionCloseDate();
       const parsedAuctionEndsAt = nextAuctionEndsAt ? new Date(nextAuctionEndsAt) : null;
       if (!parsedAuctionEndsAt || Number.isNaN(parsedAuctionEndsAt.getTime()) || parsedAuctionEndsAt.getTime() <= Date.now()) {
         return res.status(400).json({ error: 'Auction listings need a valid future close date.' });
       }
+      data.auctionEndsAt = parsedAuctionEndsAt;
     }
 
     if (listing.status === 'removed') {

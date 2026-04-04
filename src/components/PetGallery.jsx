@@ -17,8 +17,17 @@ const safeText = (value, fallback = '') => {
 
 const categoryMaps = {
   pets: ['All Pets', 'Dogs', 'Cats', 'Birds', 'Reptiles', 'Other'],
-  livestock: ['All Livestock', 'Cattle', 'Horses', 'Poultry', 'Sheep', 'Other'],
+  livestock: ['All Lots', 'Cattle', 'Sheep & Goats', 'Equine', 'Swine', 'Poultry', 'Specialty'],
   supplies: ['All Supplies', 'Hygiene', 'Grooming', 'Healthcare', 'Feeding', 'Other'],
+};
+
+const livestockCategoryAliases = {
+  'Cattle': ['cattle', 'beef', 'dairy', 'cow', 'bull', 'heifer', 'steer', 'calf'],
+  'Sheep & Goats': ['goat', 'sheep', 'ram', 'ewe', 'lamb', 'doe', 'buck', 'kid', 'wether'],
+  'Equine': ['equine', 'horse', 'mare', 'stallion', 'gelding', 'pony', 'donkey', 'mule'],
+  'Swine': ['swine', 'pig', 'hog', 'boar', 'sow', 'piglet'],
+  'Poultry': ['poultry', 'chicken', 'hen', 'rooster', 'duck', 'goose', 'turkey', 'broiler', 'layer'],
+  'Specialty': ['alpaca', 'llama', 'bison', 'yak', 'emu', 'ostrich', 'rabbit', 'hare', 'fiber', 'specialty'],
 };
 
 const filterOptions = {
@@ -28,8 +37,9 @@ const filterOptions = {
     sort: ['Newest', 'Price: Low to High', 'Price: High to Low'],
   },
   livestock: {
-    gender: ['Any Gender', 'Male', 'Female'],
-    sort: ['Newest', 'Price: Low to High', 'Price: High to Low', 'Lot Size'],
+    gender: ['Any Lot Makeup', 'Female', 'Male', 'Pair', 'Mixed Lot', 'Breeding Group'],
+    listingType: ['Any Sale Format', 'Timed Auction', 'Fixed Price'],
+    sort: ['Closing Soon', 'Newest Lots', 'Highest Bid', 'Starting Bid: Low to High', 'Largest Lots'],
   },
   supplies: {
     sort: ['Newest', 'Price: Low to High', 'Price: High to Low'],
@@ -38,9 +48,29 @@ const filterOptions = {
 
 const searchPlaceholders = {
   pets: 'Search pets by name, breed...',
-  livestock: 'Search livestock by name, breed...',
+  livestock: 'Search lots by tag, breed, or livestock class...',
   supplies: 'Search supplies by name, type...',
 };
+
+const getDefaultFilters = (marketplaceContext) => (
+  marketplaceContext === 'livestock'
+    ? { gender: 'Any Lot Makeup', age: '', sort: 'Closing Soon', listingType: 'Any Sale Format' }
+    : { gender: '', age: '', sort: '', listingType: '' }
+);
+
+const getAuctionCloseTimestamp = (item) => {
+  const timestamp = item?.auctionEndsAt ? new Date(item.auctionEndsAt).getTime() : Number.POSITIVE_INFINITY;
+  return Number.isFinite(timestamp) ? timestamp : Number.POSITIVE_INFINITY;
+};
+
+const getCreatedTimestamp = (item) => {
+  const timestamp = item?.createdAt ? new Date(item.createdAt).getTime() : 0;
+  return Number.isFinite(timestamp) ? timestamp : 0;
+};
+
+const getLivestockHaystack = (item) => (
+  `${safeText(item.type)} ${safeText(item.species)} ${safeText(item.breed)} ${safeText(item.name)}`
+).toLowerCase();
 
 const matchesActiveCategory = (item, activeCategory, marketplaceContext) => {
   if (activeCategory.startsWith('All')) return true;
@@ -55,14 +85,7 @@ const matchesActiveCategory = (item, activeCategory, marketplaceContext) => {
       if (activeCategory === 'Other') return !['dog', 'cat', 'bird'].includes(type) && !type.includes('reptile');
       return false;
     case 'livestock':
-      if (activeCategory === 'Cattle') return type.includes('cattle') || type.includes('cow');
-      if (activeCategory === 'Horses') return type.includes('horse');
-      if (activeCategory === 'Poultry') return ['poultry', 'chicken', 'duck', 'turkey'].some((value) => type.includes(value));
-      if (activeCategory === 'Sheep') return ['sheep', 'goat'].some((value) => type.includes(value));
-      if (activeCategory === 'Other') {
-        return !['cattle', 'cow', 'horse', 'poultry', 'chicken', 'duck', 'turkey', 'sheep', 'goat'].some((value) => type.includes(value));
-      }
-      return false;
+      return (livestockCategoryAliases[activeCategory] || []).some((value) => getLivestockHaystack(item).includes(value));
     case 'supplies':
       if (activeCategory === 'Hygiene') return type.includes('hygiene');
       if (activeCategory === 'Grooming') return type.includes('grooming');
@@ -94,15 +117,20 @@ const PetGallery = ({ searchQuery: externalSearchQuery = '', onPostAction, overr
   const [reloadToken, setReloadToken] = useState(0);
   const [localSearch, setLocalSearch] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({ gender: '', age: '', sort: '' });
+  const [filters, setFilters] = useState(() => getDefaultFilters(marketplaceContext));
   const combinedSearch = localSearch || externalSearchQuery;
   const deferredSearchQuery = useDeferredValue(combinedSearch);
+  const defaultFilters = getDefaultFilters(marketplaceContext);
+  const hasCustomFilters = filters.gender !== defaultFilters.gender
+    || filters.age !== defaultFilters.age
+    || filters.sort !== defaultFilters.sort
+    || filters.listingType !== defaultFilters.listingType;
 
   useEffect(() => {
     setActiveCat(categories[0]);
     setSelectedPet(null);
     setLocalSearch('');
-    setFilters({ gender: '', age: '', sort: '' });
+    setFilters(getDefaultFilters(marketplaceContext));
     setShowFilters(false);
   }, [categories, marketplaceContext]);
 
@@ -145,23 +173,49 @@ const PetGallery = ({ searchQuery: externalSearchQuery = '', onPostAction, overr
       const itemName = safeText(item.name).toLowerCase();
       const itemBreed = safeText(item.breed).toLowerCase();
       const itemType = safeText(item.type).toLowerCase();
+      const itemTitle = safeText(item.title).toLowerCase();
+      const itemDescription = safeText(item.description).toLowerCase();
+      const itemLocation = safeText(item.location).toLowerCase();
+      const itemSeller = safeText(item.sellerName).toLowerCase();
       return (
         itemName.includes(searchLower) ||
         itemBreed.includes(searchLower) ||
-        itemType.includes(searchLower)
+        itemType.includes(searchLower) ||
+        itemTitle.includes(searchLower) ||
+        itemDescription.includes(searchLower) ||
+        itemLocation.includes(searchLower) ||
+        itemSeller.includes(searchLower)
       );
     })
     .filter((item) => {
-      const gender = filters.gender && filters.gender !== 'Any Gender';
+      const gender = filters.gender
+        && filters.gender !== 'Any Gender'
+        && filters.gender !== 'Any Lot Makeup';
       const age = filters.age && filters.age !== 'Any Age';
+      const listingType = filters.listingType && filters.listingType !== 'Any Sale Format';
       const matchesGender = !gender || safeText(item.gender).toLowerCase() === filters.gender.toLowerCase();
       const matchesAge = !age || safeText(item.age).toLowerCase().includes(filters.age.toLowerCase());
-      return matchesGender && matchesAge;
+      const matchesListingType = !listingType
+        || (filters.listingType === 'Timed Auction' ? item.listingType === 'auction' : item.listingType !== 'auction');
+      return matchesGender && matchesAge && matchesListingType;
     })
     .sort((a, b) => {
+      if (marketplaceContext === 'livestock') {
+        const effectiveSort = filters.sort || 'Closing Soon';
+        if (effectiveSort === 'Closing Soon') {
+          const auctionOrder = getAuctionCloseTimestamp(a) - getAuctionCloseTimestamp(b);
+          if (auctionOrder !== 0) return auctionOrder;
+          return (b.currentBid || b.fee || 0) - (a.currentBid || a.fee || 0);
+        }
+        if (effectiveSort === 'Newest Lots') {
+          return getCreatedTimestamp(b) - getCreatedTimestamp(a);
+        }
+        if (effectiveSort === 'Highest Bid') return (b.currentBid || b.fee || 0) - (a.currentBid || a.fee || 0);
+        if (effectiveSort === 'Starting Bid: Low to High') return (a.fee || 0) - (b.fee || 0);
+        if (effectiveSort === 'Largest Lots') return (b.lotSize || 0) - (a.lotSize || 0);
+      }
       if (filters.sort === 'Price: Low to High') return (a.fee || 0) - (b.fee || 0);
       if (filters.sort === 'Price: High to Low') return (b.fee || 0) - (a.fee || 0);
-      if (filters.sort === 'Lot Size') return (b.lotSize || 0) - (a.lotSize || 0);
       return 0;
     });
 
@@ -175,22 +229,37 @@ const PetGallery = ({ searchQuery: externalSearchQuery = '', onPostAction, overr
   });
 
   const title = marketplaceContext === 'livestock'
-    ? 'Elite Livestock'
+    ? 'Livestock Lots & Auctions'
     : marketplaceContext === 'supplies'
       ? 'Supply listings'
       : 'Available pets';
 
+  const subtitle = marketplaceContext === 'livestock'
+    ? 'Browse cattle, sheep, goats, equine, swine, poultry, and specialty stock by sale format, lot makeup, and closing time.'
+    : '';
+
+  const hasSearch = Boolean((deferredSearchQuery || '').trim());
+
   const emptyCopy = error
     ? 'We could not load fresh inventory. Try again in a moment.'
+    : marketplaceContext === 'livestock' && (hasCustomFilters || hasSearch)
+      ? 'No livestock lots matched these filters. Try another stock category, sale format, or search term.'
     : marketplaceContext === 'pets'
       ? 'There are no live pet listings in this category yet. Check back soon or switch categories.'
-      : `There are no live ${marketplaceContext} listings yet. Check back soon or switch categories.`;
+      : marketplaceContext === 'livestock'
+        ? 'There are no live livestock lots in this segment right now. Try another stock category or check back for the next closing group.'
+        : `There are no live ${marketplaceContext} listings yet. Check back soon or switch categories.`;
 
   return (
     <section className={`container ${styles.gallerySection}`}>
       <div className={styles.header}>
         <div>
           <h2 className={styles.title}>{title}</h2>
+          {subtitle && (
+            <p style={{ marginTop: '10px', color: 'var(--color-text-muted)', maxWidth: '620px', lineHeight: 1.6 }}>
+              {subtitle}
+            </p>
+          )}
           {error && (
             <p style={{ marginTop: '8px', color: 'var(--color-text-muted)', fontSize: '0.95rem' }}>
               {error}{' '}
@@ -258,6 +327,17 @@ const PetGallery = ({ searchQuery: externalSearchQuery = '', onPostAction, overr
               ))}
             </select>
           )}
+          {filterOptions[marketplaceContext]?.listingType && (
+            <select
+              className={styles.filterSelect}
+              value={filters.listingType}
+              onChange={(e) => setFilters((f) => ({ ...f, listingType: e.target.value }))}
+            >
+              {filterOptions[marketplaceContext].listingType.map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          )}
           {filterOptions[marketplaceContext]?.age && (
             <select
               className={styles.filterSelect}
@@ -280,11 +360,11 @@ const PetGallery = ({ searchQuery: externalSearchQuery = '', onPostAction, overr
               ))}
             </select>
           )}
-          {(filters.gender || filters.age || filters.sort) && (
+          {hasCustomFilters && (
             <button
               type="button"
               className={styles.clearFilters}
-              onClick={() => setFilters({ gender: '', age: '', sort: '' })}
+              onClick={() => setFilters(getDefaultFilters(marketplaceContext))}
             >
               Clear all
             </button>
@@ -337,13 +417,23 @@ const PetGallery = ({ searchQuery: externalSearchQuery = '', onPostAction, overr
           <button type="button" className="btn btn-secondary" onClick={() => setReloadToken((value) => value + 1)}>
             Refresh
           </button>
+          {hasCustomFilters && !error && (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ marginLeft: '12px' }}
+              onClick={() => setFilters(getDefaultFilters(marketplaceContext))}
+            >
+              Clear filters
+            </button>
+          )}
         </div>
       )}
 
       {!loading && filteredPets.length > 0 && (
         <div className={styles.loadMore}>
           <span style={{ color: 'var(--color-text-muted)', fontSize: '0.95rem' }}>
-            Showing {filteredPets.length} listing{filteredPets.length === 1 ? '' : 's'}
+            Showing {filteredPets.length} {marketplaceContext === 'livestock' ? `lot${filteredPets.length === 1 ? '' : 's'}` : `listing${filteredPets.length === 1 ? '' : 's'}`}
           </span>
         </div>
       )}

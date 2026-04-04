@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, UploadCloud, Rocket, Zap, Plus, Trash2, Image as ImageIcon, AlertTriangle, LogIn } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { X, UploadCloud, Rocket, Zap, Plus, Trash2, AlertTriangle, LogIn } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
@@ -8,17 +8,98 @@ import { startCheckout } from '../utils/payments';
 import usePaymentConfig from '../hooks/usePaymentConfig';
 import styles from './ListPetModal.module.css';
 
-const OPTIONAL_CATEGORIES = [
-  'Personality', 'Medical History', 'Vaccination Record', 
-  'Genetic Profile', 'Genealogy', 'Fun Facts'
+const DETAIL_SECTIONS = {
+  pets: [
+    'Personality',
+    'Medical History',
+    'Vaccination Record',
+    'Genetic Profile',
+    'Genealogy',
+    'Fun Facts',
+  ],
+  livestock: [
+    'Breeding Program',
+    'Herd Health & Vaccines',
+    'Registration & Papers',
+    'Feed Program',
+    'Handling & Temperament',
+    'Pickup / Haul Terms',
+  ],
+  supplies: [
+    'Condition Notes',
+    'Included Equipment',
+    'Usage History',
+    'Dimensions & Fit',
+    'Pickup / Shipping',
+    'Storage Notes',
+  ],
+};
+
+const DETAIL_PLACEHOLDERS = {
+  'Personality': 'Share behavior, energy level, and what kind of home is the best match.',
+  'Medical History': 'Add treatment history, known conditions, and any important vet notes.',
+  'Vaccination Record': 'List vaccine dates, boosters, and supporting records.',
+  'Genetic Profile': 'Describe lineage, testing, or breed-specific traits buyers should know.',
+  'Genealogy': 'Summarize parentage, pedigree background, or registration history.',
+  'Fun Facts': 'Add standout traits that help the listing feel specific and real.',
+  'Breeding Program': 'Explain bloodlines, breeding status, calving/lambing history, or program goals.',
+  'Herd Health & Vaccines': 'List vaccination protocol, herd health work, vet checks, and testing.',
+  'Registration & Papers': 'Describe registry status, transfer paperwork, and tags or branded IDs.',
+  'Feed Program': 'Summarize ration, pasture setup, supplements, and current condition program.',
+  'Handling & Temperament': 'Describe disposition, chute history, halter work, and loading behavior.',
+  'Pickup / Haul Terms': 'Explain pickup windows, haul support, shipping options, and buyer expectations.',
+  'Condition Notes': 'Call out cosmetic wear, defects, and what is included.',
+  'Included Equipment': 'List bundled parts, accessories, or add-ons that come with the item.',
+  'Usage History': 'Describe how often the item was used and in what environment.',
+  'Dimensions & Fit': 'Share measurements, compatibility, or capacity details.',
+  'Pickup / Shipping': 'Explain pickup, freight, or local delivery options clearly.',
+  'Storage Notes': 'Mention shelf life, storage conditions, or maintenance guidance.',
+};
+
+const LIVESTOCK_SPECIES_OPTIONS = [
+  'Beef Cattle',
+  'Dairy Cattle',
+  'Equine',
+  'Goats',
+  'Sheep',
+  'Swine',
+  'Poultry',
+  'Alpacas & Llamas',
+  'Rabbits',
+  'Specialty Livestock',
 ];
+
+const LIVESTOCK_GENDER_OPTIONS = [
+  'Female',
+  'Male',
+  'Mixed Lot',
+  'Pair',
+  'Breeding Group',
+];
+
+const LIVESTOCK_STOCK_CLASS_OPTIONS = [
+  'Breeding Stock',
+  'Commercial Replacement',
+  'Market / Feeder',
+  'Registered / Papered',
+  'Mixed Commercial Lot',
+];
+
+const createDefaultAuctionCloseDate = () => {
+  const closeDate = new Date();
+  closeDate.setDate(closeDate.getDate() + 7);
+  closeDate.setMinutes(0, 0, 0);
+  return new Date(closeDate.getTime() - closeDate.getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, 16);
+};
 
 const createInitialForm = ({ isLivestock, isSupplies }) => ({
   petName: '',
-  species: isLivestock ? 'Cattle' : isSupplies ? 'Grooming' : 'Dog',
+  species: isLivestock ? 'Beef Cattle' : isSupplies ? 'Grooming' : 'Dog',
   breed: '',
-  gender: 'Male',
-  size: 'Medium',
+  gender: isLivestock ? 'Mixed Lot' : 'Male',
+  size: isLivestock ? 'Midweight' : 'Medium',
   description: '',
   price: '',
   location: '',
@@ -27,9 +108,10 @@ const createInitialForm = ({ isLivestock, isSupplies }) => ({
   vaccinated: false,
   neutered: false,
   listingType: isLivestock ? 'auction' : 'fixed',
-  lotSize: 'Single',
+  lotSize: '1',
+  allowPartialSale: false,
   reservePrice: '',
-  auctionEndsAt: '',
+  auctionEndsAt: isLivestock ? createDefaultAuctionCloseDate() : '',
   condition: 'New',
   bulkQuantity: '1',
 });
@@ -53,6 +135,11 @@ const ListPetModal = ({ isOpen, onClose }) => {
   const isLivestock = location.pathname === '/livestock';
   const isSupplies = location.pathname === '/supplies';
   const marketplace = isLivestock ? 'Livestock' : isSupplies ? 'Supplies' : 'Pets';
+  const detailSections = isLivestock
+    ? DETAIL_SECTIONS.livestock
+    : isSupplies
+      ? DETAIL_SECTIONS.supplies
+      : DETAIL_SECTIONS.pets;
 
   const [form, setForm] = useState(() => createInitialForm({ isLivestock, isSupplies }));
   const [dob, setDob] = useState('');
@@ -80,12 +167,27 @@ const ListPetModal = ({ isOpen, onClose }) => {
     return ageStr.trim();
   };
 
-  if (!isOpen) return null;
-
   const handleNext = () => {
     if (step === 1) {
       if (!form.petName || (!form.breed && !isSupplies) || !form.description || !form.location) {
         return toast.error('Please fill in all required fields');
+      }
+      if (isLivestock) {
+        if (!Number.isFinite(Number(form.lotSize)) || Number(form.lotSize) < 1) {
+          return toast.error('Enter a valid lot size for this livestock listing.');
+        }
+        if (form.listingType === 'auction') {
+          if (!form.auctionEndsAt) {
+            return toast.error('Set a future close date for this auction lot.');
+          }
+          const auctionCloseTime = new Date(form.auctionEndsAt);
+          if (Number.isNaN(auctionCloseTime.getTime()) || auctionCloseTime.getTime() <= Date.now()) {
+            return toast.error('Auction close time must be in the future.');
+          }
+          if (form.reservePrice && Number(form.reservePrice) < Number(form.price || 0)) {
+            return toast.error('Reserve price should be at or above the starting bid.');
+          }
+        }
       }
       if (form.description.trim().length < 40) {
         return toast.error('Add a more complete description so buyers understand health, condition, or handoff details.');
@@ -154,6 +256,21 @@ const ListPetModal = ({ isOpen, onClose }) => {
     setShowInlineAuth(false);
   };
 
+  useEffect(() => {
+    if (!isOpen) return;
+    setStep(1);
+    setForm(createInitialForm({ isLivestock, isSupplies }));
+    setDob('');
+    setActiveCategories([]);
+    setCategoryNotes({});
+    setImages([]);
+    setImageFiles([]);
+    setSelectedMonetize('none');
+    setShowInlineAuth(false);
+  }, [isOpen, isLivestock, isSupplies]);
+
+  if (!isOpen) return null;
+
   const finishAndPublish = async () => {
     // Listings require an account because the API stores them against the owner.
     if (!isAuthenticated && !showInlineAuth) {
@@ -187,6 +304,7 @@ const ListPetModal = ({ isOpen, onClose }) => {
       // Multi-sector fields
       if (isLivestock) {
         formData.append('lotSize', form.lotSize);
+        formData.append('allowPartialSale', String(form.allowPartialSale));
         if (resolvedListingType === 'auction') {
           formData.append('reservePrice', form.reservePrice);
           formData.append('auctionEndsAt', form.auctionEndsAt);
@@ -261,9 +379,9 @@ const ListPetModal = ({ isOpen, onClose }) => {
         <div className={styles.header}>
           <h2 className={styles.title}>
             {step === 1 && "Basic Details"}
-            {step === 2 && "Additional Info"}
+            {step === 2 && (isLivestock ? 'Lot Details' : "Additional Info")}
             {step === 3 && "Add Photos (Max 7)"}
-            {step === 4 && "Boost Your Listing"}
+            {step === 4 && (isLivestock ? 'Promote Your Lot' : "Boost Your Listing")}
           </h2>
           <button className={styles.closeBtn} onClick={onClose}>
             <X size={24} />
@@ -287,22 +405,24 @@ const ListPetModal = ({ isOpen, onClose }) => {
             <div className={styles.formGrid}>
               <div className={styles.inputGroup}>
                 <label>
-                  {isLivestock ? 'Animal Name / ID *' : isSupplies ? 'Item Title *' : 'Pet Name *'}
+                  {isLivestock ? 'Lot Name / Tag *' : isSupplies ? 'Item Title *' : 'Pet Name *'}
                 </label>
-                <input 
-                  type="text" 
-                  placeholder={isLivestock ? "e.g. Angus #42" : isSupplies ? "e.g. Industrial Soap" : "e.g. Luna"} 
-                  value={form.petName} 
-                  onChange={(e) => updateForm('petName', e.target.value)} 
+                <input
+                  type="text"
+                  placeholder={isLivestock ? "e.g. Angus Heifers - Lot 12" : isSupplies ? "e.g. Industrial Soap" : "e.g. Luna"}
+                  value={form.petName}
+                  onChange={(e) => updateForm('petName', e.target.value)}
                 />
               </div>
 
               <div className={styles.inputGroup}>
-                <label>{isSupplies ? 'Supply Category *' : 'Animal Type *'}</label>
+                <label>{isLivestock ? 'Livestock Category *' : isSupplies ? 'Supply Category *' : 'Animal Type *'}</label>
                 <select value={form.species} onChange={(e) => updateForm('species', e.target.value)}>
                   {isLivestock ? (
                     <>
-                      <option>Cattle</option><option>Horses</option><option>Poultry</option><option>Sheep/Goats</option><option>Swine</option><option>Other</option>
+                      {LIVESTOCK_SPECIES_OPTIONS.map((option) => (
+                        <option key={option}>{option}</option>
+                      ))}
                     </>
                   ) : isSupplies ? (
                     <>
@@ -319,8 +439,8 @@ const ListPetModal = ({ isOpen, onClose }) => {
               {/* Conditional: Breed (Hide for Supplies) */}
               {!isSupplies && (
                 <div className={styles.inputGroup}>
-                  <label>{isLivestock ? 'Breed / Genetics *' : 'Breed / Morph *'}</label>
-                  <input type="text" placeholder="e.g. Black Angus" value={form.breed} onChange={(e) => updateForm('breed', e.target.value)} />
+                  <label>{isLivestock ? 'Breed / Program *' : 'Breed / Morph *'}</label>
+                  <input type="text" placeholder={isLivestock ? 'e.g. Registered Black Angus' : 'e.g. Ball Python'} value={form.breed} onChange={(e) => updateForm('breed', e.target.value)} />
                 </div>
               )}
 
@@ -328,11 +448,11 @@ const ListPetModal = ({ isOpen, onClose }) => {
               {!isSupplies && (
                 <>
                   <div className={styles.inputGroup}>
-                    <label>Date of Birth</label>
+                    <label>{isLivestock ? 'Birth Date / Approximate DOB' : 'Date of Birth'}</label>
                     <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
                   </div>
                   <div className={styles.inputGroup}>
-                    <label>Current Age</label>
+                    <label>{isLivestock ? 'Approximate Age' : 'Current Age'}</label>
                     <input type="text" readOnly placeholder="Auto-calculated" value={calculateAge(dob)} style={{ backgroundColor: 'var(--color-surface-hover)', cursor: 'not-allowed' }} />
                   </div>
                 </>
@@ -341,23 +461,43 @@ const ListPetModal = ({ isOpen, onClose }) => {
               {/* Conditional: Gender (Hide for Supplies) */}
               {!isSupplies && (
                 <div className={styles.inputGroup}>
-                  <label>Gender / Mixed</label>
+                  <label>{isLivestock ? 'Sex / Lot Makeup' : 'Gender'}</label>
                   <select value={form.gender} onChange={(e) => updateForm('gender', e.target.value)}>
-                    <option>Male</option><option>Female</option><option>Mixed Lot</option>
+                    {isLivestock ? (
+                      <>
+                        {LIVESTOCK_GENDER_OPTIONS.map((option) => (
+                          <option key={option}>{option}</option>
+                        ))}
+                      </>
+                    ) : (
+                      <>
+                        <option>Male</option><option>Female</option>
+                      </>
+                    )}
                   </select>
                 </div>
               )}
 
               {/* Conditional: Size/Condition */}
               <div className={styles.inputGroup}>
-                <label>{isSupplies ? 'Condition' : 'Size'}</label>
+                <label>{isSupplies ? 'Condition' : isLivestock ? 'Weight / Class' : 'Size'}</label>
                 {isSupplies ? (
                   <select value={form.condition} onChange={(e) => updateForm('condition', e.target.value)}>
                     <option>New</option><option>Used - Like New</option><option>Used - Good</option><option>Refurbished</option>
                   </select>
                 ) : (
                   <select value={form.size} onChange={(e) => updateForm('size', e.target.value)}>
-                    <option>Small</option><option>Medium</option><option>Large</option><option>Extra Large</option>
+                    {isLivestock ? (
+                      <>
+                        {LIVESTOCK_STOCK_CLASS_OPTIONS.map((option) => (
+                          <option key={option}>{option}</option>
+                        ))}
+                      </>
+                    ) : (
+                      <>
+                        <option>Small</option><option>Medium</option><option>Large</option><option>Extra Large</option>
+                      </>
+                    )}
                   </select>
                 )}
               </div>
@@ -365,14 +505,18 @@ const ListPetModal = ({ isOpen, onClose }) => {
               {/* Pricing Section - Dynamic for Auctions */}
               <div className={styles.inputGroup}>
                 <label>
-                  {isLivestock ? (form.listingType === 'auction' ? 'Starting Bid ($)' : 'Price ($)') : 
+                  {isLivestock ? (form.listingType === 'auction' ? 'Opening Bid ($)' : 'Asking Price ($)') :
                    isSupplies ? 'Market Price ($)' : 'Rehoming Fee ($)'}
                 </label>
                 <input type="number" placeholder="0 for free" value={form.price} onChange={(e) => updateForm('price', e.target.value)} />
                 <span className={styles.note}>
-                  {paymentsConfigured
-                    ? 'Buyer checkout runs through Stripe-hosted billing when you are ready to accept payment.'
-                    : 'Publish now. Paid checkout stays disabled until Stripe billing is connected.'}
+                  {isLivestock
+                    ? (form.listingType === 'auction'
+                      ? 'Set the opening bid buyers see first. Reserve stays private until it is met.'
+                      : 'Use a direct sale price when you want offers instead of timed bidding.')
+                    : paymentsConfigured
+                      ? 'Buyer checkout runs through Stripe-hosted billing when you are ready to accept payment.'
+                      : 'Publish now. Paid checkout stays disabled until Stripe billing is connected.'}
                 </span>
               </div>
 
@@ -380,10 +524,78 @@ const ListPetModal = ({ isOpen, onClose }) => {
               {isLivestock && (
                 <div className={styles.inputGroup}>
                   <label>Listing Format</label>
-                  <select value={form.listingType} onChange={(e) => updateForm('listingType', e.target.value)}>
-                    <option value="auction">Live Auction</option>
+                  <select
+                    value={form.listingType}
+                    onChange={(e) => {
+                      const nextListingType = e.target.value;
+                      setForm((prev) => ({
+                        ...prev,
+                        listingType: nextListingType,
+                        auctionEndsAt: nextListingType === 'auction'
+                          ? (prev.auctionEndsAt || createDefaultAuctionCloseDate())
+                          : prev.auctionEndsAt,
+                      }));
+                    }}
+                  >
+                    <option value="auction">Timed Auction</option>
                     <option value="fixed">Fixed Price Sale</option>
                   </select>
+                </div>
+              )}
+
+              {isLivestock && (
+                <div className={styles.inputGroup}>
+                  <label>Lot Size (Head) *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={form.lotSize}
+                    onChange={(e) => updateForm('lotSize', e.target.value)}
+                  />
+                  <span className={styles.note}>Use the actual head count in this lot so buyers understand scale immediately.</span>
+                </div>
+              )}
+
+              {isLivestock && form.listingType === 'auction' && (
+                <>
+                  <div className={styles.inputGroup}>
+                    <label>Reserve Price ($)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={form.reservePrice}
+                      onChange={(e) => updateForm('reservePrice', e.target.value)}
+                      placeholder="Optional floor price"
+                    />
+                    <span className={styles.note}>Leave blank for a no-reserve auction, or set a minimum acceptable bid.</span>
+                  </div>
+
+                  <div className={styles.inputGroup}>
+                    <label>Auction Close Time *</label>
+                    <input
+                      type="datetime-local"
+                      value={form.auctionEndsAt}
+                      onChange={(e) => updateForm('auctionEndsAt', e.target.value)}
+                    />
+                    <span className={styles.note}>Timed lots close automatically at this date and time.</span>
+                  </div>
+                </>
+              )}
+
+              {isLivestock && (
+                <div className={styles.inputGroup}>
+                  <label>Lot Terms</label>
+                  <div className={styles.checkboxRow}>
+                    <label className={styles.checkboxOption}>
+                      <input
+                        type="checkbox"
+                        checked={form.allowPartialSale}
+                        onChange={(e) => updateForm('allowPartialSale', e.target.checked)}
+                      />
+                      Allow split-lot inquiries
+                    </label>
+                  </div>
                 </div>
               )}
 
@@ -397,7 +609,18 @@ const ListPetModal = ({ isOpen, onClose }) => {
 
               <div className={`${styles.inputGroup} ${styles.fullWidth}`}>
                 <label>Description *</label>
-                <textarea rows={3} placeholder={isLivestock ? "Describe pedigrees, records..." : "Product details..."} value={form.description} onChange={(e) => updateForm('description', e.target.value)} />
+                <textarea
+                  rows={3}
+                  placeholder={
+                    isLivestock
+                      ? 'Describe bloodlines, herd health, disposition, lot makeup, reserve terms, and pickup details...'
+                      : isSupplies
+                        ? 'Describe condition, compatibility, quantity, and delivery details...'
+                        : 'Describe temperament, care history, health details, and ideal placement...'
+                  }
+                  value={form.description}
+                  onChange={(e) => updateForm('description', e.target.value)}
+                />
               </div>
 
               <div className={styles.inputGroup}>
@@ -408,15 +631,15 @@ const ListPetModal = ({ isOpen, onClose }) => {
               {/* Conditional: Health (Only for Pets/Livestock) */}
               {!isSupplies && (
                 <div className={styles.inputGroup}>
-                  <label>Health Records</label>
-                  <div style={{ display: 'flex', gap: '16px', paddingTop: '8px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', cursor: 'pointer' }}>
+                  <label>{isLivestock ? 'Program Details' : 'Health Records'}</label>
+                  <div className={styles.checkboxRow}>
+                    <label className={styles.checkboxOption}>
                       <input type="checkbox" checked={form.vaccinated} onChange={(e) => updateForm('vaccinated', e.target.checked)} />
-                      {isLivestock ? 'Records Available' : 'Vaccinated'}
+                      {isLivestock ? 'Vaccination records ready' : 'Vaccinated'}
                     </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', cursor: 'pointer' }}>
+                    <label className={styles.checkboxOption}>
                       <input type="checkbox" checked={form.neutered} onChange={(e) => updateForm('neutered', e.target.checked)} />
-                      {isLivestock ? 'Breeding Quality' : 'Spayed/Neutered'}
+                      {isLivestock ? 'Breeding quality lot' : 'Spayed/Neutered'}
                     </label>
                   </div>
                 </div>
@@ -428,10 +651,14 @@ const ListPetModal = ({ isOpen, onClose }) => {
           {step === 2 && (
             <div className={styles.optionalSection}>
               <p className={styles.sectionDesc}>
-                Listings with rich details get 3x more serious inquiries.
+                {isLivestock
+                  ? 'Strong livestock lots close better when buyers can review health program, registration, handling, and haul terms up front.'
+                  : isSupplies
+                    ? 'Detailed product notes reduce low-intent questions and help buyers commit faster.'
+                    : 'Listings with rich details get 3x more serious inquiries.'}
               </p>
               <div className={styles.pillContainer}>
-                {OPTIONAL_CATEGORIES.map(cat => (
+                {detailSections.map(cat => (
                   <button 
                     key={cat}
                     className={`${styles.pillBtn} ${activeCategories.includes(cat) ? styles.pillActive : ''}`}
@@ -452,7 +679,7 @@ const ListPetModal = ({ isOpen, onClose }) => {
                       </button>
                     </div>
                     <textarea 
-                      placeholder={`Provide details about their ${cat.toLowerCase()}...`}
+                      placeholder={DETAIL_PLACEHOLDERS[cat] || `Provide details about ${cat.toLowerCase()}...`}
                       rows={3}
                       value={categoryNotes[cat] || ''}
                       onChange={(e) => setCategoryNotes(prev => ({ ...prev, [cat]: e.target.value }))}
@@ -461,7 +688,7 @@ const ListPetModal = ({ isOpen, onClose }) => {
                 ))}
                 {activeCategories.length === 0 && (
                   <div className={styles.emptyCategories}>
-                    <p>Select a category above to add details.</p>
+                    <p>{isLivestock ? 'Select a section above to document the lot clearly for auction buyers.' : 'Select a category above to add details.'}</p>
                   </div>
                 )}
               </div>
@@ -489,7 +716,9 @@ const ListPetModal = ({ isOpen, onClose }) => {
                 )}
               </div>
               <p className={styles.note} style={{ textAlign: 'center', marginTop: '16px' }}>
-                Clear, well-lit photos help your listing get 5x more attention.
+                {isLivestock
+                  ? 'Clear pen, pasture, or chute photos help bidders judge condition and lot makeup faster.'
+                  : 'Clear, well-lit photos help your listing get more attention.'}
               </p>
             </div>
           )}

@@ -11,10 +11,10 @@ const LivestockPage = ({ searchQuery }) => {
   return (
     <div className="livestock-page">
       <Hero 
-        badge="Livestock Listings and Auctions"
-        title={<>Trusted <span className={styles.highlight}>Livestock</span> Marketplace.</>}
-        subtitle="Review livestock listings, compare breeding details, and connect directly with sellers through the platform."
-        ctaText="View Auctions"
+        badge="Timed livestock auctions and quality stock lots"
+        title={<>Trusted <span className={styles.highlight}>Livestock</span> Auction Market.</>}
+        subtitle="Browse timed cattle, small stock, equine, poultry, and specialty lots with clearer breeding, herd-health, and pickup details."
+        ctaText="Browse Lots"
         onOpenHowItWorks={() => document.dispatchEvent(new CustomEvent('openHowItWorks'))}
         onBrowse={() => document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' })}
       />

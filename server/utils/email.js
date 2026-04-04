@@ -12,18 +12,53 @@ const escapeHtml = (value) => String(value ?? '')
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&#39;');
 
-const getEmailConfig = () => ({
-  resendApiKey: process.env.RESEND_API_KEY || '',
-  smtpHost: process.env.SMTP_HOST || '',
-  smtpPort: parseInt(process.env.SMTP_PORT || '587', 10),
-  smtpUser: process.env.SMTP_USER || '',
-  smtpPass: process.env.SMTP_PASS || '',
-  fromEmail: process.env.PASSWORD_RESET_FROM_EMAIL || process.env.SUPPORT_EMAIL || 'Rehome <noreply@rehome.world>',
-  supportEmail: process.env.SUPPORT_EMAIL || 'support@rehome.world',
-});
+let etherealAccount = null;
 
-export const getPasswordResetEmailStatus = () => {
-  const config = getEmailConfig();
+const getEmailConfig = async () => {
+  // If we have Resend or SMTP credentials, use those first
+  const config = {
+    resendApiKey: process.env.RESEND_API_KEY || '',
+    smtpHost: process.env.SMTP_HOST || '',
+    smtpPort: parseInt(process.env.SMTP_PORT || '587', 10),
+    smtpUser: process.env.SMTP_USER || '',
+    smtpPass: process.env.SMTP_PASS || '',
+    fromEmail: process.env.PASSWORD_RESET_FROM_EMAIL || process.env.SUPPORT_EMAIL || 'Rehome <noreply@rehome.world>',
+    supportEmail: process.env.SUPPORT_EMAIL || 'support@rehome.world',
+  };
+
+  // If No Credentials, Auto-Provision an Ethereal Account for "Live" Testing
+  if (!config.resendApiKey && !config.smtpHost && process.env.NODE_ENV !== 'production') {
+    if (!etherealAccount) {
+      try {
+        etherealAccount = await nodemailer.createTestAccount();
+        console.log('\n' + '⚡'.repeat(30));
+        console.log('📬 AUTO-PROVISIONED ETHEREAL EMAIL ACTIVATED (ZERO CONFIG)');
+        console.log('------------------------------------------------------------');
+        console.log(`USER:     ${etherealAccount.user}`);
+        console.log(`PASS:     ${etherealAccount.pass}`);
+        console.log(`PREVIEW:  https://ethereal.email/login`);
+        console.log('------------------------------------------------------------');
+        console.log('Real emails will be "sent" to this virtual inbox for testing.');
+        console.log('⚡'.repeat(30) + '\n');
+      } catch (err) {
+        console.error('[email] Failed to provision Ethereal account:', err);
+      }
+    }
+
+    if (etherealAccount) {
+      config.smtpHost = etherealAccount.smtp.host;
+      config.smtpPort = etherealAccount.smtp.port;
+      config.smtpUser = etherealAccount.user;
+      config.smtpPass = etherealAccount.pass;
+      config.fromEmail = `Rehome (Test) <${etherealAccount.user}>`;
+    }
+  }
+
+  return config;
+};
+
+export const getPasswordResetEmailStatus = async () => {
+  const config = await getEmailConfig();
   const configured = Boolean(config.resendApiKey || (config.smtpHost && config.smtpUser && config.smtpPass));
   return {
     configured,
@@ -33,8 +68,8 @@ export const getPasswordResetEmailStatus = () => {
 };
 
 export const sendPasswordResetEmail = async ({ to, resetUrl, expiresInMinutes = 30 }) => {
-  const config = getEmailConfig();
-  const { configured } = getPasswordResetEmailStatus();
+  const config = await getEmailConfig();
+  const { configured } = await getPasswordResetEmailStatus();
 
   const escapedResetUrl = escapeHtml(resetUrl);
   const escapedTo = escapeHtml(to);

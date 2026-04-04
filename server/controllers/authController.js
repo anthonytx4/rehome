@@ -133,7 +133,7 @@ export const forgotPassword = async (req, res, next) => {
         password: true,
       },
     });
-    const deliveryStatus = getPasswordResetEmailStatus();
+    const deliveryStatus = await getPasswordResetEmailStatus();
 
     const baseResponse = {
       message: PASSWORD_RESET_GENERIC_MESSAGE,

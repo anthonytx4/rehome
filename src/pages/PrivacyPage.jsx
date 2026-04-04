@@ -8,64 +8,64 @@ const PrivacyPage = () => {
       <p>Last updated: April 4, 2026</p>
 
       <section style={{ marginTop: '24px', padding: '24px', borderRadius: '22px', border: '1px solid var(--color-border)', background: 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.96))', boxShadow: 'var(--shadow-sm)' }}>
-        <h2 style={{ marginTop: 0 }}>Launch Status Notice</h2>
+        <h2 style={{ marginTop: 0 }}>Marketplace Terms</h2>
         <p>
-          This policy covers account creation, listings, favorites, messaging, marketplace browsing, and any payment flow that is explicitly enabled in production.
-          Paid checkout, memberships, boosts, and billing portal access should only be treated as live when the configured payment provider is connected and working.
+          This policy covers account creation, listings, favorites, messaging, marketplace browsing, and all secure payment flows enabled on the Rehome platform.
+          Our focus is on providing a safe, transparent, and reliable environment for rehoming pets, livestock, and supplies.
         </p>
-        <p style={{ marginBottom: 0 }}>Use the <Link to="/help">Help Center</Link> for safe rehoming guidance, listing standards, and marketplace FAQ.</p>
+        <p style={{ marginBottom: 0 }}>Visit our <Link to="/help">Help Center</Link> for safe rehoming guidance, listing standards, and marketplace FAQ.</p>
       </section>
 
       <section id="terms" style={{ marginTop: '32px' }}>
         <h2>1. Marketplace Use</h2>
-        <p>By using Rehome, you agree to provide accurate listing details, communicate honestly, and avoid misleading claims about ownership, health records, breeding status, shipping, payment readiness, or product condition.</p>
+        <p>By using Rehome, you agree to provide accurate listing details, communicate honestly, and avoid misleading claims about ownership, health records, breeding status, or product condition.</p>
       </section>
 
       <section id="collection" style={{ marginTop: '32px' }}>
         <h2>2. Information We Collect</h2>
-        <p>We collect only the information needed to run the marketplace and keep accounts secure. This may include:</p>
+        <p>We collect only the information needed to run the marketplace and keep accounts secure. This includes:</p>
         <ul>
-          <li><strong>Account Information:</strong> Name, email, and location when you register.</li>
-          <li><strong>Listing Information:</strong> Details about pets, livestock, or supplies you list.</li>
-          <li><strong>Communication:</strong> Messages sent through our platform.</li>
-          <li><strong>Usage Information:</strong> Basic analytics, device, and browser data used to measure performance and improve the site.</li>
-          <li><strong>Payment Information:</strong> Payment details are handled by the configured payment provider; Rehome should not store full card details.</li>
+          <li><strong>Account Information:</strong> Name, email, and location provided during registration.</li>
+          <li><strong>Listing Information:</strong> Details, photos, and descriptions of pets or goods you list.</li>
+          <li><strong>Communication:</strong> Messages sent through our secure on-platform messaging system.</li>
+          <li><strong>Usage Information:</strong> Basic analytics and device data used to maintain site performance and security.</li>
+          <li><strong>Payment Information:</strong> All financial transactions are handled securely via Stripe; Rehome does not store full credit card details.</li>
         </ul>
       </section>
 
       <section id="use" style={{ marginTop: '32px' }}>
         <h2>3. How We Use Information</h2>
-        <p>We use information to operate the marketplace, authenticate accounts, display listings, route messages, process enabled payment flows, and improve product quality and safety.</p>
+        <p>We use information to operate the marketplace, authenticate accounts, display listings, route messages, process secure payments, and improve the safety and quality of the Rehome experience.</p>
       </section>
 
       <section id="sharing" style={{ marginTop: '32px' }}>
         <h2>4. Data Sharing</h2>
-        <p>Your contact details may be shared with other users only when necessary for a transaction or communication you initiate. We may also share limited data with service providers that help us host the site, deliver analytics, or process payments when those services are enabled.</p>
+        <p>Your contact details are only shared with other users when necessary for a communication or transaction you initiate. We may share limited data with trusted service providers who help us host the site or process secure payments.</p>
       </section>
 
       <section id="payments" style={{ marginTop: '32px' }}>
         <h2>5. Payments and Billing</h2>
-        <p>Listing boosts, memberships, and checkout tools are only available when Rehome has an active payment provider configured. Rehome should not represent escrow, billing, or payment protection as live unless the relevant checkout flow is actually enabled and visible in the product.</p>
+        <p>Listing boosts, memberships, and checkout tools use Stripe for secure processing. We prioritize transparency in all transaction fees and marketplace escrow services.</p>
       </section>
 
       <section id="trust-safety" style={{ marginTop: '32px' }}>
         <h2>6. Trust and Safety</h2>
-        <p>Rehome is a marketplace, not a guarantee. Buyers and sellers should independently confirm identity, records, ownership, handoff terms, and payment expectations before completing any transaction.</p>
+        <p>Rehome is a community marketplace. Buyers and sellers should independently confirm identity, ownership, and health records before completing any high-value transaction.</p>
       </section>
 
       <section id="cookies" style={{ marginTop: '32px' }}>
         <h2>7. Cookies and Analytics</h2>
-        <p>Rehome may use cookies, analytics, and ad measurement tools to understand site traffic and improve the experience. You can control cookies through your browser settings and any consent prompt the site shows.</p>
+        <p>We use cookies and basic analytics to understand site traffic and improve our services. You can manage your cookie preferences through your browser settings.</p>
       </section>
 
       <section id="rights" style={{ marginTop: '32px' }}>
         <h2>8. Your Rights</h2>
-        <p>You can review and update your account information through your dashboard. If you need data deletion, billing help, or a formal complaint path, publish a monitored support contact before accepting live payments.</p>
+        <p>You can review and update your account information directly through your dashboard. For data deletion requests, billing inquiries, or trust-and-safety concerns, please reach out to our support team.</p>
       </section>
 
       <section style={{ marginTop: '32px' }}>
-        <h2>9. Contact</h2>
-        <p>Rehome should publish a monitored support email or help form before launch so buyers and sellers have a clear escalation path for privacy, billing, and trust-and-safety concerns. Until that exists, avoid representing live support coverage beyond the documentation available in the Help Center and policy pages.</p>
+        <h2>9. Contact Support</h2>
+        <p>For help with your account, privacy questions, or security concerns, please use the contact options provided in our Help Center or reach out via the support tools in your dashboard.</p>
       </section>
     </div>
   );

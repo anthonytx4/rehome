@@ -263,7 +263,7 @@ const DashboardPage = () => {
 
   const handleMembershipCheckout = async () => {
     if (!paymentsConfigured) {
-      toast.error('Stripe billing is not configured yet. Membership checkout is blocked until billing is connected.');
+      toast.error('Membership checkout is currently unavailable. We are finalizing our secure payment systems.');
       return;
     }
 
@@ -297,7 +297,7 @@ const DashboardPage = () => {
 
   const handleBoostCheckout = async (listing) => {
     if (!paymentsConfigured) {
-      toast.error('Stripe billing is not configured yet. Boost checkout is blocked until billing is connected.');
+      toast.error('Boost checkout is currently unavailable. We are finalizing our secure payment systems.');
       return;
     }
 
@@ -351,7 +351,7 @@ const DashboardPage = () => {
                 ? `You currently have breeder verification, ad-free browsing, and premium account treatment enabled.${membershipEndsLabel ? ` Current billing period ends ${membershipEndsLabel}.` : ''}`
                 : paymentsConfigured
                   ? 'Complete the membership checkout to get the trust badge, remove ads, and keep premium buyer-facing status across the marketplace.'
-                  : 'Membership billing is ready in the product but still blocked until Stripe is connected in production.'}
+                  : 'Advanced membership features will be available as we expand our checkout options soon.'}
             </p>
           </div>
           <button

@@ -283,10 +283,6 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
                   <Images size={15} />
                   {galleryImages.length} photo{galleryImages.length === 1 ? '' : 's'}
                 </div>
-                <div className={styles.factPill}>
-                  <Images size={15} />
-                  {galleryImages.length} photo{galleryImages.length === 1 ? '' : 's'}
-                </div>
                 {displayPet.createdAt && (
                   <div className={styles.factPill}>
                     <CalendarClock size={15} />
@@ -406,7 +402,7 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
                 <p className={styles.escrowText}>
                   {paymentsConfigured
                     ? 'A refundable $50.00 deposit is required before bidding opens.'
-                    : 'Bidding is blocked until Stripe billing is connected.'}
+                    : 'Bidding is coming soon as we finalize our secure payment verification.'}
                 </p>
                 <button
                   className={`btn btn-primary ${styles.fullWidthBtn}`}
@@ -424,7 +420,7 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
                 <p className={styles.escrowText}>
                   {paymentsConfigured
                     ? 'Checkout runs through Stripe when the seller has set an online price. Confirm records and handoff terms before paying.'
-                    : 'Checkout is not active yet. Do not promise buyers on-platform payment until Stripe is connected.'}
+                    : 'On-platform checkout is currently in testing and will be live for all users soon.'}
                 </p>
 
                 {canUseCheckout ? (

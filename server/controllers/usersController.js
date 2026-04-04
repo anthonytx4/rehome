@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { getListingModerationFlags, getMessageRiskFlags } from '../utils/marketplaceSafety.js';
 
 const prisma = new PrismaClient();
 const COMPLETED_PAYMENT_STATUSES = ['completed', 'finalized'];
@@ -107,6 +108,10 @@ export const getAdminInsights = async (req, res, next) => {
         activeListings,
         adoptedListings,
         revenueByType,
+        pendingReviewCount,
+        removedListingsCount,
+        moderationListings,
+        recentMessages,
       ] = await Promise.all([
         prisma.user.count(),
         prisma.listing.count(),
@@ -122,7 +127,105 @@ export const getAdminInsights = async (req, res, next) => {
           where: { status: { in: COMPLETED_PAYMENT_STATUSES } },
           _sum: { amount: true },
         }),
+        prisma.listing.count({ where: { status: 'pending_review' } }),
+        prisma.listing.count({ where: { status: 'removed' } }),
+        prisma.listing.findMany({
+          where: {
+            status: { in: ['pending_review', 'removed'] },
+          },
+          orderBy: { updatedAt: 'desc' },
+          take: 100,
+          select: {
+            id: true,
+            petName: true,
+            breed: true,
+            status: true,
+            location: true,
+            description: true,
+            createdAt: true,
+            updatedAt: true,
+            userId: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                createdAt: true,
+                isVerifiedBreeder: true,
+              },
+            },
+          },
+        }),
+        prisma.message.findMany({
+          where: {
+            createdAt: { gte: weekAgo },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 80,
+          select: {
+            id: true,
+            content: true,
+            createdAt: true,
+            sender: { select: { id: true, name: true, email: true } },
+            receiver: { select: { id: true, name: true, email: true } },
+            listing: { select: { id: true, petName: true, breed: true } },
+          },
+        }),
       ]);
+
+      const listingQueue = moderationListings
+        .filter((listing) => listing.status === 'pending_review')
+        .map((listing) => ({
+          ...listing,
+          flags: getListingModerationFlags({
+            title: listing.petName,
+            petName: listing.petName,
+            breed: listing.breed,
+            description: listing.description,
+            location: listing.location,
+          }),
+        }))
+        .slice(0, 8);
+
+      const sellerWatchlist = Array.from(
+        moderationListings.reduce((map, listing) => {
+          const existing = map.get(listing.userId) || {
+            userId: listing.userId,
+            seller: listing.user,
+            flaggedListings: 0,
+            pendingReviewCount: 0,
+            removedCount: 0,
+            mostRecentFlaggedAt: listing.updatedAt,
+            examples: [],
+          };
+
+          existing.flaggedListings += 1;
+          if (listing.status === 'pending_review') existing.pendingReviewCount += 1;
+          if (listing.status === 'removed') existing.removedCount += 1;
+          if (new Date(listing.updatedAt).getTime() > new Date(existing.mostRecentFlaggedAt).getTime()) {
+            existing.mostRecentFlaggedAt = listing.updatedAt;
+          }
+          if (existing.examples.length < 2) {
+            existing.examples.push(`${listing.petName} (${listing.status.replace('_', ' ')})`);
+          }
+
+          map.set(listing.userId, existing);
+          return map;
+        }, new Map()).values()
+      )
+        .sort((a, b) => {
+          if (b.flaggedListings !== a.flaggedListings) return b.flaggedListings - a.flaggedListings;
+          return new Date(b.mostRecentFlaggedAt).getTime() - new Date(a.mostRecentFlaggedAt).getTime();
+        })
+        .slice(0, 6);
+
+      const flaggedMessages = recentMessages
+        .map((message) => {
+          const flags = getMessageRiskFlags(message.content);
+          return flags.length > 0 ? { ...message, flags } : null;
+        })
+        .filter(Boolean);
+      const messageAlerts = flaggedMessages.slice(0, 8);
 
       return res.json({
         scope: 'admin',
@@ -145,6 +248,14 @@ export const getAdminInsights = async (req, res, next) => {
         messages: { total: totalMessages, today: messagesToday },
         favorites: { total: totalFavorites },
         revenue: buildRevenueBreakdown(revenueByType),
+        moderation: {
+          pendingReviewCount,
+          removedListingsCount,
+          flaggedMessageCount: flaggedMessages.length,
+          listingQueue,
+          sellerWatchlist,
+          messageAlerts,
+        },
       });
     }
 

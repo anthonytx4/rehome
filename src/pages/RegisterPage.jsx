@@ -62,7 +62,7 @@ const RegisterPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !password) return toast.error('Please fill in all required fields');
-    if (password.length < 6) return toast.error('Password must be at least 6 characters');
+    if (password.length < 8) return toast.error('Password must be at least 8 characters');
 
     setIsLoading(true);
     try {
@@ -135,7 +135,7 @@ const RegisterPage = () => {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 6 characters"
+                  placeholder="At least 8 characters"
                   className={styles.input}
                   autoComplete="new-password"
                   disabled={isSubmitting}

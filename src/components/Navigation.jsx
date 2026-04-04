@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { PawPrint, Search, Menu, PlusCircle, User, LogOut, LayoutDashboard, X, MessageSquare, ShieldCheck, Beef, ShoppingBag, Bell, Sparkles, AlertTriangle } from 'lucide-react';
+import { PawPrint, Search, Menu, PlusCircle, User, LogOut, LayoutDashboard, X, MessageSquare, ShieldCheck, Beef, ShoppingBag, Bell, Sparkles, AlertTriangle, LifeBuoy } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import usePaymentConfig from '../hooks/usePaymentConfig';
 import useNotifications from '../hooks/useNotifications';
@@ -227,6 +227,9 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
                       <Link to="/messages" className={styles.menuItem} onClick={() => setShowUserMenu(false)}>
                         <MessageSquare size={16} /> Messages
                       </Link>
+                      <Link to="/help" className={styles.menuItem} onClick={() => setShowUserMenu(false)}>
+                        <LifeBuoy size={16} /> Help Center
+                      </Link>
                       {user?.email === 'admin@rehome.world' && (
                         <Link to="/admin" className={styles.menuItem} onClick={() => setShowUserMenu(false)}>
                           <ShieldCheck size={16} /> Admin Panel
@@ -292,6 +295,9 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
              location.pathname === '/supplies' ? 'List Supplies' : 
              'List a Pet'}
           </button>
+          <Link to="/help" className={styles.mobileLink} onClick={() => setShowMobileMenu(false)}>
+            <LifeBuoy size={16} /> Help Center
+          </Link>
           {isAuthenticated ? (
             <>
               <button type="button" className={styles.mobileLink} onClick={() => { setShowNotifications(true); setShowMobileMenu(false); }}>

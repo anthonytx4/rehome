@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { handleUpload } from '../middleware/upload.js';
 import { decorateListingWithArtwork } from '../../src/utils/listingArtwork.js';
+import { getMessageRiskFlags, sanitizeText } from '../utils/marketplaceSafety.js';
 
 const prisma = new PrismaClient();
 
@@ -214,12 +215,13 @@ export const sendMessage = async (req, res, next) => {
   try {
     const { receiverId, listingId, content } = req.body;
     const mediaFile = req.file;
+    const normalizedContent = sanitizeText(content, { maxLength: 1500 });
 
     if (!receiverId || !listingId) {
       return res.status(400).json({ error: 'receiverId and listingId are required' });
     }
 
-    if (!content && !mediaFile) {
+    if (!normalizedContent && !mediaFile) {
       return res.status(400).json({ error: 'Message content or media is required' });
     }
 
@@ -230,6 +232,16 @@ export const sendMessage = async (req, res, next) => {
     const conversationCheck = await validateConversationParticipant(req.user.id, listingId, receiverId);
     if (!conversationCheck.ok) {
       return res.status(conversationCheck.status).json({ error: conversationCheck.error });
+    }
+
+    if (!conversationCheck.existingCounterpartyId) {
+      const messageRiskFlags = getMessageRiskFlags(normalizedContent);
+      if (messageRiskFlags.length > 0) {
+        return res.status(400).json({
+          error: 'Keep first contact on-platform. Do not share phone numbers, email addresses, off-platform apps, payment handles, or external links in your opening message.',
+          flags: messageRiskFlags,
+        });
+      }
     }
 
     let mediaUrl = null;
@@ -253,7 +265,7 @@ export const sendMessage = async (req, res, next) => {
 
     const createMessage = async (tx) => tx.message.create({
       data: {
-        content: content || '',
+        content: normalizedContent || '',
         senderId: req.user.id,
         receiverId,
         listingId,

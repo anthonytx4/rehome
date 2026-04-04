@@ -1,5 +1,8 @@
-export const errorHandler = (err, req, res, next) => {
-  console.error('Error:', err.message);
+export const errorHandler = (err, req, res, _next) => {
+  const statusCode = Number(err.status || err.statusCode || 500);
+  const requestId = res.locals.requestId;
+
+  console.error(`[${requestId || 'request'}] Error:`, err.message);
   console.error(err.stack);
 
   if (err.code === 'P2002') {
@@ -18,7 +21,8 @@ export const errorHandler = (err, req, res, next) => {
     return res.status(401).json({ error: 'Token expired' });
   }
 
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal server error'
+  return res.status(statusCode).json({
+    error: statusCode >= 500 ? 'Internal server error' : (err.message || 'Request failed'),
+    ...(requestId ? { requestId } : {}),
   });
 };

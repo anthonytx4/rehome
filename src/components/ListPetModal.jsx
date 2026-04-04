@@ -87,6 +87,12 @@ const ListPetModal = ({ isOpen, onClose }) => {
       if (!form.petName || (!form.breed && !isSupplies) || !form.description || !form.location) {
         return toast.error('Please fill in all required fields');
       }
+      if (form.description.trim().length < 40) {
+        return toast.error('Add a more complete description so buyers understand health, condition, or handoff details.');
+      }
+    }
+    if (step === 3 && imageFiles.length < 1) {
+      return toast.error('Add at least one real photo before submitting a listing.');
     }
     setStep(step + 1);
   };
@@ -124,8 +130,8 @@ const ListPetModal = ({ isOpen, onClose }) => {
     if (!authName || !authEmail || !authPassword) {
       return toast.error('Please fill in all account fields');
     }
-    if (authPassword.length < 6) {
-      return toast.error('Password must be at least 6 characters');
+    if (authPassword.length < 8) {
+      return toast.error('Password must be at least 8 characters');
     }
     try {
       await register(authName, authEmail, authPassword, form.location);
@@ -194,13 +200,21 @@ const ListPetModal = ({ isOpen, onClose }) => {
       });
 
       const { data: createdListing } = await api.post('/listings', formData);
+      const requiresReview = createdListing.status === 'pending_review' || createdListing.moderation?.requiresReview;
 
-      toast.success('Listing published! 🎉');
+      if (requiresReview) {
+        toast('Listing submitted for review. It will stay private until approved by staff.', { icon: '🛡️' });
+      } else {
+        toast.success('Listing published! 🎉');
+      }
       resetFormState();
       onClose();
 
-      if (selectedMonetize === 'none') {
-        navigate('/dashboard');
+      if (selectedMonetize === 'none' || requiresReview) {
+        if (requiresReview && selectedMonetize !== 'none') {
+          toast('Boost checkout stays off until the listing is approved and live.', { icon: 'ℹ️' });
+        }
+        navigate('/dashboard?tab=listings');
         return;
       }
 
@@ -231,7 +245,8 @@ const ListPetModal = ({ isOpen, onClose }) => {
         navigate('/dashboard?tab=listings&action=boost');
       }
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to publish listing');
+      const issues = err.response?.data?.issues;
+      toast.error(Array.isArray(issues) && issues.length ? issues[0] : (err.response?.data?.error || 'Failed to publish listing'));
     } finally {
       setIsSubmitting(false);
     }

@@ -168,6 +168,17 @@
   color: #92400E;
 }
 
+.status_pending_review,
+.status_under_review {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.status_removed {
+  background: #FEE2E2;
+  color: #B91C1C;
+}
+
 .boostBadge {
   max-width: min(210px, calc(100vw - 88px));
   padding: 4px 10px;

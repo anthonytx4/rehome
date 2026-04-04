@@ -23,6 +23,12 @@ const formatDateLabel = (value) => {
   }).format(date);
 };
 
+const formatStatusLabel = (value) => String(value || 'available')
+  .split('_')
+  .filter(Boolean)
+  .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+  .join(' ');
+
 const getBoostStatus = (listing) => {
   if (!listing?.boostType) return null;
 
@@ -408,10 +414,10 @@ const DashboardPage = () => {
                   return (
                     <div key={listing.id} className={styles.listingCard}>
                       <div className={styles.listingImage}>
-                        <img src={resolveMediaUrl(listing.image || listing.images?.[0] || '/images/mock_dog_1775037305181.png')} alt={listing.petName} />
+                        <img src={resolveMediaUrl(listing.image || listing.images?.[0] || '/images/mock_dog_1775037305181.png')} alt={listing.petName} loading="lazy" decoding="async" />
                         <div className={styles.badgeStack}>
                           <span className={`${styles.statusBadge} ${styles[`status_${listing.status}`]}`}>
-                            {listing.status}
+                            {formatStatusLabel(listing.status)}
                           </span>
                           {boostStatus && (
                             <span className={`${styles.boostBadge} ${boostStatus.active ? styles.boostBadgeActive : styles.boostBadgeExpired}`}>
@@ -424,7 +430,13 @@ const DashboardPage = () => {
                         <h3>{listing.petName}</h3>
                         <p>{listing.breed} • {listing.age}</p>
                         <span className={styles.price}>${listing.price}</span>
-                        {boostStatus && (
+                        {listing.status === 'pending_review' && (
+                          <p className={styles.boostMeta}>Waiting for staff review before this listing appears publicly or becomes eligible for boosts.</p>
+                        )}
+                        {listing.status === 'removed' && (
+                          <p className={styles.boostMeta}>Removed from public browse results. Edit carefully or contact support before relisting.</p>
+                        )}
+                        {boostStatus && listing.status !== 'pending_review' && listing.status !== 'removed' && (
                           <p className={styles.boostMeta}>{boostStatus.active ? 'Promotion attached' : 'Promotion expired'}</p>
                         )}
                       </div>

@@ -40,6 +40,15 @@ const PetCard = ({ pet, isAd, onClick }) => {
     <div
       className={`${styles.card} ${pet.isPremium ? styles.premiumCard : ''}`}
       onClick={() => onClick(pet)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onClick(pet);
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={`Open quick details for ${pet.name}`}
     >
       {pet.isPremium && (
         <div className={styles.premiumBadge}>
@@ -67,7 +76,7 @@ const PetCard = ({ pet, isAd, onClick }) => {
           aria-label={`Open full listing for ${pet.name}`}
           onClick={(event) => event.stopPropagation()}
         >
-          <img src={imageSource} alt={pet.name} className={styles.image} />
+          <img src={imageSource} alt={pet.name} className={styles.image} loading="lazy" decoding="async" />
         </Link>
         {pet.verified && (
           <div className={styles.verifiedBadge}>

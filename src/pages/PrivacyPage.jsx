@@ -1,10 +1,11 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const PrivacyPage = () => {
   return (
     <div id="privacy" style={{ padding: '64px 24px', maxWidth: '840px', margin: '0 auto', lineHeight: '1.7' }}>
       <h1 style={{ fontSize: '2.6rem', marginBottom: '8px', letterSpacing: '-0.03em' }}>Privacy Policy</h1>
-      <p>Last updated: April 3, 2026</p>
+      <p>Last updated: April 4, 2026</p>
 
       <section style={{ marginTop: '24px', padding: '24px', borderRadius: '22px', border: '1px solid var(--color-border)', background: 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.96))', boxShadow: 'var(--shadow-sm)' }}>
         <h2 style={{ marginTop: 0 }}>Launch Status Notice</h2>
@@ -12,6 +13,7 @@ const PrivacyPage = () => {
           This policy covers account creation, listings, favorites, messaging, marketplace browsing, and any payment flow that is explicitly enabled in production.
           Paid checkout, memberships, boosts, and billing portal access should only be treated as live when the configured payment provider is connected and working.
         </p>
+        <p style={{ marginBottom: 0 }}>Use the <Link to="/help">Help Center</Link> for safe rehoming guidance, listing standards, and marketplace FAQ.</p>
       </section>
 
       <section id="terms" style={{ marginTop: '32px' }}>
@@ -63,7 +65,7 @@ const PrivacyPage = () => {
 
       <section style={{ marginTop: '32px' }}>
         <h2>9. Contact</h2>
-        <p>Rehome should publish a monitored support email or help form before launch so buyers and sellers have a clear escalation path for privacy, billing, and trust-and-safety concerns.</p>
+        <p>Rehome should publish a monitored support email or help form before launch so buyers and sellers have a clear escalation path for privacy, billing, and trust-and-safety concerns. Until that exists, avoid representing live support coverage beyond the documentation available in the Help Center and policy pages.</p>
       </section>
     </div>
   );

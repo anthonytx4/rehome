@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import process from 'node:process';
 
 import authRoutes from './routes/auth.js';
 import listingsRoutes from './routes/listings.js';
@@ -19,12 +20,31 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+app.disable('x-powered-by');
+app.set('trust proxy', 1);
+
 // Middleware
 const allowedOrigins = [
   process.env.CLIENT_URL || 'http://localhost:5173',
   'https://rehome.world',
   'https://www.rehome.world'
 ];
+
+app.use((req, res, next) => {
+  const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  res.locals.requestId = requestId;
+  res.setHeader('X-Request-Id', requestId);
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=15552000; includeSubDomains');
+  }
+
+  next();
+});
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -45,7 +65,8 @@ app.use(cors({
 // Raw body for Stripe webhook signature verification (must come before express.json)
 app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), handleWebhook);
 
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(cookieParser());
 
 // Serve uploaded images

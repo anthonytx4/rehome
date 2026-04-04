@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { put } from '@vercel/blob';
+import { sanitizeFilename } from '../utils/marketplaceSafety.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -28,9 +29,11 @@ export const upload = multer({
 
 // Helper for Vercel Blob vs Local
 export const handleUpload = async (file, folder = 'listings') => {
+  const safeFilename = sanitizeFilename(file?.originalname || 'upload');
+
   if (process.env.BLOB_READ_WRITE_TOKEN) {
     // Production: Vercel Blob
-    const { url } = await put(`${folder}/${Date.now()}-${file.originalname}`, file.buffer, {
+    const { url } = await put(`${folder}/${Date.now()}-${safeFilename}`, file.buffer, {
       access: 'public',
       token: process.env.BLOB_READ_WRITE_TOKEN
     });
@@ -40,7 +43,7 @@ export const handleUpload = async (file, folder = 'listings') => {
     const uploadPath = path.join(__dirname, '..', 'uploads', folder);
     if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath, { recursive: true });
     
-    const filename = `${Date.now()}-${file.originalname}`;
+    const filename = `${Date.now()}-${safeFilename}`;
     fs.writeFileSync(path.join(uploadPath, filename), file.buffer);
     return `/uploads/${folder}/${filename}`;
   }

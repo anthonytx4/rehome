@@ -6,6 +6,30 @@ import PetDetailModal from '../components/PetDetailModal';
 import { normalizeListing } from '../utils/listings';
 import toast from 'react-hot-toast';
 
+const SITE_ORIGIN = 'https://rehome.world';
+
+const setMetaContent = (key, value, isProperty = false) => {
+  const selector = isProperty ? `meta[property="${key}"]` : `meta[name="${key}"]`;
+  let tag = document.head.querySelector(selector);
+  if (!tag) {
+    tag = document.createElement('meta');
+    if (isProperty) tag.setAttribute('property', key);
+    else tag.setAttribute('name', key);
+    document.head.appendChild(tag);
+  }
+  tag.setAttribute('content', value);
+};
+
+const setCanonical = (href) => {
+  let tag = document.head.querySelector('link[rel="canonical"]');
+  if (!tag) {
+    tag = document.createElement('link');
+    tag.setAttribute('rel', 'canonical');
+    document.head.appendChild(tag);
+  }
+  tag.setAttribute('href', href);
+};
+
 // This is a "page" wrapper for PetDetailModal content
 const ListingDetailPage = () => {
   const { id } = useParams();
@@ -54,6 +78,26 @@ const ListingDetailPage = () => {
     };
   }, [id]);
 
+  useEffect(() => {
+    if (!listing) return;
+
+    const title = `${listing.name || listing.title} in ${listing.location} | Rehome`;
+    const description = `${listing.description}`.slice(0, 155);
+    const canonicalUrl = `${SITE_ORIGIN}/listing/${id}`;
+    const shouldIndex = listing.status === 'available';
+
+    document.title = title;
+    setMetaContent('description', description);
+    setMetaContent('robots', shouldIndex ? 'index,follow,max-image-preview:large' : 'noindex,nofollow');
+    setMetaContent('og:title', title, true);
+    setMetaContent('og:description', description, true);
+    setMetaContent('og:type', 'article', true);
+    setMetaContent('og:url', canonicalUrl, true);
+    setMetaContent('twitter:title', title);
+    setMetaContent('twitter:description', description);
+    setCanonical(canonicalUrl);
+  }, [id, listing]);
+
   if (loading) {
     return (
       <div style={{ padding: '96px 24px', textAlign: 'center' }}>
@@ -81,8 +125,37 @@ const ListingDetailPage = () => {
     );
   }
 
+  const listingJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ClassifiedAd',
+    name: listing.title || listing.name,
+    description: listing.description,
+    url: `${SITE_ORIGIN}/listing/${listing.id}`,
+    category: listing.category,
+    datePosted: listing.createdAt || undefined,
+    image: [listing.image, ...(listing.images || [])].filter(Boolean),
+    seller: listing.sellerName
+      ? {
+          '@type': 'Person',
+          name: listing.sellerName,
+        }
+      : undefined,
+    itemOffered: {
+      '@type': 'Thing',
+      name: listing.name || listing.title,
+      description: `${listing.breed} • ${listing.type}`,
+    },
+    offers: {
+      '@type': 'Offer',
+      price: String(listing.fee || 0),
+      priceCurrency: 'USD',
+      availability: listing.status === 'available' ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+    },
+  };
+
   return (
     <div style={{ padding: '20px' }}>
+      <script type="application/ld+json">{JSON.stringify(listingJsonLd)}</script>
       <button 
         onClick={handleBack}
         style={{ 

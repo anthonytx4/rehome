@@ -22,6 +22,7 @@ import LivestockPage from './pages/LivestockPage';
 import SuppliesPage from './pages/SuppliesPage';
 import ListingDetailPage from './pages/ListingDetailPage';
 import PrivacyPage from './pages/PrivacyPage';
+import HelpCenterPage from './pages/HelpCenterPage';
 import './App.css';
 
 const SITE_NAME = 'Rehome';
@@ -47,6 +48,11 @@ const PAGE_META = {
   '/privacy': {
     title: 'Privacy, Terms, and Trust | Rehome',
     description: 'Read Rehome’s privacy policy, marketplace terms, payment notes, and trust and safety guidance.',
+    ogType: 'article',
+  },
+  '/help': {
+    title: 'Help Center, FAQ, and Safety Guide | Rehome',
+    description: 'Read Rehome’s listing standards, safe rehoming guidance, prohibited behavior policy, and marketplace FAQ.',
     ogType: 'article',
   },
   '/listing': {
@@ -161,16 +167,16 @@ const SiteFooter = () => (
       background: 'linear-gradient(180deg, rgba(255,255,255,0.9), rgba(248,250,252,0.98))',
     }}
   >
-    <div className="container" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) repeat(3, minmax(140px, 1fr))', gap: '24px', alignItems: 'start' }}>
+    <div className="container" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '24px', alignItems: 'start' }}>
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', color: 'var(--color-secondary)', fontWeight: 900, fontSize: '1.05rem' }}>
           <span style={{ color: 'var(--color-primary)' }}>{SITE_NAME}</span>
         </div>
         <p style={{ color: 'var(--color-text-muted)', lineHeight: 1.7, maxWidth: '560px' }}>
-          Marketplace messaging, seller profiles, and discovery tools for pets, livestock, and supplies.
+          Marketplace messaging, seller profiles, moderation tools, and discovery flows for pets, livestock, and supplies.
         </p>
         <p style={{ color: 'var(--color-text-muted)', lineHeight: 1.7, marginTop: '12px' }}>
-          Live checkout, membership, and boost flows only appear when payment configuration is connected in production.
+          Live checkout, membership, and boost flows only appear when payment configuration is connected in production and should stay off until support and compliance paths are ready.
         </p>
       </div>
 
@@ -194,8 +200,9 @@ const SiteFooter = () => (
       </div>
 
       <div>
-        <h3 style={{ marginBottom: '12px', color: 'var(--color-secondary)', fontSize: '0.95rem' }}>Policies</h3>
+        <h3 style={{ marginBottom: '12px', color: 'var(--color-secondary)', fontSize: '0.95rem' }}>Trust</h3>
         <div style={{ display: 'grid', gap: '10px', color: 'var(--color-text-muted)' }}>
+          <Link to="/help" style={{ color: 'inherit' }}>Help Center</Link>
           <Link to="/privacy#terms" style={{ color: 'inherit' }}>Terms</Link>
           <Link to="/privacy" style={{ color: 'inherit' }}>Privacy</Link>
           <Link to="/privacy#payments" style={{ color: 'inherit' }}>Payments</Link>
@@ -206,7 +213,7 @@ const SiteFooter = () => (
 
     <div className="container" style={{ marginTop: '28px', paddingTop: '20px', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', color: 'var(--color-text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
       <span>© 2026 Rehome Marketplace.</span>
-      <span>Always verify identity, records, and handoff terms before paying.</span>
+      <span>Always verify identity, records, and handoff terms before paying or arranging transport.</span>
     </div>
   </footer>
 );
@@ -315,6 +322,7 @@ function App() {
           <Route path="/supplies" element={<SuppliesPage searchQuery={searchQuery} />} />
           <Route path="/listing/:id" element={<ListingDetailPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/help" element={<HelpCenterPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>

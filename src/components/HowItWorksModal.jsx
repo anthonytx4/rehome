@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { X, ShieldCheck, Heart, ArrowRight } from 'lucide-react';
 import styles from './HowItWorksModal.module.css';
 
@@ -26,14 +27,14 @@ const HowItWorksModal = ({ isOpen, onClose }) => {
   return (
     <div className={styles.overlay}>
       <div className={styles.modalBg} onClick={onClose} />
-      <div className={styles.modalContent}>
-        <button className={styles.closeBtn} onClick={onClose}>
+      <div className={styles.modalContent} role="dialog" aria-modal="true" aria-labelledby="how-it-works-title">
+        <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Close how it works">
           <X size={24} />
         </button>
 
         <div className={styles.header}>
-          <h2>How Rehome Works</h2>
-          <p>A clearer way to browse listings, contact sellers, and complete the next step responsibly.</p>
+          <h2 id="how-it-works-title">How Rehome Works</h2>
+          <p>A clearer way to browse listings, contact sellers, and complete the next step responsibly without faking trust signals that are not live.</p>
         </div>
 
         <div className={styles.stepsGrid}>
@@ -49,9 +50,13 @@ const HowItWorksModal = ({ isOpen, onClose }) => {
         <div className={styles.footer}>
           <div className={styles.safetyBadge}>
             <ShieldCheck size={20} />
-            Ready to find your match?
+            Verify identity, records, and handoff terms before paying.
           </div>
-          <button className="btn btn-primary" onClick={onClose}>Start Browsing</button>
+          <p className={styles.supportNote}>Read the help center for safe rehoming guidance, listing standards, and common scam signals.</p>
+          <div className={styles.footerActions}>
+            <Link to="/help" className="btn btn-secondary" onClick={onClose}>Open Help Center</Link>
+            <button type="button" className="btn btn-primary" onClick={onClose}>Start Browsing</button>
+          </div>
         </div>
       </div>
     </div>

@@ -1,0 +1,218 @@
+.page {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 48px 24px 72px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.9fr);
+  gap: 24px;
+  align-items: stretch;
+  margin-bottom: 32px;
+}
+
+.heroCopy,
+.launchNotice,
+.section,
+.guideCard,
+.bottomCta {
+  border: 1px solid var(--color-border);
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
+  box-shadow: var(--shadow-sm);
+}
+
+.heroCopy {
+  padding: 40px;
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--color-primary-dark);
+}
+
+.heroCopy h1 {
+  margin: 0 0 16px;
+  font-size: clamp(2.3rem, 5vw, 3.8rem);
+  line-height: 1.04;
+  letter-spacing: -0.05em;
+  color: var(--color-secondary);
+}
+
+.subtitle {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--color-text-muted);
+  line-height: 1.75;
+  font-size: 1.03rem;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.launchNotice {
+  display: flex;
+  gap: 14px;
+  padding: 28px 24px;
+}
+
+.noticeIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: #FEF3C7;
+  color: #92400E;
+  flex-shrink: 0;
+}
+
+.launchNotice strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--color-secondary);
+}
+
+.launchNotice p {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.7;
+}
+
+.guidesGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 32px;
+}
+
+.guideCard {
+  padding: 24px;
+}
+
+.guideIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 16px;
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+}
+
+.guideCard h2,
+.sectionHeader h2,
+.bottomCta h2 {
+  margin: 0 0 10px;
+  color: var(--color-secondary);
+}
+
+.guideCard p,
+.faqItem p,
+.panel li,
+.listCard p,
+.bottomCta p {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.7;
+}
+
+.section {
+  padding: 30px;
+  margin-bottom: 24px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  color: var(--color-primary-dark);
+}
+
+.listGrid,
+.twoColumn,
+.faqList {
+  display: grid;
+  gap: 16px;
+}
+
+.listGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.listCard,
+.panel,
+.faqItem {
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.listCard {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 18px;
+}
+
+.listCard svg {
+  color: var(--color-primary-dark);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.twoColumn {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.panel {
+  padding: 22px;
+}
+
+.panel h3,
+.faqItem h3 {
+  margin: 0 0 12px;
+  color: var(--color-secondary);
+}
+
+.bulletList {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.faqItem {
+  padding: 22px;
+}
+
+.bottomCta {
+  padding: 32px;
+  text-align: center;
+}
+
+@media (max-width: 960px) {
+  .hero,
+  .guidesGrid,
+  .listGrid,
+  .twoColumn {
+    grid-template-columns: 1fr;
+  }
+
+  .heroCopy,
+  .section,
+  .bottomCta {
+    padding: 28px;
+  }
+}

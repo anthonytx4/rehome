@@ -81,7 +81,7 @@ const biddingController = {
         }
       });
       res.json(listing);
-    } catch (error) {
+    } catch (_error) {
       res.status(500).json({ error: 'Failed to fetch auction status' });
     }
   }

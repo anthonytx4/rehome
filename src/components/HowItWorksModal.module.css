@@ -139,3 +139,18 @@
   border-radius: var(--radius-full);
   font-size: 0.9rem;
 }
+
+.supportNote {
+  margin: 0;
+  max-width: 42ch;
+  text-align: center;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+
+.footerActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}

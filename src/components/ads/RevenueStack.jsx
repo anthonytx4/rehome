@@ -39,8 +39,11 @@ const tiles = [
 
 const RevenueStack = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const canUseAccountActions = isAuthenticated;
+  const isPremium = Boolean(user?.membershipTier && user.membershipTier !== 'free');
+
+  if (isPremium) return null;
 
   const handleMembership = async () => {
     analytics.beginCheckout(25, 'USD');

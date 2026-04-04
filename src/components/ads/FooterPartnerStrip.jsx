@@ -1,10 +1,14 @@
 import React from 'react';
 import { ShieldCheck } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import AdSenseUnit from './AdSenseUnit';
 import { hasAdSlot } from '../../config/ads';
 import styles from './FooterPartnerStrip.module.css';
 
 const FooterPartnerStrip = () => {
+  const { user } = useAuth();
+  const isAdFree = Boolean(user?.membershipTier && user.membershipTier !== 'free');
+  if (isAdFree) return null;
   if (!hasAdSlot('footerPartners') && !import.meta.env.DEV) {
     return null;
   }

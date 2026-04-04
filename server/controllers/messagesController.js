@@ -87,6 +87,47 @@ export const getThread = async (req, res, next) => {
   }
 };
 
+// Check if a user can message about a listing (queue gate)
+async function checkQueueAccess(userId, listingId) {
+  const [user, listing, existingThread] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId }, select: { membershipTier: true, remainingSkips: true } }),
+    prisma.listing.findUnique({ where: { id: listingId }, select: { createdAt: true, userId: true, category: true } }),
+    prisma.message.findFirst({ where: { listingId, senderId: userId } }),
+  ]);
+
+  if (!listing) return { allowed: false, reason: 'Listing not found' };
+  // Queue only applies to pets — livestock and supplies can message freely
+  if (listing.category !== 'pets') return { allowed: true };
+  // Seller can always reply to their own listing threads
+  if (listing.userId === userId) return { allowed: true };
+  // Already has an active conversation — allow continued messaging
+  if (existingThread) return { allowed: true };
+  // Premium members bypass the queue
+  if (user.membershipTier && user.membershipTier !== 'free') return { allowed: true };
+
+  const hoursSinceListing = (Date.now() - new Date(listing.createdAt).getTime()) / (1000 * 60 * 60);
+  // Queue is active for first 24 hours
+  if (hoursSinceListing < 24) {
+    // Check if user has skip credits
+    if (user.remainingSkips > 0) {
+      await prisma.user.update({ where: { id: userId }, data: { remainingSkips: { decrement: 1 } } });
+      return { allowed: true, skipped: true };
+    }
+    const hoursLeft = Math.ceil(24 - hoursSinceListing);
+    return { allowed: false, reason: 'queue_active', hoursLeft };
+  }
+
+  return { allowed: true };
+}
+
+export const checkQueue = async (req, res, next) => {
+  try {
+    const { listingId } = req.params;
+    const access = await checkQueueAccess(req.user.id, listingId);
+    res.json(access);
+  } catch (err) { next(err); }
+};
+
 export const sendMessage = async (req, res, next) => {
   try {
     const { receiverId, listingId, content } = req.body;
@@ -102,6 +143,13 @@ export const sendMessage = async (req, res, next) => {
 
     if (receiverId === req.user.id) {
       return res.status(400).json({ error: 'Cannot message yourself' });
+    }
+
+    // Enforce queue gate on first message
+    const access = await checkQueueAccess(req.user.id, listingId);
+    if (!access.allowed) {
+      return res.status(403).json({ error: 'queue_active', hoursLeft: access.hoursLeft,
+        message: `This listing is in review queue. ${access.hoursLeft}h left or pay $9 to skip.` });
     }
 
     let mediaUrl = null;

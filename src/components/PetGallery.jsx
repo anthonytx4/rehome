@@ -1,6 +1,7 @@
 import React, { useDeferredValue, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import api from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import PetCard from './PetCard';
 import PetDetailModal from './PetDetailModal';
 import NativeSponsoredCard from './ads/NativeSponsoredCard';
@@ -552,6 +553,8 @@ const matchesActiveCategory = (item, activeCategory, marketplaceContext) => {
 };
 
 const PetGallery = ({ searchQuery = '', onPostAction, overrideType = '' }) => {
+  const { user } = useAuth();
+  const isAdFree = Boolean(user?.membershipTier && user.membershipTier !== 'free');
   const location = useLocation();
   const path = location.pathname;
   const urlMarketplace = path === '/livestock' ? 'livestock' : path === '/supplies' ? 'supplies' : 'pets';
@@ -639,8 +642,8 @@ const PetGallery = ({ searchQuery = '', onPostAction, overrideType = '' }) => {
     filteredPets.forEach((pet, i) => {
       items.push({ type: 'pet', data: pet });
       
-      // Insert a native sponsored card after every 8th pet
-      if ((i + 1) % 8 === 0 && deferredSearchQuery === '') {
+      // Insert a native sponsored card after every 8th pet (skip for premium users)
+      if ((i + 1) % 8 === 0 && deferredSearchQuery === '' && !isAdFree) {
         items.push({ type: 'sponsored', index: adIndex++ });
       }
     });

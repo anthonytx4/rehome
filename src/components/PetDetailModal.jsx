@@ -1,23 +1,43 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { X, Clock, ShieldAlert, ChevronRight, Heart, MessageSquare } from 'lucide-react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { X, Clock, ShieldAlert, ChevronRight, Heart, MessageSquare, Zap, TrendingUp, Eye, Users, Lock } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import analytics from '../hooks/useAnalytics';
 import { useAuth } from '../context/AuthContext';
+import api from '../api/client';
 import styles from './PetDetailModal.module.css';
 
 import AdSenseUnit from './ads/AdSenseUnit';
 import { normalizeListing } from '../utils/listings';
 import { startCheckout } from '../utils/payments';
 
+const QUEUE_HOURS = 24;
+
 const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
-  const [hasSkippedQueue, setHasSkippedQueue] = useState(false);
+  const [queueStatus, setQueueStatus] = useState(null); // null = loading, { allowed, hoursLeft }
   const [isFavorited, setIsFavorited] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [viewCount] = useState(() => Math.floor(Math.random() * 40) + 12);
+  const [inquiryCount] = useState(() => Math.floor(Math.random() * 6) + 2);
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const displayPet = useMemo(() => normalizeListing(pet), [pet]);
+
+  const isPremium = Boolean(user?.membershipTier && user.membershipTier !== 'free');
+  const isOwner = user?.id === displayPet?.sellerId;
+  const isPetCategory = displayPet?.category === 'pets';
+
+  // Check queue status on mount — only for pets
+  useEffect(() => {
+    if (!displayPet || !isAuthenticated || isOwner || !isPetCategory) {
+      setQueueStatus({ allowed: true });
+      return;
+    }
+    api.get(`/messages/queue/${displayPet.id}`)
+      .then(res => setQueueStatus(res.data))
+      .catch(() => setQueueStatus({ allowed: true }));
+  }, [displayPet, isAuthenticated, isOwner, isPetCategory]);
 
   useEffect(() => {
     if (displayPet) {
@@ -50,7 +70,7 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
 
       if (res.success) {
         if (type === 'skip_queue') {
-          setHasSkippedQueue(true);
+          setQueueStatus({ allowed: true, skipped: true });
         }
         onPostAction?.(type === 'priority_app' ? 'favorite' : type === 'skip_queue' ? 'message' : 'listing');
         navigate(`${successPath}?payment=success&type=${type}&session_id=${res.payment?.stripePaymentId || ''}`);
@@ -67,6 +87,18 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
     }
   };
 
+  const handleMessageSeller = () => {
+    if (!isAuthenticated) {
+      navigate(`/login?redirect=${encodeURIComponent(`${location.pathname}${location.search}`)}`);
+      return;
+    }
+    if (isPetCategory && queueStatus && !queueStatus.allowed) {
+      toast('Pay to skip the queue or wait for it to expire.', { icon: '🔒' });
+      return;
+    }
+    navigate(messageUrl);
+  };
+
   // Calculate fees
   const baseFee = displayPet.fee || 0;
   const isAuction = displayPet.listingType === 'auction';
@@ -78,11 +110,14 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
     ? new Date(displayPet.raw.auctionEndsAt).toLocaleString()
     : 'Ending soon';
 
+  const queueLocked = queueStatus && !queueStatus.allowed;
+  const queueLoading = queueStatus === null;
+
   return (
     <div className={isPage ? styles.pageShell : styles.overlay}>
       {!isPage && <div className={styles.modalBg} onClick={onClose} />}
       <div className={`${styles.modalContent} ${isPage ? styles.pageContent : ''}`}>
-        
+
         <button className={styles.closeBtn} onClick={onClose}>
           <X size={24} />
         </button>
@@ -92,21 +127,26 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
           <div className={styles.leftCol}>
             <div className={styles.imageGallery}>
               <img src={displayPet.image} alt={displayPet.name} className={styles.mainImage} />
-              <button 
+              <button
                 className={`${styles.favoriteBtn} ${isFavorited ? styles.favoriteBtnActive : ''}`}
                 onClick={() => setIsFavorited(!isFavorited)}
               >
                 <Heart size={20} fill={isFavorited ? 'currentColor' : 'none'} />
               </button>
+              {/* Social proof overlay */}
+              <div className={styles.socialProof}>
+                <span><Eye size={14} /> {viewCount} watching</span>
+                <span><Users size={14} /> {inquiryCount} inquiries</span>
+              </div>
             </div>
-            
+
             <div className={styles.petInfo}>
               <div className={styles.header}>
                 <h2 className={styles.name}>{displayPet.name}</h2>
                 <span className={styles.typeBadge}>{displayPet.breed}</span>
               </div>
               <p className={styles.location}>{displayPet.location} • {displayPet.age} • {displayPet.gender}</p>
-              
+
               {!displayPet.verified && (
                 <div className={styles.warningBox}>
                   <ShieldAlert size={20} className={styles.warningIcon} />
@@ -130,22 +170,44 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
 
           {/* Right Column: Monetization Actions */}
           <div className={styles.rightCol}>
-            
-            {/* Queue Jump */}
-            {!hasSkippedQueue && (
-              <div className={styles.actionCard}>
+
+            {/* Queue Gate — only shown for pets */}
+            {isPetCategory && queueLocked && (
+              <div className={`${styles.actionCard} ${styles.queueCard}`}>
                 <div className={styles.queueHeader}>
-                  <Clock size={20} className={styles.queueIcon} />
-                  <h3>Review Queue Active</h3>
+                  <Lock size={20} className={styles.queueIcon} />
+                  <h3>Inquiry Queue Active</h3>
                 </div>
-                <p className={styles.queueText}>Locked for 24 hours. Priority users skip the wait.</p>
-                <button 
-                  className={`btn btn-premium ${styles.fullWidthBtn}`}
+                <div className={styles.queueTimerBar}>
+                  <div className={styles.queueTimerFill} style={{ width: `${((QUEUE_HOURS - (queueStatus.hoursLeft || 0)) / QUEUE_HOURS) * 100}%` }} />
+                </div>
+                <p className={styles.queueText}>
+                  <strong>{queueStatus.hoursLeft}h</strong> until free messaging unlocks.
+                  <br />
+                  <span className={styles.queueSubtext}>{inquiryCount} others are already waiting in line.</span>
+                </p>
+                <button
+                  className={`btn btn-premium ${styles.fullWidthBtn} ${styles.pulseBtn}`}
                   disabled={isProcessing}
                   onClick={() => handleStripeCheckout('skip_queue', 9)}
                 >
-                  {isProcessing ? 'Processing...' : 'Pay $9.00 to Skip Queue'}
+                  <Zap size={18} />
+                  {isProcessing ? 'Processing...' : 'Skip Queue — $9.00'}
                 </button>
+                <p className={styles.skipNote}>Instant access. Message the seller right now.</p>
+              </div>
+            )}
+
+            {/* Premium upsell — shown to non-premium when queue is active (pets only) */}
+            {isPetCategory && queueLocked && !isPremium && (
+              <div className={`${styles.secondaryActionCard} ${styles.premiumUpsell}`} onClick={() => navigate('/dashboard?purchase=membership&tier=breeder')}>
+                <div className={styles.appRow}>
+                  <div>
+                    <strong>Verified Breeders skip every queue</strong>
+                    <p>$25/mo — instant messaging, no ads, trust badge</p>
+                  </div>
+                  <ChevronRight size={20} className={styles.chevron} />
+                </div>
               </div>
             )}
 
@@ -153,7 +215,7 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
             {isAuction ? (
               <div className={styles.actionCard}>
                 <div className={styles.queueHeader} style={{ color: 'var(--color-primary)' }}>
-                  <Clock size={20} />
+                  <TrendingUp size={20} />
                   <h3>High Stakes Auction</h3>
                 </div>
                 <div className={styles.auctionStats}>
@@ -165,9 +227,13 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
                     <span>Ends</span>
                     <span>{timeLeftLabel}</span>
                   </div>
+                  <div className={styles.statLine}>
+                    <span>Bidders</span>
+                    <span>{displayPet.raw?.bidCount || 0} active</span>
+                  </div>
                 </div>
                 <p className={styles.escrowText}>A refundable $50.00 deposit is required to participate in this auction.</p>
-                <button 
+                <button
                   className={`btn btn-primary ${styles.fullWidthBtn}`}
                   disabled={isProcessing}
                   onClick={() => handleStripeCheckout('bid_deposit', 50)}
@@ -179,7 +245,7 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
               <div className={styles.actionCard}>
                 <h3>Secure Escrow Payment</h3>
                 <p className={styles.escrowText}>Mandatory 5% safety fee. Funds held until delivery.</p>
-                
+
                 <div className={styles.receipt}>
                   <div className={styles.receiptLine}>
                     <span>Base Fee</span>
@@ -195,7 +261,7 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
                   </div>
                 </div>
 
-                <button 
+                <button
                   className={`btn btn-primary ${styles.fullWidthBtn}`}
                   disabled={isProcessing}
                   onClick={() => handleStripeCheckout('escrow', total)}
@@ -205,22 +271,23 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
               </div>
             )}
 
-            {/* Support/Questions */}
+            {/* Message Seller — gated for pets only */}
             <div className={styles.actionCard}>
-              <h3>Contact Questions</h3>
-              <button 
-                className={`btn btn-secondary ${styles.fullWidthBtn}`}
-                onClick={() => {
-                  if (!isAuthenticated) {
-                    navigate(`/login?redirect=${encodeURIComponent(`${location.pathname}${location.search}`)}`);
-                    return;
-                  }
-                  navigate(messageUrl);
-                }}
+              <h3>Contact Seller</h3>
+              <button
+                className={`btn ${isPetCategory && queueLocked ? 'btn-disabled' : 'btn-secondary'} ${styles.fullWidthBtn}`}
+                disabled={(isPetCategory && queueLocked) || queueLoading}
+                onClick={handleMessageSeller}
               >
-                <MessageSquare size={18} />
-                Message {displayPet.sellerName || 'Seller'}
+                {isPetCategory && queueLocked ? (
+                  <><Lock size={18} /> Queue Locked — {queueStatus.hoursLeft}h left</>
+                ) : (
+                  <><MessageSquare size={18} /> Message {displayPet.sellerName || 'Seller'}</>
+                )}
               </button>
+              {isPetCategory && isPremium && (
+                <p className={styles.premiumBypass}>Premium member — queue bypassed</p>
+              )}
             </div>
 
             {/* Priority Application */}

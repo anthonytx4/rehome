@@ -142,7 +142,7 @@ const PremiumBanner = () => {
     }, 400);
   };
 
-  if (dismissed) return null;
+  if (dismissed || hasPaidMembership) return null;
 
   return (
     <div

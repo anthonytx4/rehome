@@ -382,3 +382,104 @@
 .chevron {
   color: var(--color-text-muted);
 }
+
+/* Social proof overlay on image */
+.socialProof {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  display: flex;
+  gap: 12px;
+}
+
+.socialProof span {
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  backdrop-filter: blur(4px);
+}
+
+/* Queue card urgency */
+.queueCard {
+  border: 2px solid #F59E0B;
+  background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+}
+
+.queueTimerBar {
+  height: 6px;
+  background: #E5E7EB;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.queueTimerFill {
+  height: 100%;
+  background: linear-gradient(90deg, #F59E0B, #EF4444);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.queueSubtext {
+  color: #B45309;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.skipNote {
+  color: #92400E;
+  font-size: 0.8rem;
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* Pulse animation for skip button */
+.pulseBtn {
+  animation: pulse 2s ease-in-out infinite;
+  position: relative;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+}
+
+/* Premium upsell card */
+.premiumUpsell {
+  border: 1px solid #10B981;
+  background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+}
+
+.premiumUpsell strong {
+  color: #065F46 !important;
+}
+
+.premiumUpsell p {
+  color: #047857 !important;
+}
+
+.premiumBypass {
+  color: #10B981;
+  font-size: 0.8rem;
+  text-align: center;
+  margin-top: 8px;
+  font-weight: 600;
+}
+
+/* Disabled button style */
+:global(.btn-disabled) {
+  background: #E5E7EB;
+  color: #9CA3AF;
+  cursor: not-allowed;
+  border: none;
+}
+
+:global(.btn-disabled):hover {
+  background: #E5E7EB;
+  transform: none;
+}

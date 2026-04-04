@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
+import Stripe from 'stripe';
 
 const prisma = new PrismaClient();
-let stripeClientPromise;
 
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 const DEFAULT_RETURN_PATH = '/dashboard';
@@ -10,21 +10,12 @@ const normalizeMembershipTier = (tier) => {
   return tier;
 };
 
-async function getStripeClient() {
-  if (!process.env.STRIPE_SECRET_KEY) {
-    return null;
-  }
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { timeout: 30000, maxNetworkRetries: 3 })
+  : null;
 
-  if (!stripeClientPromise) {
-    stripeClientPromise = import('stripe')
-      .then(({ default: Stripe }) => new Stripe(process.env.STRIPE_SECRET_KEY))
-      .catch((error) => {
-        console.error('Stripe SDK unavailable:', error);
-        return null;
-      });
-  }
-
-  return stripeClientPromise;
+function getStripeClient() {
+  return stripe;
 }
 
 function buildClientUrl(pathname = DEFAULT_RETURN_PATH, params = {}) {
@@ -132,7 +123,7 @@ export const createCheckoutSession = async (req, res, next) => {
 
       if (type === 'skip_queue') {
         const count = metadata?.count || 1;
-        unitAmount = count === 3 ? 1000 : 700;
+        unitAmount = count === 3 ? 1000 : 900;
         prodName = `Elite Exchange: Inquiry Queue Skip (${count}x)`;
       } else if (type === 'bid_deposit') {
         unitAmount = 5000;
@@ -295,14 +286,32 @@ export const createPortalSession = async (req, res, next) => {
   try {
     const stripe = await getStripeClient();
     if (!stripe) return res.json({ url: buildClientUrl(DEFAULT_RETURN_PATH), mock: true });
-    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
-    if (!user.stripeCustomerId) return res.status(400).json({ error: 'No Stripe customer found' });
+    let user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    let stripeCustomerId = user.stripeCustomerId;
+    if (!stripeCustomerId) {
+      const customer = await stripe.customers.create({
+        email: user.email,
+        name: user.name,
+        metadata: { userId: user.id }
+      });
+      stripeCustomerId = customer.id;
+      await prisma.user.update({ where: { id: user.id }, data: { stripeCustomerId } });
+    }
     const session = await stripe.billingPortal.sessions.create({
-      customer: user.stripeCustomerId,
+      customer: stripeCustomerId,
       return_url: buildClientUrl(DEFAULT_RETURN_PATH),
     });
     res.json({ url: session.url });
-  } catch (err) { next(err); }
+  } catch (err) {
+    console.error('Portal session error:', err.type, err.message);
+    if (err.type === 'StripeConnectionError') {
+      return res.status(502).json({ error: 'Unable to reach Stripe. Please try again in a moment.' });
+    }
+    if (err.code === 'resource_missing' || err.message?.includes('portal')) {
+      return res.status(400).json({ error: 'Billing portal is not yet configured. Please contact support.' });
+    }
+    next(err);
+  }
 };
 
 export const getPaymentHistory = async (req, res, next) => {

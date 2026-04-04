@@ -89,7 +89,8 @@ const ForgotPasswordPage = () => {
 
             {result?.delivery === 'blocked_externally' && (
               <div className={styles.statusBanner} role="alert">
-                <strong>Reset delivery is blocked externally.</strong> {result.blockedReason} {result.requiredSetup}
+                <strong>Password reset email is not live yet.</strong> {result.blockedReason} {result.requiredSetup}
+                {result.supportEmail ? ` Contact ${result.supportEmail} for manual recovery help.` : ''}
               </div>
             )}
 

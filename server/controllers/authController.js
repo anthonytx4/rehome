@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { normalizeEmailAddress, sanitizeText } from '../utils/marketplaceSafety.js';
 import { generatePasswordResetToken, generateSessionToken, hashPasswordVersion, verifySignedToken } from '../utils/authTokens.js';
+import { getPasswordResetEmailStatus, sendPasswordResetEmail } from '../utils/email.js';
 
 const prisma = new PrismaClient();
 const MIN_PASSWORD_LENGTH = 8;
@@ -129,11 +130,13 @@ export const forgotPassword = async (req, res, next) => {
         password: true,
       },
     });
+    const deliveryStatus = getPasswordResetEmailStatus();
 
     const baseResponse = {
       message: PASSWORD_RESET_GENERIC_MESSAGE,
-      delivery: PASSWORD_RESET_PREVIEW_ENABLED ? 'preview' : 'blocked_externally',
+      delivery: deliveryStatus.configured ? 'email' : (PASSWORD_RESET_PREVIEW_ENABLED ? 'preview' : 'blocked_externally'),
       expiresInMinutes: PASSWORD_RESET_EXPIRY_MINUTES,
+      supportEmail: deliveryStatus.supportEmail,
     };
 
     if (!user) {
@@ -143,6 +146,19 @@ export const forgotPassword = async (req, res, next) => {
     const token = generatePasswordResetToken(user.id, user.password);
     const resetUrl = new URL('/reset-password', CLIENT_URL);
     resetUrl.searchParams.set('token', token);
+
+    if (deliveryStatus.configured) {
+      await sendPasswordResetEmail({
+        to: normalizedEmail,
+        resetUrl: resetUrl.toString(),
+        expiresInMinutes: PASSWORD_RESET_EXPIRY_MINUTES,
+      });
+
+      return res.json({
+        ...baseResponse,
+        message: 'If the account exists, a password reset email has been sent.',
+      });
+    }
 
     if (PASSWORD_RESET_PREVIEW_ENABLED) {
       return res.json({
@@ -156,7 +172,7 @@ export const forgotPassword = async (req, res, next) => {
     return res.json({
       ...baseResponse,
       blockedReason: 'Password reset email delivery is not configured in this environment yet.',
-      requiredSetup: 'Connect a transactional email provider before advertising live self-serve password recovery.',
+      requiredSetup: 'Set RESEND_API_KEY and PASSWORD_RESET_FROM_EMAIL before advertising live self-serve password recovery.',
     });
   } catch (err) {
     return next(err);

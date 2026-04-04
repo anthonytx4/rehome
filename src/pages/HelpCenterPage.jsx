@@ -93,15 +93,6 @@ const HelpCenterPage = () => {
           </div>
         </div>
 
-        <aside className={styles.launchNotice}>
-          <div className={styles.noticeIcon}>
-            <AlertTriangle size={20} />
-          </div>
-          <div>
-            <strong>Launch requirement</strong>
-            <p>Before enabling live paid flows at scale, Rehome still needs a monitored support inbox or help form for billing, privacy, and trust escalations.</p>
-          </div>
-        </aside>
       </section>
 
       <section className={styles.guidesGrid}>

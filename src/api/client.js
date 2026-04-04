@@ -8,7 +8,6 @@ const baseURL = isProd ? '/api' : (import.meta.env.VITE_API_URL || 'http://local
 const api = axios.create({
   baseURL,
   withCredentials: true,
-  headers: { 'Content-Type': 'application/json' }
 });
 
 // Add token from localStorage as fallback
@@ -17,6 +16,11 @@ api.interceptors.request.use((config) => {
   if (token && !config.headers.Authorization) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  if (typeof FormData !== 'undefined' && config.data instanceof FormData && config.headers) {
+    delete config.headers['Content-Type'];
+  }
+
   return config;
 });
 

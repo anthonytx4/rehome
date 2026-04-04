@@ -1,4 +1,6 @@
-const apiBaseUrl = import.meta.env.VITE_API_URL || '';
+const apiBaseUrl = (typeof import.meta !== 'undefined' && import.meta?.env?.VITE_API_URL)
+  ? import.meta.env.VITE_API_URL
+  : '';
 
 export const resolveMediaUrl = (value) => {
   if (!value) return '';

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import toast from 'react-hot-toast';
 import { startCheckout } from '../utils/payments';
+import usePaymentConfig from '../hooks/usePaymentConfig';
 import styles from './ListPetModal.module.css';
 
 const OPTIONAL_CATEGORIES = [
@@ -35,6 +36,7 @@ const createInitialForm = ({ isLivestock, isSupplies }) => ({
 
 const ListPetModal = ({ isOpen, onClose }) => {
   const { isAuthenticated, register } = useAuth();
+  const { configured: paymentsConfigured } = usePaymentConfig();
   const navigate = useNavigate();
   const location = useLocation();
   const [step, setStep] = useState(1);
@@ -147,7 +149,7 @@ const ListPetModal = ({ isOpen, onClose }) => {
   };
 
   const finishAndPublish = async () => {
-    // If not authenticated, show inline auth or submit as guest warning
+    // Listings require an account because the API stores them against the owner.
     if (!isAuthenticated && !showInlineAuth) {
       setShowInlineAuth(true);
       return;
@@ -162,7 +164,8 @@ const ListPetModal = ({ isOpen, onClose }) => {
       ].join('');
 
       const formData = new FormData();
-      formData.append('title', form.petName); // We mapped petName to title/item name
+      formData.append('title', form.petName);
+      formData.append('petName', form.petName);
       formData.append('species', form.species);
       formData.append('breed', form.breed || marketplace);
       formData.append('age', age);
@@ -190,9 +193,7 @@ const ListPetModal = ({ isOpen, onClose }) => {
         formData.append('images', file);
       });
 
-      const { data: createdListing } = await api.post('/listings', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const { data: createdListing } = await api.post('/listings', formData);
 
       toast.success('Listing published! 🎉');
       resetFormState();
@@ -200,6 +201,12 @@ const ListPetModal = ({ isOpen, onClose }) => {
 
       if (selectedMonetize === 'none') {
         navigate('/dashboard');
+        return;
+      }
+
+      if (!paymentsConfigured) {
+        toast('Listing published. Paid boosts stay disabled until Stripe is connected.', { icon: 'ℹ️' });
+        navigate('/dashboard?tab=listings');
         return;
       }
 
@@ -251,7 +258,7 @@ const ListPetModal = ({ isOpen, onClose }) => {
         {!isAuthenticated && (
           <div className={styles.guestWarning}>
             <AlertTriangle size={18} />
-            <span>You're not signed in. Your listing will be marked as <strong>Unverified</strong>.</span>
+            <span>You need an account to publish a listing so buyers can reach you and you can manage billing safely.</span>
             <button onClick={() => { onClose(); navigate(`/login?redirect=${encodeURIComponent(location.pathname)}`); }} className={styles.guestLoginBtn}>
               <LogIn size={14} /> Sign In
             </button>
@@ -347,7 +354,9 @@ const ListPetModal = ({ isOpen, onClose }) => {
                 </label>
                 <input type="number" placeholder="0 for free" value={form.price} onChange={(e) => updateForm('price', e.target.value)} />
                 <span className={styles.note}>
-                  {isLivestock ? 'Verified secure escrow required.' : 'Payments secured via Escrow.'}
+                  {paymentsConfigured
+                    ? 'Buyer checkout runs through Stripe-hosted billing when you are ready to accept payment.'
+                    : 'Publish now. Paid checkout stays disabled until Stripe billing is connected.'}
                 </span>
               </div>
 
@@ -476,7 +485,7 @@ const ListPetModal = ({ isOpen, onClose }) => {
               {!isAuthenticated && showInlineAuth && (
                 <div className={styles.inlineAuth}>
                   <h3>Create an account to publish</h3>
-                  <p>Or go back and your listing will be marked as unverified.</p>
+                  <p>Your listing needs an owner account for messages, dashboard access, and payment history.</p>
                   <div className={styles.formGrid}>
                     <div className={styles.inputGroup}>
                       <label>Full Name</label>
@@ -523,9 +532,9 @@ const ListPetModal = ({ isOpen, onClose }) => {
                        'Featured Listing'}
                     </h3>
                     <p>
-                      {isLivestock ? 'Gold border, top of the auction feed, and 7 days of elite positioning.' : 
-                       isSupplies ? 'Gold border, top of the marketplace, and 7 days of premium placement.' : 
-                       'Gold border, top of search results, and 7 days of premium placement.'}
+                      {isLivestock ? 'Featured styling plus priority placement near the top of the livestock feed for 7 days.' : 
+                       isSupplies ? 'Featured styling plus stronger placement near the top of the supplies feed for 7 days.' : 
+                       'Featured styling plus stronger placement near the top of pet search results for 7 days.'}
                     </p>
                     <span className={styles.boostPrice}>$15</span>
                   </div>
@@ -538,9 +547,9 @@ const ListPetModal = ({ isOpen, onClose }) => {
                        'Urgent Network Blast'}
                     </h3>
                     <p>
-                      {isLivestock ? 'Direct SMS to registered breeders + priority email to matching investors.' : 
-                       isSupplies ? 'Direct email to bulk buyers + priority positioning in the wholesale feed.' : 
-                       'Send to all users in your area + email blast to matching seekers.'}
+                      {isLivestock ? 'Expanded feature treatment with an urgent badge and top-feed visibility for 7 days.' : 
+                       isSupplies ? 'Expanded feature treatment with stronger wholesale visibility for 7 days.' : 
+                       'Expanded feature treatment with stronger local visibility and an urgent badge for 7 days.'}
                     </p>
                     <span className={styles.boostPrice}>$50</span>
                   </div>

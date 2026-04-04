@@ -5,17 +5,17 @@ import styles from './HowItWorksModal.module.css';
 const STEPS = [
   {
     title: 'Browse & Connect',
-    desc: 'Explore thousands of verified listings. When you find your perfect match, submit an application to the breeder.',
+    desc: 'Browse available listings, compare seller details, and shortlist the ones that fit your needs.',
     icon: <Heart size={24} className={styles.stepIcon} />
   },
   {
-    title: 'Secure Escrow Payment',
-    desc: 'Pay the rehoming fee through our secure portal. We hold the funds safely while you arrange pickup.',
+    title: 'Message and Review',
+    desc: 'Ask about records, pickup plans, pricing, and availability before you commit to the next step.',
     icon: <ShieldCheck size={24} className={styles.stepIcon} />
   },
   {
-    title: 'Welcome Home',
-    desc: 'Meet your new pet! Once you confirm the safe rehoming, we release the funds to the breeder.',
+    title: 'Complete the Handoff',
+    desc: 'Finalize pickup or delivery and keep high-value payments on-platform once billing is fully configured.',
     icon: <ArrowRight size={24} className={styles.stepIcon} />
   }
 ];
@@ -33,7 +33,7 @@ const HowItWorksModal = ({ isOpen, onClose }) => {
 
         <div className={styles.header}>
           <h2>How Rehome Works</h2>
-          <p>The safest way to find your new best friend.</p>
+          <p>A clearer way to browse listings, contact sellers, and complete the next step responsibly.</p>
         </div>
 
         <div className={styles.stepsGrid}>

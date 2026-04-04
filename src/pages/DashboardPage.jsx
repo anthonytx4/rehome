@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Package, Heart, MessageSquare, Plus, Trash2, Eye, TrendingUp, Users, BarChart3, DollarSign, ShieldCheck, Rocket } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -6,12 +6,14 @@ import api from '../api/client';
 import toast from 'react-hot-toast';
 import AdSenseUnit from '../components/ads/AdSenseUnit';
 import { startBillingPortal, startCheckout, startMembershipCheckout } from '../utils/payments';
+import usePaymentConfig from '../hooks/usePaymentConfig';
 import styles from './DashboardPage.module.css';
 
 const DASHBOARD_TABS = ['listings', 'favorites', 'insights'];
 
 const DashboardPage = () => {
   const { user, refreshUser } = useAuth();
+  const { configured: paymentsConfigured } = usePaymentConfig();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const requestedTab = searchParams.get('tab');
@@ -26,12 +28,12 @@ const DashboardPage = () => {
   const [checkoutLoading, setCheckoutLoading] = useState('');
   const hasPaidMembership = Boolean(user?.membershipTier && user.membershipTier !== 'free');
 
-  const replaceDashboardSearch = (mutateParams) => {
+  const replaceDashboardSearch = useCallback((mutateParams) => {
     const params = new URLSearchParams(searchParams);
     mutateParams(params);
     const nextSearch = params.toString();
     navigate(nextSearch ? `/dashboard?${nextSearch}` : '/dashboard', { replace: true });
-  };
+  }, [navigate, searchParams]);
 
   useEffect(() => {
     const nextTab = DASHBOARD_TABS.includes(searchParams.get('tab'))
@@ -175,7 +177,7 @@ const DashboardPage = () => {
         cancelled = true;
       };
     }
-  }, [hasPaidMembership, refreshUser, searchParams, user?.id]);
+  }, [hasPaidMembership, refreshUser, replaceDashboardSearch, searchParams, user?.id]);
 
   const handleDelete = async (id) => {
     if (!confirm('Delete this listing?')) return;
@@ -210,6 +212,11 @@ const DashboardPage = () => {
   };
 
   const handleMembershipCheckout = async () => {
+    if (!paymentsConfigured) {
+      toast.error('Stripe billing is not configured yet. Membership checkout is blocked until billing is connected.');
+      return;
+    }
+
     if (hasPaidMembership) {
       setCheckoutLoading('portal');
       try {
@@ -239,6 +246,11 @@ const DashboardPage = () => {
   };
 
   const handleBoostCheckout = async (listing) => {
+    if (!paymentsConfigured) {
+      toast.error('Stripe billing is not configured yet. Boost checkout is blocked until billing is connected.');
+      return;
+    }
+
     setCheckoutLoading(`boost:${listing.id}`);
     try {
       await startCheckout({
@@ -287,7 +299,9 @@ const DashboardPage = () => {
             <p style={{ color: 'rgba(255,255,255,0.78)', maxWidth: '640px', lineHeight: 1.6 }}>
               {hasPaidMembership
                 ? 'You currently have breeder verification, ad-free browsing, and premium account treatment enabled.'
-                : 'Complete the membership checkout to get the trust badge, remove ads, and keep premium buyer-facing status across the marketplace.'}
+                : paymentsConfigured
+                  ? 'Complete the membership checkout to get the trust badge, remove ads, and keep premium buyer-facing status across the marketplace.'
+                  : 'Membership billing is ready in the product but still blocked until Stripe is connected in production.'}
             </p>
           </div>
           <button
@@ -300,6 +314,8 @@ const DashboardPage = () => {
               ? checkoutLoading === 'portal'
                 ? 'Opening billing...'
                 : 'Manage Billing'
+              : !paymentsConfigured
+                ? 'Billing Setup Needed'
               : checkoutLoading === 'membership'
                 ? 'Opening checkout...'
                 : 'Join as Breeder'}
@@ -338,6 +354,7 @@ const DashboardPage = () => {
                     <Package size={48} />
                     <h3>No listings yet</h3>
                     <p>Create your first pet listing to get started.</p>
+                    {!paymentsConfigured && <p>Billing setup is still pending, so boosts and memberships are disabled for now.</p>}
                     <button onClick={() => document.dispatchEvent(new CustomEvent('openPostModal'))} className="btn btn-primary">Create Listing</button>
                   </div>
                 ) : listings.map(listing => (
@@ -434,16 +451,18 @@ const DashboardPage = () => {
                   <div className={styles.insightValue}>{insights.listings.thisWeek}</div>
                   <div className={styles.insightLabel}>Listings This Week</div>
                 </div>
-                <div className={`${styles.insightCard} ${styles.revenueCard}`}>
-                  <DollarSign size={24} />
-                  <div className={styles.insightLabel}>Est. Revenue</div>
-                  <div className={styles.revenueBreakdown}>
-                    <div><span>Boosts:</span> <strong>{insights.revenue.estimatedBoostRevenue}</strong></div>
-                    <div><span>Escrow Fees:</span> <strong>{insights.revenue.estimatedEscrowFees}</strong></div>
-                    <div><span>Queue Skips:</span> <strong>{insights.revenue.estimatedQueueSkips}</strong></div>
-                    <div><span>Priority Apps:</span> <strong>{insights.revenue.estimatedPriorityApps}</strong></div>
+                  <div className={`${styles.insightCard} ${styles.revenueCard}`}>
+                    <DollarSign size={24} />
+                    <div className={styles.insightLabel}>{insights.scope === 'admin' ? 'Completed Revenue' : 'Completed Purchases'}</div>
+                    <div className={styles.revenueBreakdown}>
+                    <div><span>Boosts:</span> <strong>{insights.revenue.boostRevenue}</strong></div>
+                    <div><span>Checkout:</span> <strong>{insights.revenue.escrowRevenue}</strong></div>
+                    <div><span>Queue Skips:</span> <strong>{insights.revenue.queueSkipRevenue}</strong></div>
+                    <div><span>Priority Apps:</span> <strong>{insights.revenue.priorityAppRevenue}</strong></div>
+                    <div><span>Membership:</span> <strong>{insights.revenue.membershipRevenue}</strong></div>
+                    <div><span>Total:</span> <strong>{insights.revenue.totalRevenue}</strong></div>
+                    </div>
                   </div>
-                </div>
               </div>
             )}
           </>

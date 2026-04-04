@@ -10,19 +10,19 @@ const Hero = ({ onOpenHowItWorks, onBrowse, title, subtitle, badge, ctaText }) =
     pets: {
       badge: 'New listings verified daily',
       title: <>Find your new <span className={styles.highlight}>best friend</span> today.</>,
-      subtitle: 'Premium adoption and rehoming marketplace. Connect safely with trusted breeders, loving shelters, and verified pet owners.',
+      subtitle: 'Browse available pets, compare seller details, and keep communication organized in one marketplace.',
       ctaText: 'Browse Pets'
     },
     livestock: {
-      badge: 'Elite Livestock Auctions — High Stakes Bidding',
-      title: <>Royal <span className={styles.highlight}>Livestock</span> Marketplace.</>,
-      subtitle: "The world's most exclusive marketplace for premium livestock. Verified genetics, secure escrow, and high-impact trading.",
+      badge: 'Livestock Listings and Auctions',
+      title: <>Trusted <span className={styles.highlight}>Livestock</span> Marketplace.</>,
+      subtitle: 'Review livestock listings, compare breeding details, and connect directly with sellers through the platform.',
       ctaText: 'View Auctions'
     },
     supplies: {
-      badge: 'B2B/B2C Premium Supplies Market',
-      title: <>The Ultimate <span className={styles.highlight}>Supply</span> Market.</>,
-      subtitle: 'Stock your facility with professional-grade hygiene, grooming, and healthcare supplies for any species.',
+      badge: 'Pet and Farm Supply Marketplace',
+      title: <>Shop Better <span className={styles.highlight}>Supply</span> Listings.</>,
+      subtitle: 'Compare grooming, feeding, and facility supplies from marketplace sellers in one place.',
       ctaText: 'Browse Supplies'
     }
   };
@@ -51,9 +51,9 @@ const Hero = ({ onOpenHowItWorks, onBrowse, title, subtitle, badge, ctaText }) =
           </div>
           
           <div className={styles.statsRow}>
-             <div className={styles.stat}><strong>Verify</strong> Trusted Platform</div>
-             <div className={styles.stat}><strong>Secure</strong> Escrow Payments</div>
-             <div className={styles.stat}><strong>Direct</strong> Breeder Access</div>
+             <div className={styles.stat}><strong>Browse</strong> Fresh listings</div>
+             <div className={styles.stat}><strong>Compare</strong> Seller details</div>
+             <div className={styles.stat}><strong>Message</strong> Directly on-platform</div>
           </div>
         </div>
       </div>

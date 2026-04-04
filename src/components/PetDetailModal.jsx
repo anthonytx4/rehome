@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { X, Clock, ShieldAlert, ChevronRight, Heart, MessageSquare, Zap, TrendingUp, Eye, Users, Lock } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -10,6 +10,7 @@ import styles from './PetDetailModal.module.css';
 import AdSenseUnit from './ads/AdSenseUnit';
 import { normalizeListing } from '../utils/listings';
 import { startCheckout } from '../utils/payments';
+import usePaymentConfig from '../hooks/usePaymentConfig';
 
 const QUEUE_HOURS = 24;
 
@@ -22,6 +23,7 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
+  const { configured: paymentsConfigured } = usePaymentConfig();
   const displayPet = useMemo(() => normalizeListing(pet), [pet]);
 
   const isPremium = Boolean(user?.membershipTier && user.membershipTier !== 'free');
@@ -55,12 +57,42 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
     }
   }, [displayPet]);
 
+  useEffect(() => {
+    if (!displayPet?.id || !isAuthenticated) {
+      setIsFavorited(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    api.get('/favorites')
+      .then((res) => {
+        if (!cancelled) {
+          setIsFavorited(res.data.some((favorite) => favorite.listingId === displayPet.id));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setIsFavorited(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [displayPet?.id, isAuthenticated]);
+
   if (!displayPet) return null;
 
   const handleStripeCheckout = async (type, amount, metadata = {}) => {
     if (!isAuthenticated) {
       toast('Sign in to continue to checkout.', { icon: '🔐' });
       navigate(`/login?redirect=${encodeURIComponent(`/listing/${displayPet.id}`)}`);
+      return;
+    }
+
+    if (!paymentsConfigured) {
+      toast.error('Payments are not configured yet. Connect Stripe before taking paid actions.');
       return;
     }
 
@@ -109,6 +141,34 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
     navigate(messageUrl);
   };
 
+  const handleFavoriteToggle = async () => {
+    if (!isAuthenticated) {
+      navigate(`/login?redirect=${encodeURIComponent(`${location.pathname}${location.search}`)}`);
+      return;
+    }
+
+    try {
+      if (isFavorited) {
+        await api.delete(`/favorites/${displayPet.id}`);
+        analytics.removeFromFavorites(displayPet.id);
+        setIsFavorited(false);
+        toast.success('Removed from saved listings');
+        return;
+      }
+
+      await api.post(`/favorites/${displayPet.id}`);
+      analytics.addToFavorites(displayPet.id, displayPet.type);
+      setIsFavorited(true);
+      toast.success('Saved to your dashboard');
+    } catch (err) {
+      if (err.response?.status === 409) {
+        setIsFavorited(true);
+        return;
+      }
+      toast.error(err.response?.data?.error || 'Unable to update saved listings');
+    }
+  };
+
   // Calculate fees
   const baseFee = displayPet.fee || 0;
   const isAuction = displayPet.listingType === 'auction';
@@ -139,7 +199,7 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
               <img src={displayPet.image} alt={displayPet.name} className={styles.mainImage} />
               <button
                 className={`${styles.favoriteBtn} ${isFavorited ? styles.favoriteBtnActive : ''}`}
-                onClick={() => setIsFavorited(!isFavorited)}
+                onClick={handleFavoriteToggle}
               >
                 <Heart size={20} fill={isFavorited ? 'currentColor' : 'none'} />
               </button>
@@ -161,8 +221,8 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
                 <div className={styles.warningBox}>
                   <ShieldAlert size={20} className={styles.warningIcon} />
                   <div>
-                    <strong>Unverified Seller</strong>
-                    <p>This seller hasn't completed an Ethical Check. Proceed with caution.</p>
+                    <strong>Seller not verified yet</strong>
+                    <p>Use messages to confirm identity, records, and pickup details before paying.</p>
                   </div>
                 </div>
               )}
@@ -213,8 +273,8 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
               <div className={`${styles.secondaryActionCard} ${styles.premiumUpsell}`} onClick={() => navigate('/dashboard?purchase=membership&tier=breeder')}>
                 <div className={styles.appRow}>
                   <div>
-                    <strong>Verified Breeders skip every queue</strong>
-                    <p>$25/mo — instant messaging, no ads, trust badge</p>
+                    <strong>Membership removes queue delays</strong>
+                    <p>$25/mo with ad-free browsing, a trust badge, and faster messaging access.</p>
                   </div>
                   <ChevronRight size={20} className={styles.chevron} />
                 </div>
@@ -242,19 +302,29 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
                     <span>{displayPet.raw?.bidCount || 0} active</span>
                   </div>
                 </div>
-                <p className={styles.escrowText}>A refundable $50.00 deposit is required to participate in this auction.</p>
+                <p className={styles.escrowText}>
+                  {paymentsConfigured
+                    ? 'A refundable $50.00 deposit is required before bidding opens.'
+                    : 'Bidding is blocked until Stripe billing is connected.'}
+                </p>
                 <button
                   className={`btn btn-primary ${styles.fullWidthBtn}`}
-                  disabled={isProcessing}
+                  disabled={isProcessing || !paymentsConfigured}
                   onClick={() => handleStripeCheckout('bid_deposit', 50)}
                 >
-                  {isProcessing ? 'Initializing...' : 'Pay $50.00 to Place Bid'}
+                  {paymentsConfigured
+                    ? (isProcessing ? 'Initializing...' : 'Pay $50.00 to Place Bid')
+                    : 'Bidding Unavailable'}
                 </button>
               </div>
             ) : (
               <div className={styles.actionCard}>
-                <h3>Secure Escrow Payment</h3>
-                <p className={styles.escrowText}>Mandatory 5% safety fee. Funds held until delivery.</p>
+                <h3>Protected Checkout</h3>
+                <p className={styles.escrowText}>
+                  {paymentsConfigured
+                    ? 'Checkout runs through Stripe. Keep high-value transactions on-platform whenever possible.'
+                    : 'Checkout is not active yet. Do not promise buyers on-platform payment until Stripe is connected.'}
+                </p>
 
                 <div className={styles.receipt}>
                   <div className={styles.receiptLine}>
@@ -273,10 +343,12 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
 
                 <button
                   className={`btn btn-primary ${styles.fullWidthBtn}`}
-                  disabled={isProcessing}
+                  disabled={isProcessing || !paymentsConfigured}
                   onClick={() => handleStripeCheckout('escrow', total)}
                 >
-                  {isProcessing ? 'Processing...' : `Pay $${total} via Escrow`}
+                  {paymentsConfigured
+                    ? (isProcessing ? 'Processing...' : `Pay $${total} via Checkout`)
+                    : 'Checkout Unavailable'}
                 </button>
               </div>
             )}
@@ -301,7 +373,16 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
             </div>
 
             {/* Priority Application */}
-            <div className={styles.secondaryActionCard} onClick={() => handleStripeCheckout('priority_app', 5)}>
+            <div
+              className={styles.secondaryActionCard}
+              onClick={() => {
+                if (!paymentsConfigured) {
+                  toast.error('Priority applications are unavailable until Stripe billing is connected.');
+                  return;
+                }
+                handleStripeCheckout('priority_app', 5);
+              }}
+            >
               <div className={styles.appRow}>
                 <div>
                   <strong>Priority Application ($5)</strong>

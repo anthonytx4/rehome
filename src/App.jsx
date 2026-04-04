@@ -63,7 +63,7 @@ const HomePage = ({ searchQuery }) => {
       <Hero 
         badge="Trusted by Verified Breeders"
         title={<>Find your new <span className="highlight">best friend</span> today.</>}
-        subtitle="Premium adoption and rehoming marketplace. Connect safely with trusted breeders, loving shelters, and verified pet owners."
+        subtitle="Browse available pets, compare seller details, and keep communication organized in one marketplace."
         ctaText="Browse Pets"
         onOpenHowItWorks={() => document.dispatchEvent(new CustomEvent('openHowItWorks'))}
         onBrowse={() => document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' })}
@@ -79,7 +79,7 @@ const HomePage = ({ searchQuery }) => {
       <AdSenseUnit slot="homepage-bottom-native" />
       <FooterPartnerStrip />
       <footer style={{ padding: '64px 24px', textAlign: 'center', color: 'var(--color-text-muted)', borderTop: '1px solid var(--color-border)' }}>
-        <p>&copy; 2026 Rehome Marketplace. Secure Escrow & Registered Breeders.</p>
+        <p>&copy; 2026 Rehome Marketplace. Marketplace messaging, seller profiles, and buyer-friendly discovery tools.</p>
         <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center', gap: '24px', fontSize: '0.9rem' }}>
           <Link to="/privacy#terms" style={{ color: 'inherit' }}>Terms</Link>
           <Link to="/privacy" style={{ color: 'inherit' }}>Privacy Policy</Link>

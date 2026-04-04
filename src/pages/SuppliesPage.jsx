@@ -10,9 +10,9 @@ const SuppliesPage = ({ searchQuery }) => {
   return (
     <div className="supplies-page">
       <Hero 
-        badge="Premium Market Supplies — Built for Champions"
-        title={<>Luxury <span className="highlight">Market</span> Supplies.</>}
-        subtitle="Exclusive accessories, high-performance nutrition, and elite habitat solutions for your companions. Bulk options available."
+        badge="Pet and Farm Supply Marketplace"
+        title={<>Shop Better <span className="highlight">Supply</span> Listings.</>}
+        subtitle="Compare grooming, feeding, and facility supplies from marketplace sellers in one place."
         ctaText="Shop Supplies"
         onOpenHowItWorks={() => document.dispatchEvent(new CustomEvent('openHowItWorks'))}
         onBrowse={() => document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' })}

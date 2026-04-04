@@ -38,30 +38,11 @@ export const createCheckoutSession = async (req, res, next) => {
       return res.status(400).json({ error: 'Type and amount are required' });
     }
 
-    // If Stripe is not configured, use mock flow
+    // Never fake revenue-critical flows outside explicit local tooling.
     if (!stripe) {
-      const payment = await prisma.payment.create({
-        data: {
-          type,
-          amount: parseFloat(amount),
-          status: 'completed',
-          description: description || `${type} payment`,
-          metadata: metadata ? JSON.stringify(metadata) : null,
-          stripePaymentId: 'mock_' + Date.now(),
-          userId: req.user.id,
-        }
-      });
-      await applySideEffects(type, metadata, req.user.id, payment.stripePaymentId);
-      return res.json({
-        mock: true,
-        success: true,
-        payment,
-        message: 'Mock payment completed',
-        redirectUrl: buildClientUrl(successPath || DEFAULT_RETURN_PATH, {
-          payment: 'success',
-          type,
-          session_id: payment.stripePaymentId,
-        }),
+      return res.status(503).json({
+        error: 'Payments are not configured yet. Connect Stripe before accepting memberships, boosts, or checkout.',
+        code: 'PAYMENTS_NOT_CONFIGURED',
       });
     }
 
@@ -174,7 +155,14 @@ export const verifySession = async (req, res, next) => {
     if (!payment) return res.status(404).json({ error: 'Payment not found' });
     if (payment.status === 'completed') return res.json({ success: true, payment, alreadyProcessed: true });
 
-    if (stripe && !sessionId.startsWith('mock_')) {
+    if (!stripe) {
+      return res.status(503).json({
+        error: 'Payments are not configured yet. Verification is unavailable until Stripe is connected.',
+        code: 'PAYMENTS_NOT_CONFIGURED',
+      });
+    }
+
+    if (!sessionId.startsWith('mock_')) {
       const session = await stripe.checkout.sessions.retrieve(sessionId);
       if (session.payment_status !== 'paid') return res.status(400).json({ error: 'Payment not completed' });
     }
@@ -285,7 +273,12 @@ async function applySideEffects(type, metadata, userId, paymentId) {
 export const createPortalSession = async (req, res, next) => {
   try {
     const stripe = await getStripeClient();
-    if (!stripe) return res.json({ url: buildClientUrl(DEFAULT_RETURN_PATH), mock: true });
+    if (!stripe) {
+      return res.status(503).json({
+        error: 'Billing portal is unavailable until Stripe is configured.',
+        code: 'PAYMENTS_NOT_CONFIGURED',
+      });
+    }
     let user = await prisma.user.findUnique({ where: { id: req.user.id } });
     let stripeCustomerId = user.stripeCustomerId;
     if (!stripeCustomerId) {
@@ -328,7 +321,8 @@ export const getPaymentHistory = async (req, res, next) => {
 export const getStripeConfig = async (req, res) => {
   res.json({
     publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || null,
-    configured: !!process.env.STRIPE_SECRET_KEY
+    configured: !!process.env.STRIPE_SECRET_KEY,
+    provider: process.env.STRIPE_SECRET_KEY ? 'stripe' : null,
   });
 };
 

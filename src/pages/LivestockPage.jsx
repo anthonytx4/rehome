@@ -11,9 +11,9 @@ const LivestockPage = ({ searchQuery }) => {
   return (
     <div className="livestock-page">
       <Hero 
-        badge="Elite Livestock Auctions — High Stakes Bidding"
-        title={<>Royal <span className={styles.highlight}>Livestock</span> Marketplace.</>}
-        subtitle="The world's most exclusive marketplace for premium livestock. Verified genetics, secure escrow, and high-impact trading."
+        badge="Livestock Listings and Auctions"
+        title={<>Trusted <span className={styles.highlight}>Livestock</span> Marketplace.</>}
+        subtitle="Review livestock listings, compare breeding details, and connect directly with sellers through the platform."
         ctaText="View Auctions"
         onOpenHowItWorks={() => document.dispatchEvent(new CustomEvent('openHowItWorks'))}
         onBrowse={() => document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' })}

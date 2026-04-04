@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { UserPlus, Mail, Lock, User, MapPin, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -12,7 +12,7 @@ const RegisterPage = () => {
   const [location, setLocation] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { register } = useAuth();
+  const { register, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const tier = searchParams.get('tier'); // breeder, royal, etc.
@@ -23,6 +23,12 @@ const RegisterPage = () => {
     : (redirectPath || '/dashboard');
   const loginLink = `/login${loginRedirect ? `?redirect=${encodeURIComponent(loginRedirect)}` : ''}`;
 
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      navigate(redirectPath || '/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, loading, navigate, redirectPath]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name || !email || !password) return toast.error('Please fill in all required fields');
@@ -30,7 +36,7 @@ const RegisterPage = () => {
 
     setIsLoading(true);
     try {
-      await register(name, email, password, location, tier);
+      await register(name, email, password, location);
       toast.success(normalizedTier ? `Welcome to the ${normalizedTier} Circle!` : 'Account created!');
       if (normalizedTier) {
         navigate(`/dashboard?purchase=membership&tier=${encodeURIComponent(normalizedTier)}`, { replace: true });

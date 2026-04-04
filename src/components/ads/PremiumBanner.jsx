@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import analytics from '../../hooks/useAnalytics';
 import { useAuth } from '../../context/AuthContext';
 import { startMembershipCheckout } from '../../utils/payments';
+import usePaymentConfig from '../../hooks/usePaymentConfig';
 import styles from './PremiumBanner.module.css';
 
 const CAMPAIGNS = [
@@ -55,6 +56,7 @@ const PremiumBanner = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, user } = useAuth();
+  const { configured: paymentsConfigured } = usePaymentConfig();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [dismissed, setDismissed] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -103,6 +105,11 @@ const PremiumBanner = () => {
     }
 
     if (campaign.action === 'membership') {
+      if (!paymentsConfigured) {
+        toast.error('Membership billing is not configured yet.');
+        return;
+      }
+
       if (hasPaidMembership) {
         navigate('/dashboard');
         return;
@@ -176,6 +183,8 @@ const PremiumBanner = () => {
               ? 'Opening checkout...'
               : campaign.action === 'membership' && hasPaidMembership
                 ? 'Membership Active'
+                : campaign.action === 'membership' && !paymentsConfigured
+                  ? 'Billing Setup Needed'
                 : campaign.cta}
             <ArrowRight size={16} />
           </button>

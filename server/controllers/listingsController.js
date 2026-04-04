@@ -183,7 +183,12 @@ export const createListing = async (req, res, next) => {
       auctionEndsAt,
     } = req.body;
 
-    if (!petName || !species || !breed || !age || !gender || !description || !location) {
+    const normalizedPetName = petName || title;
+    const normalizedBreed = breed || species || 'General';
+    const normalizedAge = age || 'Unknown';
+    const normalizedGender = gender || 'Unknown';
+
+    if (!normalizedPetName || !species || !description || !location) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -197,12 +202,12 @@ export const createListing = async (req, res, next) => {
 
     const listing = await prisma.listing.create({
       data: {
-        title: title || `${petName} — ${breed}`,
-        petName,
+        title: title || `${normalizedPetName} — ${normalizedBreed}`,
+        petName: normalizedPetName,
         species,
-        breed,
-        age,
-        gender,
+        breed: normalizedBreed,
+        age: normalizedAge,
+        gender: normalizedGender,
         size: size || 'Medium',
         description,
         price: parseFloat(price) || 0,

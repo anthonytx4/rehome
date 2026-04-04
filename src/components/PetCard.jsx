@@ -31,7 +31,7 @@ const PetCard = ({ pet, isAd, onClick }) => {
 
   const isAuction = pet.listingType === 'auction';
   const isHot = pet.bidCount > 10;
-  const lotLabel = pet.lotLabel || (pet.lotSize ? `Lot of ${pet.lotSize}` : null);
+  const lotLabel = pet.lotLabel || null;
   const auctionEndsAt = formatAuctionEnd(pet.auctionEndsAt || pet.raw?.auctionEndsAt);
   const imageSource = resolveMediaUrl(pet.image || pet.images?.[0] || '/images/mock_dog_1775037305181.png');
   const listingPath = `/listing/${pet.id}`;

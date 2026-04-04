@@ -3,8 +3,7 @@ import bcrypt from 'bcryptjs';
 import { normalizeEmailAddress, sanitizeText } from '../utils/marketplaceSafety.js';
 import { generatePasswordResetToken, generateSessionToken, hashPasswordVersion, verifySignedToken } from '../utils/authTokens.js';
 import { getPasswordResetEmailStatus, sendPasswordResetEmail } from '../utils/email.js';
-
-const prisma = new PrismaClient();
+import prisma from '../utils/db.js';
 const MIN_PASSWORD_LENGTH = 8;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_RESET_EXPIRY_MINUTES = 30;

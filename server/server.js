@@ -15,6 +15,7 @@ import paymentsRoutes from './routes/payments.js';
 import biddingRoutes from './routes/bidding.js';
 import { handleWebhook } from './controllers/paymentsController.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import prisma from './utils/db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -85,6 +86,27 @@ app.use('/api/bidding', biddingRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Production Debug Route (Safe)
+app.get('/api/debug-status', async (req, res) => {
+  const status = {
+    env: {
+      has_db: !!process.env.DATABASE_URL,
+      has_resend: !!process.env.RESEND_API_KEY,
+      node_env: process.env.NODE_ENV,
+    },
+    db: 'testing...',
+  };
+  
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    status.db = 'connected';
+  } catch (err) {
+    status.db = `error: ${err.message}`;
+  }
+  
+  res.json(status);
 });
 
 // Error handler

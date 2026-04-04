@@ -91,6 +91,7 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       const res = await api.post('/auth/register', { name, email, password, location });
+      if (!res?.data?.user) throw new Error('Invalid account data received from server.');
       setUser(res.data.user);
       setError(null);
       localStorage.setItem('rehome_token', res.data.token);

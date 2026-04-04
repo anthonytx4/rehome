@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../utils/db.js';
 import { hashPasswordVersion, verifySignedToken } from '../utils/authTokens.js';
-
-const prisma = new PrismaClient();
 
 export const auth = async (req, res, next) => {
   try {

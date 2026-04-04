@@ -20,9 +20,6 @@ const Footer = () => (
         <p style={{ color: 'var(--color-text-muted)', lineHeight: 1.7, maxWidth: '560px' }}>
           Marketplace messaging, seller profiles, moderation tools, and discovery flows for pets, livestock, and supplies.
         </p>
-        <p style={{ color: 'var(--color-text-muted)', lineHeight: 1.7, marginTop: '12px' }}>
-          Live checkout, membership, and boost flows only appear when payment configuration is connected in production and should stay off until support and compliance paths are ready.
-        </p>
       </div>
 
       <div>

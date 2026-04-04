@@ -4,7 +4,10 @@ import process from 'node:process';
 
 const prisma = new PrismaClient();
 
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+const DEFAULT_CLIENT_URL = (process.env.NODE_ENV === 'production' || process.env.VERCEL)
+  ? 'https://www.rehome.world'
+  : 'http://localhost:5173';
+const CLIENT_URL = process.env.CLIENT_URL || DEFAULT_CLIENT_URL;
 const DEFAULT_RETURN_PATH = '/dashboard';
 const BOOST_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 const SUPPORTED_BOOST_TYPES = new Set(['featured', 'urgent']);

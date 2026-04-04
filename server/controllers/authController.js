@@ -9,7 +9,10 @@ const MIN_PASSWORD_LENGTH = 8;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_RESET_EXPIRY_MINUTES = 30;
 const PASSWORD_RESET_PREVIEW_ENABLED = process.env.NODE_ENV !== 'production';
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+const DEFAULT_CLIENT_URL = (process.env.NODE_ENV === 'production' || process.env.VERCEL)
+  ? 'https://www.rehome.world'
+  : 'http://localhost:5173';
+const CLIENT_URL = process.env.CLIENT_URL || DEFAULT_CLIENT_URL;
 const PASSWORD_RESET_GENERIC_MESSAGE = 'If an account exists for that email, Rehome will prepare password reset instructions.';
 
 const setTokenCookie = (res, token) => {

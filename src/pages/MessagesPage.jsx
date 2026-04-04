@@ -4,6 +4,7 @@ import { Send, Paperclip, MoreVertical, Search, ArrowLeft, Loader2, X } from 'lu
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import toast from 'react-hot-toast';
+import { resolveMediaUrl } from '../utils/media';
 import styles from './MessagesPage.module.css';
 
 const MessagesPage = () => {
@@ -206,7 +207,7 @@ const MessagesPage = () => {
                 {messages.length === 0 ? (
                   <div className={styles.chatStart}>
                     <div className={styles.listingPreview}>
-                      <img src={activeConv.listing.image || activeConv.listing.images?.[0]} alt={activeConv.listing.petName || 'Listing preview'} />
+                      <img src={resolveMediaUrl(activeConv.listing.image || activeConv.listing.images?.[0])} alt={activeConv.listing.petName || 'Listing preview'} />
                       <div>
                         <h4>Inquiry about {activeConv.listing.petName}</h4>
                         <p>${activeConv.listing.price}</p>
@@ -221,14 +222,14 @@ const MessagesPage = () => {
                         <div className={styles.mediaContent}>
                           {msg.mediaType === 'image' ? (
                             <img
-                              src={`${import.meta.env.VITE_API_URL || ''}${msg.mediaUrl}`}
+                              src={resolveMediaUrl(msg.mediaUrl)}
                               alt="Sent media"
-                              onClick={() => window.open(`${import.meta.env.VITE_API_URL || ''}${msg.mediaUrl}`, '_blank', 'noopener')}
+                              onClick={() => window.open(resolveMediaUrl(msg.mediaUrl), '_blank', 'noopener')}
                             />
                           ) : (
                             <div className={styles.videoContainer}>
                               <video controls>
-                                <source src={`${import.meta.env.VITE_API_URL || ''}${msg.mediaUrl}`} type="video/mp4" />
+                                <source src={resolveMediaUrl(msg.mediaUrl)} type="video/mp4" />
                                 Your browser does not support video.
                               </video>
                             </div>

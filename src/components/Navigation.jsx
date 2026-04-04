@@ -1,16 +1,21 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { PawPrint, Search, Menu, PlusCircle, User, LogOut, LayoutDashboard, X, MessageSquare, ShieldCheck, Beef, ShoppingBag } from 'lucide-react';
+import { PawPrint, Search, Menu, PlusCircle, User, LogOut, LayoutDashboard, X, MessageSquare, ShieldCheck, Beef, ShoppingBag, Bell, Sparkles, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import usePaymentConfig from '../hooks/usePaymentConfig';
+import useNotifications from '../hooks/useNotifications';
 import toast from 'react-hot-toast';
 import styles from './Navigation.module.css';
 
 const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks }) => {
   const { user, isAuthenticated, logout } = useAuth();
+  const { configured: paymentsConfigured } = usePaymentConfig();
   const location = useLocation();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const navigate = useNavigate();
+  const notifications = useNotifications({ isAuthenticated, user, paymentsConfigured });
 
   const handleLogout = async () => {
     await logout();
@@ -76,7 +81,90 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
                  'List a Pet'}
               </button>
               <div className={styles.userMenuWrap}>
-                <button className={styles.avatarBtn} onClick={() => setShowUserMenu(!showUserMenu)}>
+                <button
+                  className={styles.notificationBtn}
+                  onClick={() => {
+                    setShowNotifications(!showNotifications);
+                    setShowUserMenu(false);
+                  }}
+                  aria-label="Notifications"
+                >
+                  <Bell size={18} />
+                  {notifications.totalCount > 0 && (
+                    <span className={styles.notificationCount}>
+                      {notifications.totalCount > 9 ? '9+' : notifications.totalCount}
+                    </span>
+                  )}
+                </button>
+                {showNotifications && (
+                  <>
+                    <div className={styles.menuBackdrop} onClick={() => setShowNotifications(false)} />
+                    <div className={styles.notificationMenu}>
+                      <div className={styles.menuHeader}>
+                        <strong>Notifications</strong>
+                        <span>{notifications.totalCount > 0 ? `${notifications.totalCount} updates waiting` : 'You are all caught up'}</span>
+                      </div>
+
+                      {notifications.alerts.length > 0 && (
+                        <div className={styles.notificationSection}>
+                          <div className={styles.notificationSectionLabel}><AlertTriangle size={14} /> Alerts</div>
+                          {notifications.alerts.map((item) => (
+                            <Link key={item.id} to={item.href} className={styles.notificationItem} onClick={() => setShowNotifications(false)}>
+                              <div className={styles.notificationIconWrap}><AlertTriangle size={16} /></div>
+                              <div className={styles.notificationText}>
+                                <strong>{item.title}</strong>
+                                <p>{item.body}</p>
+                                <span>{item.meta}</span>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+
+                      {notifications.messages.length > 0 && (
+                        <div className={styles.notificationSection}>
+                          <div className={styles.notificationSectionLabel}><MessageSquare size={14} /> Messages</div>
+                          {notifications.messages.map((item) => (
+                            <Link key={item.id} to={item.href} className={styles.notificationItem} onClick={() => setShowNotifications(false)}>
+                              <div className={styles.notificationIconWrap}><MessageSquare size={16} /></div>
+                              <div className={styles.notificationText}>
+                                <strong>{item.title}</strong>
+                                <p>{item.body}</p>
+                                <span>{item.meta}</span>
+                              </div>
+                              <div className={styles.notificationPill}>{item.count}</div>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+
+                      {notifications.newListings.length > 0 && (
+                        <div className={styles.notificationSection}>
+                          <div className={styles.notificationSectionLabel}><Sparkles size={14} /> New Listings</div>
+                          {notifications.newListings.map((item) => (
+                            <Link key={item.id} to={item.href} className={styles.notificationItem} onClick={() => setShowNotifications(false)}>
+                              <div className={styles.notificationThumb}>
+                                {item.image ? <img src={item.image} alt={item.title} /> : <Sparkles size={16} />}
+                              </div>
+                              <div className={styles.notificationText}>
+                                <strong>{item.title}</strong>
+                                <p>{item.body}</p>
+                                <span>{item.meta}</span>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+
+                      {notifications.totalCount === 0 && !notifications.loading && (
+                        <div className={styles.notificationEmpty}>No new messages, alerts, or listings right now.</div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className={styles.userMenuWrap}>
+                <button className={styles.avatarBtn} onClick={() => { setShowUserMenu(!showUserMenu); setShowNotifications(false); }}>
                   <User size={20} />
                 </button>
                 {showUserMenu && (
@@ -160,11 +248,17 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
           </button>
           {isAuthenticated ? (
             <>
+              <button type="button" className={styles.mobileLink} onClick={() => { setShowNotifications(true); setShowMobileMenu(false); }}>
+                <Bell size={16} /> Notifications {notifications.totalCount > 0 ? `(${notifications.totalCount})` : ''}
+              </button>
               <Link to="/dashboard" className={styles.mobileLink} onClick={() => setShowMobileMenu(false)}>Dashboard</Link>
               <button className={styles.mobileLink} onClick={handleLogout}>Sign Out</button>
             </>
           ) : (
             <>
+              <Link to="/login" className={styles.mobileLink} onClick={() => setShowMobileMenu(false)}>
+                <Bell size={16} /> Notifications
+              </Link>
               <Link to="/login" className={styles.mobileLink} onClick={() => setShowMobileMenu(false)}>Sign In</Link>
               <Link to="/register" className={styles.mobileLink} onClick={() => setShowMobileMenu(false)}>Sign Up</Link>
             </>

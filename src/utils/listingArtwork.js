@@ -56,6 +56,16 @@ const parseListingImages = (value) => {
   return [];
 };
 
+const uniqueImages = (items = []) => {
+  const seen = new Set();
+  return items.filter((item) => {
+    const key = String(item || '').trim();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 const pickFrom = (items, seed) => items[Math.abs(seed) % items.length];
 
 const range = (seed, shift, min, max) => {
@@ -508,8 +518,14 @@ export const buildListingArtwork = (listing = {}, variantSeed = 0) => {
 };
 
 export const decorateListingWithArtwork = (listing = {}) => {
-  const imageCount = Math.min(3, Math.max(1, parseListingImages(listing.images).length || 1));
-  const images = Array.from({ length: imageCount }, (_, index) => buildListingArtwork(listing, index));
+  const existingImages = uniqueImages([
+    safeText(listing.image),
+    ...parseListingImages(listing.images),
+  ]);
+
+  const images = existingImages.length > 0
+    ? existingImages
+    : Array.from({ length: 3 }, (_, index) => buildListingArtwork(listing, index));
 
   return {
     ...listing,

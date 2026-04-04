@@ -1,4 +1,5 @@
 import { decorateListingWithArtwork } from './listingArtwork.js';
+import { resolveMediaList, resolveMediaUrl } from './media.js';
 
 const PET_SPECIES = new Set([
   'dog',
@@ -101,8 +102,8 @@ export function normalizeListing(rawListing) {
     fee: Number.isFinite(price) ? price : 0,
     verified: seller?.isVerifiedBreeder ?? rawListing.verified ?? false,
     isPremium: Boolean(rawListing.boostType || rawListing.isPremium),
-    image: artworkListing.image,
-    images: artworkListing.images,
+    image: resolveMediaUrl(artworkListing.image),
+    images: resolveMediaList(artworkListing.images),
     category,
     listingType: rawListing.listingType || 'fixed',
     lotSize: formatLotSize(rawListing.lotSize),

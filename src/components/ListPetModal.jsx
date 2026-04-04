@@ -78,11 +78,11 @@ const LIVESTOCK_GENDER_OPTIONS = [
 ];
 
 const LIVESTOCK_STOCK_CLASS_OPTIONS = [
-  'Breeding Stock',
-  'Commercial Replacement',
-  'Market / Feeder',
-  'Registered / Papered',
-  'Mixed Commercial Lot',
+  'Lightweight',
+  'Midweight',
+  'Heavyweight',
+  'Mature Stock',
+  'Registered Breeding Stock',
 ];
 
 const createDefaultAuctionCloseDate = () => {
@@ -523,7 +523,7 @@ const ListPetModal = ({ isOpen, onClose }) => {
               {/* Livestock Specific: Listing Type */}
               {isLivestock && (
                 <div className={styles.inputGroup}>
-                  <label>Listing Format</label>
+                  <label>Sale Format</label>
                   <select
                     value={form.listingType}
                     onChange={(e) => {

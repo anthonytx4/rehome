@@ -130,6 +130,22 @@
   color: var(--color-text-muted);
 }
 
+.checkboxRow {
+  display: flex;
+  gap: 16px;
+  padding-top: 8px;
+  flex-wrap: wrap;
+}
+
+.checkboxOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: var(--color-text-main);
+}
+
 .fullWidth {
   grid-column: 1 / -1;
 }

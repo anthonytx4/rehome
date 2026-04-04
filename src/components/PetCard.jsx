@@ -33,6 +33,10 @@ const PetCard = ({ pet, isAd, onClick }) => {
   const isHot = pet.bidCount > 10;
   const lotLabel = pet.lotLabel || null;
   const auctionEndsAt = formatAuctionEnd(pet.auctionEndsAt || pet.raw?.auctionEndsAt);
+  const auctionPrice = pet.currentBid || pet.fee || 0;
+  const priceLabel = isAuction
+    ? (pet.currentBid ? 'Current Bid' : 'Starting Bid')
+    : 'Price';
   const imageSource = resolveMediaUrl(pet.image || pet.images?.[0] || '/images/mock_dog_1775037305181.png');
   const listingPath = `/listing/${pet.id}`;
 
@@ -104,8 +108,8 @@ const PetCard = ({ pet, isAd, onClick }) => {
             <h3 className={styles.name}>{pet.name}</h3>
           </Link>
           <div className={styles.priceContainer}>
-            <span className={styles.priceLabel}>{isAuction ? 'Current Bid' : 'Price'}</span>
-            <span className={styles.price}>${(pet.currentBid || pet.fee || 0).toLocaleString()}</span>
+            <span className={styles.priceLabel}>{priceLabel}</span>
+            <span className={styles.price}>${auctionPrice.toLocaleString()}</span>
           </div>
         </div>
         

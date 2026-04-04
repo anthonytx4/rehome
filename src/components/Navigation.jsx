@@ -60,7 +60,7 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
           <input 
             type="text" 
             placeholder={
-              location.pathname === '/livestock' ? "Search cattle, horses, poultry..." :
+              location.pathname === '/livestock' ? "Search cattle lots, bred females, equine consignments..." :
               location.pathname === '/supplies' ? "Search soaps, brushes, bulk lots..." :
               "Search for pets, breeds, or shelters..."
             }

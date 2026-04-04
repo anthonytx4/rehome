@@ -101,6 +101,7 @@ export function normalizeListing(rawListing) {
     id: rawListing.id,
     name,
     title: rawListing.title || name,
+    species: rawListing.species || rawListing.type,
     type,
     breed: rawListing.breed || type,
     age: rawListing.age || 'Unknown age',

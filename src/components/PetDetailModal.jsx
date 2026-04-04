@@ -198,6 +198,8 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
     ? new Date(displayPet.raw.auctionEndsAt).toLocaleString()
     : 'Ending soon';
   const canUseCheckout = !isAuction && baseFee > 0;
+  const auctionBidValue = displayPet.currentBid || baseFee || 0;
+  const auctionBidLabel = displayPet.currentBid ? 'Current Bid' : 'Starting Bid';
 
   const queueLocked = Boolean(queueStatus && !queueStatus.allowed && !queueStatus.requiresAuth);
   const queueLoading = queueStatus === null;
@@ -371,12 +373,12 @@ const PetDetailModal = ({ pet, onClose, onPostAction, isPage = false }) => {
               <div className={styles.actionCard}>
                 <div className={styles.queueHeader} style={{ color: 'var(--color-primary)' }}>
                   <TrendingUp size={20} />
-                  <h3>High Stakes Auction</h3>
+                  <h3>{displayPet.category === 'livestock' ? 'Live livestock auction' : 'Live auction'}</h3>
                 </div>
                 <div className={styles.auctionStats}>
                   <div className={styles.statLine}>
-                    <span>Current Bid</span>
-                    <span className={styles.currentBid}>${displayPet.currentBid?.toLocaleString() || '0'}</span>
+                    <span>{auctionBidLabel}</span>
+                    <span className={styles.currentBid}>${auctionBidValue.toLocaleString()}</span>
                   </div>
                   <div className={styles.statLine}>
                     <span>Ends</span>

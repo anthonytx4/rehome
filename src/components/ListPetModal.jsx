@@ -131,10 +131,16 @@ const ListPetModal = ({ isOpen, onClose }) => {
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
 
-  // Form state
-  const isLivestock = location.pathname === '/livestock';
-  const isSupplies = location.pathname === '/supplies';
-  const marketplace = isLivestock ? 'Livestock' : isSupplies ? 'Supplies' : 'Pets';
+  const [selectedMarketplace, setSelectedMarketplace] = useState(() => {
+    if (location.pathname === '/livestock') return 'Livestock';
+    if (location.pathname === '/supplies') return 'Supplies';
+    return 'Pets';
+  });
+
+  const isLivestock = selectedMarketplace === 'Livestock';
+  const isSupplies = selectedMarketplace === 'Supplies';
+  const marketplace = selectedMarketplace;
+
   const detailSections = isLivestock
     ? DETAIL_SECTIONS.livestock
     : isSupplies
@@ -258,8 +264,12 @@ const ListPetModal = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     if (!isOpen) return;
+    const newMarketplace = location.pathname === '/livestock' ? 'Livestock' : location.pathname === '/supplies' ? 'Supplies' : 'Pets';
+    setSelectedMarketplace(newMarketplace);
+    const isLv = newMarketplace === 'Livestock';
+    const isSup = newMarketplace === 'Supplies';
     setStep(1);
-    setForm(createInitialForm({ isLivestock, isSupplies }));
+    setForm(createInitialForm({ isLivestock: isLv, isSupplies: isSup }));
     setDob('');
     setActiveCategories([]);
     setCategoryNotes({});
@@ -267,7 +277,7 @@ const ListPetModal = ({ isOpen, onClose }) => {
     setImageFiles([]);
     setSelectedMonetize('none');
     setShowInlineAuth(false);
-  }, [isOpen, isLivestock, isSupplies]);
+  }, [isOpen, location.pathname]);
 
   if (!isOpen) return null;
 
@@ -403,6 +413,26 @@ const ListPetModal = ({ isOpen, onClose }) => {
           {/* STEP 1: Basic Details */}
           {step === 1 && (
             <div className={styles.formGrid}>
+              <div className={styles.inputGroup} style={{ gridColumn: '1 / -1' }}>
+                <label>What are you listing? *</label>
+                <select
+                  value={selectedMarketplace}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setSelectedMarketplace(val);
+                    const isLv = val === 'Livestock';
+                    const isSup = val === 'Supplies';
+                    setForm(createInitialForm({ isLivestock: isLv, isSupplies: isSup }));
+                    setActiveCategories([]);
+                    setCategoryNotes({});
+                  }}
+                >
+                  <option value="Pets">Pet</option>
+                  <option value="Livestock">Livestock</option>
+                  <option value="Supplies">Supplies</option>
+                </select>
+              </div>
+
               <div className={styles.inputGroup}>
                 <label>
                   {isLivestock ? 'Lot Name / Tag *' : isSupplies ? 'Item Title *' : 'Pet Name *'}

@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, Eye, EyeOff, KeyRound, Lock } from 'lucide-react';
 import api from '../api/client';
 import toast from 'react-hot-toast';
+import { getErrorMessage } from '../utils/error';
 import styles from './AuthPages.module.css';
 
 const ResetPasswordPage = () => {
@@ -39,7 +40,7 @@ const ResetPasswordPage = () => {
       window.dispatchEvent(new CustomEvent('rehome:auth-invalidated'));
       toast.success('Password updated.');
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Unable to reset password.');
+      toast.error(getErrorMessage(err, 'Unable to reset password.'));
     } finally {
       setSubmitting(false);
     }

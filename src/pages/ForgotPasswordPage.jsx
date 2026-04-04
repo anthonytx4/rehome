@@ -4,6 +4,7 @@ import { Mail, ArrowRight, KeyRound } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import toast from 'react-hot-toast';
+import { getErrorMessage } from '../utils/error';
 import styles from './AuthPages.module.css';
 
 const ForgotPasswordPage = () => {
@@ -42,7 +43,7 @@ const ForgotPasswordPage = () => {
       setResult(res.data);
       toast.success('Password reset request received.');
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Unable to start password recovery.');
+      toast.error(getErrorMessage(err, 'Unable to start password recovery.'));
     } finally {
       setSubmitting(false);
     }

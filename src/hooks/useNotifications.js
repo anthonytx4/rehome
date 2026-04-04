@@ -138,9 +138,9 @@ export function useNotifications({ isAuthenticated, user, paymentsConfigured }) 
             listingId: conversation.listingId,
             otherUserId: conversation.otherUser.id,
             title: `New message from ${conversation.otherUser.name}`,
-            body: conversation.lastMessage.content || 'Sent media',
-            href: `/messages/${conversation.listingId}?sellerId=${conversation.otherUser.id}`,
-            meta: new Date(conversation.lastMessage.createdAt).toLocaleString(),
+            body: conversation.lastMessage?.content || 'Sent media',
+            href: `/messages/${conversation.listingId}?sellerId=${conversation.otherUser?.id}`,
+            meta: conversation.lastMessage?.createdAt ? new Date(conversation.lastMessage.createdAt).toLocaleString() : 'Recent',
             count: conversation.unreadCount,
             version: getMessageVersion(conversation),
           }));

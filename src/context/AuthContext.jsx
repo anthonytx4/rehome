@@ -119,7 +119,7 @@ export const AuthProvider = ({ children }) => {
   }, [authActionPending, user]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, authActionPending, error, setError, login, register, logout, refreshUser, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, loading, authActionPending, error, setError, login, register, logout, refreshUser, isAuthenticated: Boolean(user?.id) }}>
       {children}
     </AuthContext.Provider>
   );

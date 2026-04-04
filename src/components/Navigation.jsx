@@ -7,6 +7,7 @@ import useNotifications from '../hooks/useNotifications';
 import toast from 'react-hot-toast';
 import styles from './Navigation.module.css';
 import { MARKETPLACES, getMarketplaceByPath } from '../config/marketplace';
+import { maskEmail } from '../utils/text';
 
 const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks }) => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -214,8 +215,8 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
                     <div className={styles.menuBackdrop} onClick={() => setShowUserMenu(false)} />
                     <div className={styles.userMenu}>
                       <div className={styles.menuHeader}>
-                        <strong>{user.name}</strong>
-                        <span>{user.email}</span>
+                         <strong>{user.name}</strong>
+                         <span>{maskEmail(user.email)}</span>
                       </div>
                       <Link to="/dashboard" className={styles.menuItem} onClick={() => setShowUserMenu(false)}>
                         <LayoutDashboard size={16} /> My Dashboard

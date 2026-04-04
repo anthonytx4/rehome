@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import toast from 'react-hot-toast';
 import styles from './AdminPage.module.css';
+import { maskEmail } from '../utils/text';
 
 const formatDateTime = (value) => {
   if (!value) return 'Unknown';
@@ -187,7 +188,7 @@ const AdminPage = () => {
                       <h3>{listing.petName}</h3>
                       <p>{listing.breed} • {listing.location}</p>
                       <p className={styles.metaText}>
-                        Seller: {listing.user.name} ({listing.user.email}) • Updated {formatDateTime(listing.updatedAt)}
+                        Seller: {listing.user.name} ({maskEmail(listing.user.email)}) • Updated {formatDateTime(listing.updatedAt)}
                       </p>
                     </div>
                     <Link to={`/listing/${listing.id}`} className={styles.queueLink}>

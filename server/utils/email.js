@@ -1,5 +1,4 @@
-import nodemailer from 'nodemailer';
-
+/* Vercel Stability Refresh - Nodemailer Removed */
 const SITE_NAME = 'Rehome';
 const SITE_URL = (process.env.NODE_ENV === 'production' || process.env.VERCEL)
   ? 'https://www.rehome.world'
@@ -12,65 +11,26 @@ const escapeHtml = (value) => String(value ?? '')
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&#39;');
 
-let etherealAccount = null;
-
-const getEmailConfig = async () => {
-  // If we have Resend or SMTP credentials, use those first
-  const config = {
+const getEmailConfig = () => {
+  return {
     resendApiKey: process.env.RESEND_API_KEY || '',
-    smtpHost: process.env.SMTP_HOST || '',
-    smtpPort: parseInt(process.env.SMTP_PORT || '587', 10),
-    smtpUser: process.env.SMTP_USER || '',
-    smtpPass: process.env.SMTP_PASS || '',
-    fromEmail: process.env.PASSWORD_RESET_FROM_EMAIL || process.env.SUPPORT_EMAIL || 'Rehome <noreply@rehome.world>',
+    fromEmail: process.env.PASSWORD_RESET_FROM_EMAIL || 'support@rehome.world',
     supportEmail: process.env.SUPPORT_EMAIL || 'support@rehome.world',
   };
-
-  // If No Credentials, Auto-Provision an Ethereal Account for "Live" Testing
-  if (!config.resendApiKey && !config.smtpHost && process.env.NODE_ENV !== 'production') {
-    if (!etherealAccount) {
-      try {
-        etherealAccount = await nodemailer.createTestAccount();
-        console.log('\n' + '⚡'.repeat(30));
-        console.log('📬 AUTO-PROVISIONED ETHEREAL EMAIL ACTIVATED (ZERO CONFIG)');
-        console.log('------------------------------------------------------------');
-        console.log(`USER:     ${etherealAccount.user}`);
-        console.log(`PASS:     ${etherealAccount.pass}`);
-        console.log(`PREVIEW:  https://ethereal.email/login`);
-        console.log('------------------------------------------------------------');
-        console.log('Real emails will be "sent" to this virtual inbox for testing.');
-        console.log('⚡'.repeat(30) + '\n');
-      } catch (err) {
-        console.error('[email] Failed to provision Ethereal account:', err);
-      }
-    }
-
-    if (etherealAccount) {
-      config.smtpHost = etherealAccount.smtp.host;
-      config.smtpPort = etherealAccount.smtp.port;
-      config.smtpUser = etherealAccount.user;
-      config.smtpPass = etherealAccount.pass;
-      config.fromEmail = `Rehome (Test) <${etherealAccount.user}>`;
-    }
-  }
-
-  return config;
 };
 
 export const getPasswordResetEmailStatus = async () => {
-  const config = await getEmailConfig();
-  const configured = Boolean(config.resendApiKey || (config.smtpHost && config.smtpUser && config.smtpPass));
+  const config = getEmailConfig();
+  const configured = Boolean(config.resendApiKey);
   return {
     configured,
     supportEmail: config.supportEmail,
-    method: config.resendApiKey ? 'resend' : (config.smtpHost ? 'smtp' : 'preview_only'),
+    method: config.resendApiKey ? 'resend' : 'console_only',
   };
 };
 
 export const sendPasswordResetEmail = async ({ to, resetUrl, expiresInMinutes = 30 }) => {
-  const config = await getEmailConfig();
-  const { configured } = await getPasswordResetEmailStatus();
-
+  const config = getEmailConfig();
   const escapedResetUrl = escapeHtml(resetUrl);
   const escapedTo = escapeHtml(to);
   const subject = 'Reset your Rehome password';
@@ -102,7 +62,7 @@ export const sendPasswordResetEmail = async ({ to, resetUrl, expiresInMinutes = 
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: config.fromEmail,
+          from: `Rehome Support <support@rehome.world>`,
           to: [to],
           subject,
           html,
@@ -117,31 +77,7 @@ export const sendPasswordResetEmail = async ({ to, resetUrl, expiresInMinutes = 
     }
   }
 
-  // 2. Try SMTP if configured
-  if (config.smtpHost && config.smtpUser && config.smtpPass) {
-    try {
-      const transporter = nodemailer.createTransport({
-        host: config.smtpHost,
-        port: config.smtpPort,
-        secure: config.smtpPort === 465,
-        auth: {
-          user: config.smtpUser,
-          pass: config.smtpPass,
-        },
-      });
-
-      return await transporter.sendMail({
-        from: config.fromEmail,
-        to,
-        subject,
-        html,
-      });
-    } catch (err) {
-      console.error('[email] SMTP error:', err);
-    }
-  }
-
-  // 3. Fallback: Always log a clear preview for the user
+  // 2. Fallback: Always log a clear preview for local dev / errors
   console.log('\n' + '='.repeat(60));
   console.log('🚀 UNIFORM PASSWORD RESET DELIVERY PREVIEW');
   console.log('='.repeat(60));
@@ -149,10 +85,6 @@ export const sendPasswordResetEmail = async ({ to, resetUrl, expiresInMinutes = 
   console.log(`LINK:    ${resetUrl}`);
   console.log(`EXPIRES: ${expiresInMinutes} minutes`);
   console.log('='.repeat(60) + '\n');
-
-  if (!configured) {
-    console.warn('[email] Password reset email was LOGGED ABOVE but NOT SENT (delivery not configured).');
-  }
 
   return { previewed: true, url: resetUrl };
 };

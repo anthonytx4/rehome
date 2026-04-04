@@ -26,6 +26,7 @@ export const AuthProvider = ({ children }) => {
   const refreshUser = useCallback(async () => {
     try {
       const res = await api.get('/auth/me');
+      if (!res?.data?.user) throw new Error('Missing user data');
       setUser(res.data.user);
       setError(null);
       localStorage.setItem('rehome_user', JSON.stringify(res.data.user));

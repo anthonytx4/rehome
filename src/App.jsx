@@ -24,6 +24,73 @@ import ListingDetailPage from './pages/ListingDetailPage';
 import PrivacyPage from './pages/PrivacyPage';
 import './App.css';
 
+const SITE_NAME = 'Rehome';
+const SITE_ORIGIN = 'https://rehome.world';
+const PRIVATE_PATHS = new Set(['/login', '/register', '/dashboard', '/messages', '/admin']);
+
+const PAGE_META = {
+  '/': {
+    title: 'Rehome | Pets, Livestock, and Supplies Marketplace',
+    description: 'Browse marketplace listings, message sellers, and manage your account on Rehome. Paid checkout, boosts, and billing tools only appear when configured.',
+    ogType: 'website',
+  },
+  '/livestock': {
+    title: 'Rehome Livestock Marketplace',
+    description: 'Browse livestock listings, compare sellers, and manage inquiries in one marketplace.',
+    ogType: 'website',
+  },
+  '/supplies': {
+    title: 'Rehome Supplies Marketplace',
+    description: 'Browse pet and farm supplies, compare listings, and message sellers from one place.',
+    ogType: 'website',
+  },
+  '/privacy': {
+    title: 'Privacy, Terms, and Trust | Rehome',
+    description: 'Read Rehome’s privacy policy, marketplace terms, payment notes, and trust and safety guidance.',
+    ogType: 'article',
+  },
+  '/listing': {
+    title: 'Listing Details | Rehome',
+    description: 'View listing details, seller information, and contact options on Rehome.',
+    ogType: 'article',
+  },
+  default: {
+    title: 'Rehome',
+    description: 'Rehome marketplace',
+    ogType: 'website',
+  },
+};
+
+const setLinkMeta = (rel, attribute, value) => {
+  let tag = document.head.querySelector(`link[rel="${rel}"]`);
+  if (!tag) {
+    tag = document.createElement('link');
+    tag.setAttribute('rel', rel);
+    document.head.appendChild(tag);
+  }
+  tag.setAttribute(attribute, value);
+};
+
+const setMetaContent = (key, value, isProperty = false) => {
+  const selector = isProperty ? `meta[property="${key}"]` : `meta[name="${key}"]`;
+  let tag = document.head.querySelector(selector);
+  if (!tag) {
+    tag = document.createElement('meta');
+    if (isProperty) {
+      tag.setAttribute('property', key);
+    } else {
+      tag.setAttribute('name', key);
+    }
+    document.head.appendChild(tag);
+  }
+  tag.setAttribute('content', value);
+};
+
+const getPageMeta = (pathname) => {
+  if (pathname.startsWith('/listing/')) return PAGE_META['/listing'];
+  return PAGE_META[pathname] || PAGE_META.default;
+};
+
 const RouteLoading = ({ message }) => (
   <div style={{ minHeight: '55vh', display: 'grid', placeItems: 'center', padding: '48px 24px' }}>
     <div style={{ textAlign: 'center', padding: '32px 28px', borderRadius: '24px', background: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-md)', minWidth: '280px' }}>
@@ -61,7 +128,7 @@ const HomePage = ({ searchQuery }) => {
   return (
     <>
       <Hero 
-        badge="Trusted by Verified Breeders"
+        badge="Browse live marketplace listings"
         title={<>Find your new <span className="highlight">best friend</span> today.</>}
         subtitle="Browse available pets, compare seller details, and keep communication organized in one marketplace."
         ctaText="Browse Pets"
@@ -78,20 +145,71 @@ const HomePage = ({ searchQuery }) => {
       </div>
       <AdSenseUnit slot="homepage-bottom-native" />
       <FooterPartnerStrip />
-      <footer style={{ padding: '64px 24px', textAlign: 'center', color: 'var(--color-text-muted)', borderTop: '1px solid var(--color-border)' }}>
-        <p>&copy; 2026 Rehome Marketplace. Marketplace messaging, seller profiles, and buyer-friendly discovery tools.</p>
-        <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center', gap: '24px', fontSize: '0.9rem' }}>
-          <Link to="/privacy#terms" style={{ color: 'inherit' }}>Terms</Link>
-          <Link to="/privacy" style={{ color: 'inherit' }}>Privacy Policy</Link>
-          <Link to="/privacy#trust-safety" style={{ color: 'inherit' }}>Trust & Safety</Link>
-        </div>
-      </footer>
       {postAction && (
         <PostActionBanner type={postAction} onDismiss={() => setPostAction(null)} />
       )}
     </>
   );
 };
+
+const SiteFooter = () => (
+  <footer
+    style={{
+      marginTop: '48px',
+      padding: '56px 0 28px',
+      borderTop: '1px solid var(--color-border)',
+      background: 'linear-gradient(180deg, rgba(255,255,255,0.9), rgba(248,250,252,0.98))',
+    }}
+  >
+    <div className="container" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) repeat(3, minmax(140px, 1fr))', gap: '24px', alignItems: 'start' }}>
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', color: 'var(--color-secondary)', fontWeight: 900, fontSize: '1.05rem' }}>
+          <span style={{ color: 'var(--color-primary)' }}>{SITE_NAME}</span>
+        </div>
+        <p style={{ color: 'var(--color-text-muted)', lineHeight: 1.7, maxWidth: '560px' }}>
+          Marketplace messaging, seller profiles, and discovery tools for pets, livestock, and supplies.
+        </p>
+        <p style={{ color: 'var(--color-text-muted)', lineHeight: 1.7, marginTop: '12px' }}>
+          Live checkout, membership, and boost flows only appear when payment configuration is connected in production.
+        </p>
+      </div>
+
+      <div>
+        <h3 style={{ marginBottom: '12px', color: 'var(--color-secondary)', fontSize: '0.95rem' }}>Marketplace</h3>
+        <div style={{ display: 'grid', gap: '10px', color: 'var(--color-text-muted)' }}>
+          <Link to="/" style={{ color: 'inherit' }}>Pets</Link>
+          <Link to="/livestock" style={{ color: 'inherit' }}>Livestock</Link>
+          <Link to="/supplies" style={{ color: 'inherit' }}>Supplies</Link>
+        </div>
+      </div>
+
+      <div>
+        <h3 style={{ marginBottom: '12px', color: 'var(--color-secondary)', fontSize: '0.95rem' }}>Account</h3>
+        <div style={{ display: 'grid', gap: '10px', color: 'var(--color-text-muted)' }}>
+          <Link to="/login" style={{ color: 'inherit' }}>Sign In</Link>
+          <Link to="/register" style={{ color: 'inherit' }}>Create Account</Link>
+          <Link to="/dashboard" style={{ color: 'inherit' }}>Dashboard</Link>
+          <Link to="/messages" style={{ color: 'inherit' }}>Messages</Link>
+        </div>
+      </div>
+
+      <div>
+        <h3 style={{ marginBottom: '12px', color: 'var(--color-secondary)', fontSize: '0.95rem' }}>Policies</h3>
+        <div style={{ display: 'grid', gap: '10px', color: 'var(--color-text-muted)' }}>
+          <Link to="/privacy#terms" style={{ color: 'inherit' }}>Terms</Link>
+          <Link to="/privacy" style={{ color: 'inherit' }}>Privacy</Link>
+          <Link to="/privacy#payments" style={{ color: 'inherit' }}>Payments</Link>
+          <Link to="/privacy#trust-safety" style={{ color: 'inherit' }}>Trust & Safety</Link>
+        </div>
+      </div>
+    </div>
+
+    <div className="container" style={{ marginTop: '28px', paddingTop: '20px', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', color: 'var(--color-text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+      <span>© 2026 Rehome Marketplace.</span>
+      <span>Always verify identity, records, and handoff terms before paying.</span>
+    </div>
+  </footer>
+);
 
 const NotFoundPage = () => (
   <div style={{ minHeight: '70vh', display: 'grid', placeItems: 'center', padding: '48px 24px' }}>
@@ -156,6 +274,26 @@ function App() {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, [location.hash, location.pathname]);
 
+  useEffect(() => {
+    const meta = getPageMeta(location.pathname);
+    const canonicalUrl = `${SITE_ORIGIN}${location.pathname}`;
+    const isPrivateRoute = PRIVATE_PATHS.has(location.pathname) || location.pathname.startsWith('/messages/');
+
+    document.title = meta.title;
+    setMetaContent('description', meta.description);
+    setMetaContent('robots', isPrivateRoute ? 'noindex,nofollow' : 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1');
+    setMetaContent('googlebot', isPrivateRoute ? 'noindex,nofollow' : 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1');
+    setMetaContent('og:title', meta.title, true);
+    setMetaContent('og:description', meta.description, true);
+    setMetaContent('og:type', meta.ogType, true);
+    setMetaContent('og:url', canonicalUrl, true);
+    setMetaContent('twitter:title', meta.title);
+    setMetaContent('twitter:description', meta.description);
+    setMetaContent('twitter:card', 'summary_large_image');
+    setMetaContent('theme-color', '#10B981');
+    setLinkMeta('canonical', 'href', canonicalUrl);
+  }, [location.pathname]);
+
   return (
     <div className="app-container">
       <Navigation 
@@ -185,6 +323,7 @@ function App() {
       <HowItWorksModal isOpen={isHowItWorksOpen} onClose={() => setIsHowItWorksOpen(false)} />
       <InterstitialAd isOpen={showInterstitial} onClose={() => setShowInterstitial(false)} />
       <CookieConsent />
+      <SiteFooter />
       <Analytics />
     </div>
   );

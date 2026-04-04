@@ -88,12 +88,12 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
                     setShowNotifications((value) => !value);
                     setShowUserMenu(false);
                   }}
-                  aria-label="Notifications"
+                  aria-label="Unread messages and updates"
                 >
                   <Bell size={18} />
-                  {notifications.totalCount > 0 && (
+                  {notifications.unreadMessagesCount > 0 && (
                     <span className={styles.notificationCount}>
-                      {notifications.totalCount > 9 ? '9+' : notifications.totalCount}
+                      {notifications.unreadMessagesCount > 9 ? '9+' : notifications.unreadMessagesCount}
                     </span>
                   )}
                 </button>
@@ -107,7 +107,14 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
                           <span>{notifications.totalCount > 0 ? `${notifications.totalCount} updates waiting` : 'You are all caught up'}</span>
                         </div>
                         {notifications.totalCount > 0 && (
-                          <button type="button" className={styles.menuHeaderAction} onClick={notifications.markAllNotificationsRead}>
+                          <button
+                            type="button"
+                            className={styles.menuHeaderAction}
+                            onClick={() => {
+                              notifications.markAllNotificationsRead();
+                              setShowNotifications(false);
+                            }}
+                          >
                             Mark all read
                           </button>
                         )}

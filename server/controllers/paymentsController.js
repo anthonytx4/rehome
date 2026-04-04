@@ -1,13 +1,100 @@
 import { PrismaClient } from '@prisma/client';
 import Stripe from 'stripe';
+import process from 'node:process';
 
 const prisma = new PrismaClient();
 
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 const DEFAULT_RETURN_PATH = '/dashboard';
+const BOOST_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
+const SUPPORTED_BOOST_TYPES = new Set(['featured', 'urgent']);
+
 const normalizeMembershipTier = (tier) => {
   if (!tier || tier === 'royal') return 'breeder';
   return tier;
+};
+
+const normalizeBoostType = (boostType) => {
+  const value = String(boostType || 'featured').trim().toLowerCase();
+  return SUPPORTED_BOOST_TYPES.has(value) ? value : 'featured';
+};
+
+const getBoostPricing = (boostType) => {
+  const normalized = normalizeBoostType(boostType);
+  if (normalized === 'urgent') {
+    return {
+      amount: 50,
+      description: 'Urgent Network Blast',
+      lineItemName: 'Urgent Network Blast Listing Boost',
+    };
+  }
+
+  return {
+    amount: 15,
+    description: 'Featured Listing',
+    lineItemName: 'Featured Listing Boost',
+  };
+};
+
+const getPaymentAmount = (type, amount, metadata = {}) => {
+  const parsedAmount = Number(amount);
+
+  if (type === 'membership') return 25;
+  if (type === 'skip_queue') {
+    const count = Number(metadata.count) === 3 ? 3 : 1;
+    return count === 3 ? 10 : 9;
+  }
+  if (type === 'bid_deposit') return 50;
+  if (type === 'priority_app') return 5;
+  if (type === 'boost') return getBoostPricing(metadata.boostType).amount;
+
+  return Number.isFinite(parsedAmount) ? parsedAmount : 0;
+};
+
+const getPaymentDescription = (type, description, metadata = {}) => {
+  if (type === 'membership') return description || 'Verified Breeder Membership';
+  if (type === 'skip_queue') return description || 'Inquiry Queue Skip';
+  if (type === 'bid_deposit') return description || 'Bid Deposit';
+  if (type === 'priority_app') return description || 'Priority Application';
+  if (type === 'boost') return getBoostPricing(metadata.boostType).description;
+
+  return description || `${type} payment`;
+};
+
+const parsePaymentMetadata = (metadata) => {
+  if (!metadata) return {};
+  if (typeof metadata === 'object') return metadata;
+
+  try {
+    return JSON.parse(metadata);
+  } catch {
+    return {};
+  }
+};
+
+const buildStripeMetadata = (metadata = {}) => Object.fromEntries(
+  Object.entries(metadata)
+    .filter(([, value]) => value !== undefined && value !== null && value !== '')
+    .map(([key, value]) => [key, String(value)])
+);
+
+const loadOwnedListing = async (listingId, userId) => {
+  if (!listingId) return null;
+  return prisma.listing.findFirst({
+    where: {
+      id: listingId,
+      userId,
+    },
+    select: {
+      id: true,
+      userId: true,
+      status: true,
+      boostType: true,
+      boostExpiresAt: true,
+      title: true,
+      petName: true,
+    },
+  });
 };
 
 const stripe = process.env.STRIPE_SECRET_KEY
@@ -33,6 +120,7 @@ export const createCheckoutSession = async (req, res, next) => {
   try {
     const { type, amount, description, metadata, successPath, cancelPath } = req.body;
     const stripe = await getStripeClient();
+    const parsedMetadata = parsePaymentMetadata(metadata);
 
     if (!type || !amount) {
       return res.status(400).json({ error: 'Type and amount are required' });
@@ -49,6 +137,35 @@ export const createCheckoutSession = async (req, res, next) => {
     // Get or create Stripe customer
     let stripeCustomerId = null;
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (type === 'boost') {
+      const listingId = parsedMetadata.listingId;
+      const listing = await loadOwnedListing(listingId, req.user.id);
+
+      if (!listing) {
+        return res.status(403).json({
+          error: 'You can only boost your own listing.',
+          code: 'BOOST_OWNERSHIP_REQUIRED',
+        });
+      }
+
+      if (listing.status !== 'available') {
+        return res.status(409).json({
+          error: 'Boosts are only available for active listings.',
+          code: 'BOOST_LISTING_NOT_AVAILABLE',
+        });
+      }
+
+      parsedMetadata.boostType = normalizeBoostType(parsedMetadata.boostType);
+      parsedMetadata.listingId = listing.id;
+    }
+
+    const resolvedAmount = getPaymentAmount(type, amount, parsedMetadata);
+    const resolvedDescription = getPaymentDescription(type, description, parsedMetadata);
 
     if (user.stripeCustomerId) {
       stripeCustomerId = user.stripeCustomerId;
@@ -82,7 +199,7 @@ export const createCheckoutSession = async (req, res, next) => {
       mode: isSubscription ? 'subscription' : 'payment',
       success_url: successUrl,
       cancel_url: cancelUrl,
-      metadata: { userId: req.user.id, type, ...(metadata || {}) }
+      metadata: buildStripeMetadata({ userId: req.user.id, type, ...parsedMetadata })
     };
 
     if (isSubscription) {
@@ -90,20 +207,20 @@ export const createCheckoutSession = async (req, res, next) => {
         price_data: {
           currency: 'usd',
           product_data: {
-            name: description || 'Verified Breeder Membership',
+            name: resolvedDescription,
             description: 'Elite Verified Membership — gold badge, priority placement, ad-free experience.',
           },
-          unit_amount: Math.round(parseFloat(amount) * 100),
+          unit_amount: Math.round(resolvedAmount * 100),
           recurring: { interval: 'month' },
         },
         quantity: 1,
       }];
     } else {
-      let unitAmount = Math.round(parseFloat(amount) * 100);
-      let prodName = description || `${type} payment`;
+      let unitAmount = Math.round(resolvedAmount * 100);
+      let prodName = resolvedDescription;
 
       if (type === 'skip_queue') {
-        const count = metadata?.count || 1;
+        const count = Number(parsedMetadata.count) === 3 ? 3 : 1;
         unitAmount = count === 3 ? 1000 : 900;
         prodName = `Elite Exchange: Inquiry Queue Skip (${count}x)`;
       } else if (type === 'bid_deposit') {
@@ -112,6 +229,10 @@ export const createCheckoutSession = async (req, res, next) => {
       } else if (type === 'priority_app') {
         unitAmount = 500;
         prodName = 'Rehome Priority: Pinned Application';
+      } else if (type === 'boost') {
+        const boostPricing = getBoostPricing(parsedMetadata.boostType);
+        unitAmount = boostPricing.amount * 100;
+        prodName = boostPricing.lineItemName;
       }
 
       sessionConfig.line_items = [{
@@ -129,10 +250,10 @@ export const createCheckoutSession = async (req, res, next) => {
     await prisma.payment.create({
       data: {
         type,
-        amount: parseFloat(amount),
+        amount: resolvedAmount,
         status: 'pending',
-        description: description || `${type} payment`,
-        metadata: metadata ? JSON.stringify(metadata) : null,
+        description: resolvedDescription,
+        metadata: Object.keys(parsedMetadata).length ? JSON.stringify(parsedMetadata) : null,
         stripePaymentId: session.id,
         userId: req.user.id,
       }
@@ -151,7 +272,12 @@ export const verifySession = async (req, res, next) => {
     const stripe = await getStripeClient();
     if (!sessionId) return res.status(400).json({ error: 'sessionId is required' });
 
-    const payment = await prisma.payment.findFirst({ where: { stripePaymentId: sessionId } });
+    const payment = await prisma.payment.findFirst({
+      where: {
+        stripePaymentId: sessionId,
+        userId: req.user.id,
+      },
+    });
     if (!payment) return res.status(404).json({ error: 'Payment not found' });
     if (payment.status === 'completed') return res.json({ success: true, payment, alreadyProcessed: true });
 
@@ -162,14 +288,24 @@ export const verifySession = async (req, res, next) => {
       });
     }
 
-    if (!sessionId.startsWith('mock_')) {
-      const session = await stripe.checkout.sessions.retrieve(sessionId);
-      if (session.payment_status !== 'paid') return res.status(400).json({ error: 'Payment not completed' });
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    if (session.payment_status !== 'paid') {
+      return res.status(400).json({ error: 'Payment not completed' });
+    }
+
+    const metadata = parsePaymentMetadata(payment.metadata);
+    if (payment.type === 'boost') {
+      const listing = await loadOwnedListing(metadata.listingId, req.user.id);
+      if (!listing) {
+        return res.status(403).json({
+          error: 'Boost verification failed because the listing is not owned by the current account.',
+          code: 'BOOST_OWNERSHIP_REQUIRED',
+        });
+      }
     }
 
     await prisma.payment.update({ where: { id: payment.id }, data: { status: 'completed' } });
-    const metadata = payment.metadata ? JSON.parse(payment.metadata) : {};
-    await applySideEffects(payment.type, metadata, payment.userId, sessionId);
+    await applySideEffects(payment.type, metadata, payment.userId);
 
     res.json({ success: true, payment: { ...payment, status: 'completed' } });
   } catch (err) {
@@ -180,6 +316,13 @@ export const verifySession = async (req, res, next) => {
 // Mock payment processor (used by PaymentModal when Stripe is not configured)
 export const processPaymentMock = async (req, res, next) => {
   try {
+    if (process.env.ALLOW_MOCK_PAYMENTS !== 'true' || process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+      return res.status(410).json({
+        error: 'Mock payments are disabled. Connect Stripe to use live checkout flows.',
+        code: 'MOCK_PAYMENTS_DISABLED',
+      });
+    }
+
     const { type, amount, description, metadata } = req.body;
     if (!type || !amount) {
       return res.status(400).json({ error: 'Type and amount are required' });
@@ -197,7 +340,7 @@ export const processPaymentMock = async (req, res, next) => {
       }
     });
 
-    await applySideEffects(type, metadata || {}, req.user.id, payment.stripePaymentId);
+    await applySideEffects(type, metadata || {}, req.user.id);
     res.json({ success: true, payment });
   } catch (err) { next(err); }
 };
@@ -227,7 +370,7 @@ export const releaseEscrow = async (req, res, next) => {
 };
 
 // Side Effects Handler
-async function applySideEffects(type, metadata, userId, paymentId) {
+async function applySideEffects(type, metadata, userId) {
   try {
     if (type === 'membership') {
       const membershipTier = normalizeMembershipTier(metadata?.tier);
@@ -250,11 +393,27 @@ async function applySideEffects(type, metadata, userId, paymentId) {
     }
 
     if (type === 'boost' && metadata?.listingId) {
+      const listing = await prisma.listing.findFirst({
+        where: {
+          id: metadata.listingId,
+          userId,
+        },
+        select: {
+          id: true,
+          boostType: true,
+          boostExpiresAt: true,
+        }
+      });
+
+      if (!listing) {
+        throw new Error('Boost ownership validation failed');
+      }
+
       await prisma.listing.update({
-        where: { id: metadata.listingId },
+        where: { id: listing.id },
         data: {
-          boostType: metadata.boostType || 'featured',
-          boostExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          boostType: normalizeBoostType(metadata.boostType),
+          boostExpiresAt: new Date(Date.now() + BOOST_DURATION_MS),
         }
       });
     }
@@ -335,7 +494,7 @@ export const handleWebhook = async (req, res) => {
     const sig = req.headers['stripe-signature'];
     try {
       event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-    } catch (err) {
+    } catch {
       return res.status(400).json({ error: 'Webhook signature verification failed' });
     }
   } else {
@@ -351,8 +510,8 @@ export const handleWebhook = async (req, res) => {
     const payment = await prisma.payment.findFirst({ where: { stripePaymentId: session.id } });
     if (payment && payment.status !== 'completed') {
       await prisma.payment.update({ where: { id: payment.id }, data: { status: 'completed' } });
-      const metadata = payment.metadata ? JSON.parse(payment.metadata) : {};
-      await applySideEffects(payment.type, metadata, payment.userId, session.id);
+      const metadata = parsePaymentMetadata(payment.metadata);
+      await applySideEffects(payment.type, metadata, payment.userId);
     }
   }
 

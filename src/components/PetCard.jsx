@@ -1,3 +1,4 @@
+import { Link, useLocation } from 'react-router-dom';
 import { MapPin, ShieldCheck, Star, AlertTriangle, Gavel, Users, Boxes, TrendingUp } from 'lucide-react';
 import { resolveMediaUrl } from '../utils/media';
 import styles from './PetCard.module.css';
@@ -13,6 +14,8 @@ const formatAuctionEnd = (value) => {
 };
 
 const PetCard = ({ pet, isAd, onClick }) => {
+  const location = useLocation();
+
   if (isAd) {
     return (
       <div className={`${styles.card} ${styles.adCard}`}>
@@ -31,9 +34,10 @@ const PetCard = ({ pet, isAd, onClick }) => {
   const lotLabel = pet.lotLabel || (pet.lotSize ? `Lot of ${pet.lotSize}` : null);
   const auctionEndsAt = formatAuctionEnd(pet.auctionEndsAt || pet.raw?.auctionEndsAt);
   const imageSource = resolveMediaUrl(pet.image || pet.images?.[0] || '/images/mock_dog_1775037305181.png');
+  const listingPath = `/listing/${pet.id}`;
 
   return (
-    <div 
+    <div
       className={`${styles.card} ${pet.isPremium ? styles.premiumCard : ''}`}
       onClick={() => onClick(pet)}
     >
@@ -56,7 +60,15 @@ const PetCard = ({ pet, isAd, onClick }) => {
       )}
       
       <div className={styles.imageContainer}>
-        <img src={imageSource} alt={pet.name} className={styles.image} />
+        <Link
+          to={listingPath}
+          state={{ from: location.pathname }}
+          className={styles.imageLink}
+          aria-label={`Open full listing for ${pet.name}`}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <img src={imageSource} alt={pet.name} className={styles.image} />
+        </Link>
         {pet.verified && (
           <div className={styles.verifiedBadge}>
             <ShieldCheck size={14} className={styles.verifiedIcon} />
@@ -73,7 +85,15 @@ const PetCard = ({ pet, isAd, onClick }) => {
       
       <div className={styles.details}>
         <div className={styles.header}>
-          <h3 className={styles.name}>{pet.name}</h3>
+          <Link
+            to={listingPath}
+            state={{ from: location.pathname }}
+            className={styles.nameLink}
+            onClick={(event) => event.stopPropagation()}
+            aria-label={`Open full listing for ${pet.name}`}
+          >
+            <h3 className={styles.name}>{pet.name}</h3>
+          </Link>
           <div className={styles.priceContainer}>
             <span className={styles.priceLabel}>{isAuction ? 'Current Bid' : 'Price'}</span>
             <span className={styles.price}>${(pet.currentBid || pet.fee || 0).toLocaleString()}</span>
@@ -99,6 +119,27 @@ const PetCard = ({ pet, isAd, onClick }) => {
             </span>
           </div>
         )}
+
+        <div className={styles.cardActions}>
+          <button
+            type="button"
+            className={styles.quickViewBtn}
+            onClick={(event) => {
+              event.stopPropagation();
+              onClick(pet);
+            }}
+          >
+            Quick view
+          </button>
+          <Link
+            to={listingPath}
+            state={{ from: location.pathname }}
+            className={styles.fullListingLink}
+            onClick={(event) => event.stopPropagation()}
+          >
+            Open full listing
+          </Link>
+        </div>
         
         <div className={styles.footer}>
           <span className={styles.location}>

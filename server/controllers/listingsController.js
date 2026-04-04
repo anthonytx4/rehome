@@ -1,9 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import { handleUpload } from '../middleware/upload.js';
 import { decorateListingWithArtwork } from '../../src/utils/listingArtwork.js';
-import { dedupeListings } from '../../src/utils/listings.js';
 
 const prisma = new PrismaClient();
+const BOOST_PRIORITY = {
+  featured: 1,
+  urgent: 2,
+};
 
 const normalizeCategoryValue = (value, species = '') => {
   const normalized = String(value || '').trim().toLowerCase();
@@ -29,14 +32,83 @@ const parseLotSize = (value) => {
   return matched ? Number(matched[0]) : 1;
 };
 
+const normalizeBoostType = (value) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  return BOOST_PRIORITY[normalized] ? normalized : null;
+};
+
+const getBoostState = (listing, now = Date.now()) => {
+  const boostType = normalizeBoostType(listing?.boostType);
+  const boostExpiresAt = listing?.boostExpiresAt ? new Date(listing.boostExpiresAt) : null;
+  const hasValidExpiry = boostExpiresAt && !Number.isNaN(boostExpiresAt.getTime());
+  const isExpired = Boolean(boostType && (!hasValidExpiry || boostExpiresAt.getTime() <= now));
+  const isActive = Boolean(boostType && hasValidExpiry && boostExpiresAt.getTime() > now);
+
+  return {
+    boostType: isActive ? boostType : null,
+    boostExpiresAt: isActive ? boostExpiresAt : null,
+    boostPriority: isActive ? BOOST_PRIORITY[boostType] : 0,
+    isExpired,
+  };
+};
+
+const cleanupExpiredBoosts = async (listings = []) => {
+  const expiredIds = [...new Set(
+    listings
+      .filter((listing) => getBoostState(listing).isExpired)
+      .map((listing) => listing.id)
+      .filter(Boolean)
+  )];
+
+  if (expiredIds.length === 0) return;
+
+  await prisma.listing.updateMany({
+    where: { id: { in: expiredIds } },
+    data: {
+      boostType: null,
+      boostExpiresAt: null,
+    },
+  });
+};
+
 const serializeListing = (listing, extras = {}) => {
-  const decorated = decorateListingWithArtwork(listing);
+  const boostState = getBoostState(listing);
+  const decorated = decorateListingWithArtwork({
+    ...listing,
+    boostType: boostState.boostType,
+    boostExpiresAt: boostState.boostExpiresAt,
+  });
   const { _count, ...rest } = decorated;
   return {
     ...rest,
+    boostType: boostState.boostType,
+    boostExpiresAt: boostState.boostExpiresAt,
     ...extras,
   };
 };
+
+const rankListings = (listings = []) => listings
+  .map((listing, index) => ({
+    listing,
+    index,
+    boostState: getBoostState(listing),
+  }))
+  .sort((a, b) => {
+    if (a.boostState.boostPriority !== b.boostState.boostPriority) {
+      return b.boostState.boostPriority - a.boostState.boostPriority;
+    }
+
+    if (a.boostState.boostType && b.boostState.boostType) {
+      const aExpires = a.boostState.boostExpiresAt?.getTime() ?? 0;
+      const bExpires = b.boostState.boostExpiresAt?.getTime() ?? 0;
+      if (aExpires !== bExpires) {
+        return bExpires - aExpires;
+      }
+    }
+
+    return a.index - b.index;
+  })
+  .map(({ listing }) => listing);
 
 export const getListings = async (req, res, next) => {
   try {
@@ -106,14 +178,14 @@ export const getListings = async (req, res, next) => {
       prisma.listing.count({ where })
     ]);
 
-    const parsed = listings.map(l => serializeListing(l, {
-      favoritesCount: l._count.favorites,
+    await cleanupExpiredBoosts(listings);
+    const rankedListings = rankListings(listings).map((listing) => serializeListing(listing, {
+      favoritesCount: listing._count?.favorites ?? 0,
     }));
-    const uniqueListings = dedupeListings(parsed);
 
     res.json({
-      listings: uniqueListings,
-      total: uniqueListings.length,
+      listings: rankedListings,
+      total: rankedListings.length,
       page: parseInt(page),
       totalPages: Math.ceil(total / parseInt(limit))
     });
@@ -139,6 +211,8 @@ export const getListingById = async (req, res, next) => {
     if (!listing) {
       return res.status(404).json({ error: 'Listing not found' });
     }
+
+    await cleanupExpiredBoosts([listing]);
 
     // Get average rating for seller
     const avgRating = await prisma.review.aggregate({
@@ -330,11 +404,12 @@ export const getUserListings = async (req, res, next) => {
       }
     });
 
-    const uniqueListings = dedupeListings(listings.map(l => serializeListing(l, {
-      favoritesCount: l._count.favorites,
-    })));
+    await cleanupExpiredBoosts(listings);
+    const rankedListings = rankListings(listings).map((listing) => serializeListing(listing, {
+      favoritesCount: listing._count?.favorites ?? 0,
+    }));
 
-    res.json(uniqueListings);
+    res.json(rankedListings);
   } catch (err) {
     next(err);
   }

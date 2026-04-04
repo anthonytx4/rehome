@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import api from '../api/client';
 import PetDetailModal from '../components/PetDetailModal';
@@ -10,9 +10,25 @@ import toast from 'react-hot-toast';
 const ListingDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const categoryPath = (() => {
+    const category = String(listing?.category || '').toLowerCase();
+    if (category === 'livestock') return '/livestock';
+    if (category === 'supplies') return '/supplies';
+    return '/';
+  })();
+  const fallbackPath = location.state?.from || categoryPath;
+
+  const handleBack = () => {
+    if (location.state?.from) {
+      navigate(location.state.from, { replace: true });
+      return;
+    }
+    navigate(fallbackPath, { replace: true });
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -57,8 +73,8 @@ const ListingDetailPage = () => {
           <h1 style={{ marginBottom: '12px' }}>Listing unavailable</h1>
           <p style={{ color: 'var(--color-text-muted)', marginBottom: '24px' }}>{error || 'We could not load this listing.'}</p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <button onClick={() => navigate(-1)} className="btn btn-secondary">Go Back</button>
-            <Link to="/" className="btn btn-primary">Browse Marketplace</Link>
+            <button onClick={handleBack} className="btn btn-secondary">Go Back</button>
+            <Link to={fallbackPath} className="btn btn-primary">Browse Marketplace</Link>
           </div>
         </div>
       </div>
@@ -68,7 +84,7 @@ const ListingDetailPage = () => {
   return (
     <div style={{ padding: '20px' }}>
       <button 
-        onClick={() => navigate(-1)} 
+        onClick={handleBack}
         style={{ 
           display: 'flex', 
           alignItems: 'center', 
@@ -86,7 +102,7 @@ const ListingDetailPage = () => {
       
       <PetDetailModal 
         pet={listing} 
-        onClose={() => navigate(-1)} 
+        onClose={handleBack}
         isPage={true}
       />
     </div>

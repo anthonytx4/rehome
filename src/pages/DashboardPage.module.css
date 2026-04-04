@@ -91,6 +91,11 @@
   margin: 16px 0 8px;
 }
 
+.emptyState p {
+  max-width: 540px;
+  margin: 0 auto;
+}
+
 .emptyState .btn {
   margin-top: 16px;
 }
@@ -128,10 +133,18 @@
   object-fit: cover;
 }
 
-.statusBadge {
+.badgeStack {
   position: absolute;
   top: 10px;
   right: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.statusBadge {
   padding: 4px 10px;
   border-radius: var(--radius-full);
   font-size: 0.7rem;
@@ -153,6 +166,29 @@
 .status_pending {
   background: #FEF3C7;
   color: #92400E;
+}
+
+.boostBadge {
+  max-width: min(210px, calc(100vw - 88px));
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: right;
+  text-transform: none;
+  letter-spacing: 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.boostBadgeActive {
+  background: #DCFCE7;
+  color: #166534;
+}
+
+.boostBadgeExpired {
+  background: #F1F5F9;
+  color: #475569;
 }
 
 .listingInfo {
@@ -180,6 +216,13 @@
   padding: 4px 10px;
   border-radius: var(--radius-sm);
   font-size: 0.85rem;
+}
+
+.boostMeta {
+  margin-top: 8px;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
 }
 
 .listingActions {

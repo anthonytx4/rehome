@@ -12,6 +12,41 @@ import styles from './DashboardPage.module.css';
 
 const DASHBOARD_TABS = ['listings', 'favorites', 'insights'];
 
+const formatDateLabel = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(date);
+};
+
+const getBoostStatus = (listing) => {
+  if (!listing?.boostType) return null;
+
+  const expiresAt = listing.boostExpiresAt ? new Date(listing.boostExpiresAt) : null;
+  const expiresLabel = expiresAt && !Number.isNaN(expiresAt.getTime())
+    ? formatDateLabel(expiresAt)
+    : null;
+  const isActive = !expiresAt || expiresAt.getTime() > Date.now();
+  const label = listing.boostType === 'urgent'
+    ? 'Urgent boost'
+    : listing.boostType === 'featured'
+      ? 'Featured boost'
+      : 'Promoted';
+
+  return {
+    label,
+    active: isActive,
+    expiresLabel,
+    text: isActive
+      ? (expiresLabel ? `${label} active until ${expiresLabel}` : `${label} active`)
+      : (expiresLabel ? `${label} expired on ${expiresLabel}` : `${label} expired`),
+  };
+};
+
 const DashboardPage = () => {
   const { user, refreshUser } = useAuth();
   const { configured: paymentsConfigured } = usePaymentConfig();
@@ -28,6 +63,7 @@ const DashboardPage = () => {
   const [reloadKey, setReloadKey] = useState(0);
   const [checkoutLoading, setCheckoutLoading] = useState('');
   const hasPaidMembership = Boolean(user?.membershipTier && user.membershipTier !== 'free');
+  const membershipEndsLabel = formatDateLabel(user?.membershipExpiresAt);
 
   const replaceDashboardSearch = useCallback((mutateParams) => {
     const params = new URLSearchParams(searchParams);
@@ -114,13 +150,20 @@ const DashboardPage = () => {
         setCheckoutLoading('verify');
         try {
           await api.get('/payments/verify', { params: { sessionId } });
-          await refreshUser();
+          const refreshedUser = await refreshUser();
           setReloadKey((value) => value + 1);
-          toast.success(
-            paymentType === 'membership'
-              ? 'Breeder membership activated.'
-              : 'Payment completed successfully.'
-          );
+          if (paymentType === 'membership') {
+            const refreshedEndsLabel = formatDateLabel(refreshedUser?.membershipExpiresAt);
+            toast.success(
+              refreshedEndsLabel
+                ? `Breeder membership activated through ${refreshedEndsLabel}.`
+                : 'Breeder membership activated.'
+            );
+          } else if (paymentType === 'boost') {
+            toast.success('Boost payment verified. Refresh your listings to see the promotion status update.');
+          } else {
+            toast.success('Payment completed successfully.');
+          }
         } catch (err) {
           toast.error(err.response?.data?.error || 'We could not verify that payment yet.');
         } finally {
@@ -295,11 +338,11 @@ const DashboardPage = () => {
               {hasPaidMembership ? 'Membership Active' : 'Verified Breeder Membership'}
             </div>
             <h2 style={{ fontSize: '1.35rem', marginBottom: '8px' }}>
-              {hasPaidMembership ? 'Your account is ad-free and verified.' : 'Unlock breeder verification for $25/month.'}
+              {hasPaidMembership ? 'Your account is ad-free and verified.' : 'Unlock breeder verification and billing controls for $25/month.'}
             </h2>
             <p style={{ color: 'rgba(255,255,255,0.78)', maxWidth: '640px', lineHeight: 1.6 }}>
               {hasPaidMembership
-                ? 'You currently have breeder verification, ad-free browsing, and premium account treatment enabled.'
+                ? `You currently have breeder verification, ad-free browsing, and premium account treatment enabled.${membershipEndsLabel ? ` Current billing period ends ${membershipEndsLabel}.` : ''}`
                 : paymentsConfigured
                   ? 'Complete the membership checkout to get the trust badge, remove ads, and keep premium buyer-facing status across the marketplace.'
                   : 'Membership billing is ready in the product but still blocked until Stripe is connected in production.'}
@@ -354,56 +397,71 @@ const DashboardPage = () => {
                   <div className={styles.emptyState}>
                     <Package size={48} />
                     <h3>No listings yet</h3>
-                    <p>Create your first pet listing to get started.</p>
-                    {!paymentsConfigured && <p>Billing setup is still pending, so boosts and memberships are disabled for now.</p>}
+                    <p>Create your first listing to start collecting messages, favorites, and buyer interest.</p>
+                    <p>Boosts add a time-limited promotion badge after checkout. Membership unlocks ad-free browsing and billing controls.</p>
+                    {!paymentsConfigured && <p>Billing setup is still pending, so paid boosts and memberships stay disabled for now.</p>}
                     <button onClick={() => document.dispatchEvent(new CustomEvent('openPostModal'))} className="btn btn-primary">Create Listing</button>
                   </div>
-                ) : listings.map(listing => (
-                  <div key={listing.id} className={styles.listingCard}>
-                    <div className={styles.listingImage}>
-                      <img src={resolveMediaUrl(listing.image || listing.images?.[0] || '/images/mock_dog_1775037305181.png')} alt={listing.petName} />
-                      <span className={`${styles.statusBadge} ${styles[`status_${listing.status}`]}`}>
-                        {listing.status}
-                      </span>
-                    </div>
-                    <div className={styles.listingInfo}>
-                      <h3>{listing.petName}</h3>
-                      <p>{listing.breed} • {listing.age}</p>
-                      <span className={styles.price}>${listing.price}</span>
-                    </div>
-                    <div className={styles.listingActions}>
-                      {listing.status === 'available' && (
-                        <button
-                          onClick={() => handleBoostCheckout(listing)}
-                          className={styles.actionBtn}
-                          title="Boost Listing"
-                          disabled={checkoutLoading === `boost:${listing.id}`}
-                        >
-                          {checkoutLoading === `boost:${listing.id}` ? '...' : <Rocket size={16} />}
+                ) : listings.map((listing) => {
+                  const boostStatus = getBoostStatus(listing);
+
+                  return (
+                    <div key={listing.id} className={styles.listingCard}>
+                      <div className={styles.listingImage}>
+                        <img src={resolveMediaUrl(listing.image || listing.images?.[0] || '/images/mock_dog_1775037305181.png')} alt={listing.petName} />
+                        <div className={styles.badgeStack}>
+                          <span className={`${styles.statusBadge} ${styles[`status_${listing.status}`]}`}>
+                            {listing.status}
+                          </span>
+                          {boostStatus && (
+                            <span className={`${styles.boostBadge} ${boostStatus.active ? styles.boostBadgeActive : styles.boostBadgeExpired}`}>
+                              {boostStatus.text}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className={styles.listingInfo}>
+                        <h3>{listing.petName}</h3>
+                        <p>{listing.breed} • {listing.age}</p>
+                        <span className={styles.price}>${listing.price}</span>
+                        {boostStatus && (
+                          <p className={styles.boostMeta}>{boostStatus.active ? 'Promotion attached' : 'Promotion expired'}</p>
+                        )}
+                      </div>
+                      <div className={styles.listingActions}>
+                        {listing.status === 'available' && (
+                          <button
+                            onClick={() => handleBoostCheckout(listing)}
+                            className={styles.actionBtn}
+                            title="Boost Listing"
+                            disabled={checkoutLoading === `boost:${listing.id}`}
+                          >
+                            {checkoutLoading === `boost:${listing.id}` ? '...' : <Rocket size={16} />}
+                          </button>
+                        )}
+                        {listing.status === 'available' && (
+                          <button onClick={() => handleStatusChange(listing.id, 'adopted')} className={styles.actionBtn} title="Mark Adopted">
+                            ✅
+                          </button>
+                        )}
+                        <button onClick={() => handleDelete(listing.id)} className={`${styles.actionBtn} ${styles.deleteBtn}`} title="Delete">
+                          <Trash2 size={16} />
                         </button>
-                      )}
-                      {listing.status === 'available' && (
-                        <button onClick={() => handleStatusChange(listing.id, 'adopted')} className={styles.actionBtn} title="Mark Adopted">
-                          ✅
-                        </button>
-                      )}
-                      <button onClick={() => handleDelete(listing.id)} className={`${styles.actionBtn} ${styles.deleteBtn}`} title="Delete">
-                        <Trash2 size={16} />
-                      </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
             {tab === 'favorites' && (
               <div className={styles.listingsGrid}>
                 {favorites.length === 0 ? (
-                  <div className={styles.emptyState}>
-                    <Heart size={48} />
-                    <h3>No saved pets</h3>
-                    <p>Browse listings and save your favorites.</p>
-                    <Link to="/" className="btn btn-primary">Browse Pets</Link>
+                    <div className={styles.emptyState}>
+                      <Heart size={48} />
+                      <h3>No saved pets</h3>
+                      <p>Browse listings and save your favorites.</p>
+                      <Link to="/" className="btn btn-primary">Browse Pets</Link>
                   </div>
                 ) : favorites.map(fav => (
                   <Link to={`/listing/${fav.listing.id}`} key={fav.id} className={styles.listingCard}>
@@ -463,7 +521,7 @@ const DashboardPage = () => {
                     <div><span>Membership:</span> <strong>{insights.revenue.membershipRevenue}</strong></div>
                     <div><span>Total:</span> <strong>{insights.revenue.totalRevenue}</strong></div>
                     </div>
-                  </div>
+                </div>
               </div>
             )}
           </>

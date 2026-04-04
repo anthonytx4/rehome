@@ -1,5 +1,10 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /login
+Disallow: /messages
+Disallow: /register
 Sitemap: https://rehome.world/sitemap.xml
 
 # Allow AdSense Crawler

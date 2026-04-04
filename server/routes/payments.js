@@ -3,7 +3,6 @@ import { authenticate, authorize } from '../middleware/auth.js';
 import {
   createCheckoutSession,
   verifySession,
-  processPaymentMock,
   getPaymentHistory,
   releaseEscrow,
   getStripeConfig,
@@ -20,7 +19,6 @@ router.use(authenticate);
 
 router.post('/checkout', createCheckoutSession);
 router.get('/verify', verifySession);
-router.post('/process-mock', processPaymentMock);
 router.get('/history', getPaymentHistory);
 router.post('/portal', createPortalSession);
 

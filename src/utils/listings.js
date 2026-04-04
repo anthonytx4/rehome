@@ -60,10 +60,13 @@ export function dedupeListings(items = []) {
   return items.filter((item) => {
     if (!item) return false;
 
-    const key = [
-      normalizeListingIdentityPart(item.category),
-      normalizeListingIdentityPart(item.name || item.petName || item.title),
-    ].join('|');
+    const key = item.id
+      ? String(item.id)
+      : [
+          normalizeListingIdentityPart(item.category),
+          normalizeListingIdentityPart(item.name || item.petName || item.title),
+          normalizeListingIdentityPart(item.sellerId || item.userId),
+        ].join('|');
 
     if (seen.has(key)) return false;
     seen.add(key);
@@ -79,6 +82,11 @@ export function normalizeListing(rawListing) {
   const type = rawListing.species || rawListing.type || 'Listing';
   const name = rawListing.petName || rawListing.name || rawListing.title || type;
   const price = Number(rawListing.price ?? rawListing.fee ?? 0);
+  const boostExpiry = rawListing.boostExpiresAt ? new Date(rawListing.boostExpiresAt) : null;
+  const hasActiveBoost = Boolean(rawListing.boostType)
+    && boostExpiry instanceof Date
+    && !Number.isNaN(boostExpiry.getTime())
+    && boostExpiry.getTime() > Date.now();
   const artworkListing = decorateListingWithArtwork({
     ...rawListing,
     category,
@@ -98,10 +106,10 @@ export function normalizeListing(rawListing) {
     age: rawListing.age || 'Unknown age',
     gender: rawListing.gender || 'Unknown',
     location: rawListing.location || 'Location unavailable',
-    description: rawListing.description || `${name} is available on Rehome.`,
+    description: rawListing.description || `${name} is listed on Rehome.`,
     fee: Number.isFinite(price) ? price : 0,
     verified: seller?.isVerifiedBreeder ?? rawListing.verified ?? false,
-    isPremium: Boolean(rawListing.boostType || rawListing.isPremium),
+    isPremium: Boolean(rawListing.isPremium || hasActiveBoost),
     image: resolveMediaUrl(artworkListing.image),
     images: resolveMediaList(artworkListing.images),
     category,
@@ -114,6 +122,13 @@ export function normalizeListing(rawListing) {
     sellerId: rawListing.userId || seller?.id || null,
     sellerName: seller?.name || null,
     seller,
+    sellerLocation: seller?.location || null,
+    sellerReviewCount: seller?.reviewCount ?? seller?._count?.reviewsReceived ?? 0,
+    sellerAvgRating: seller?.avgRating ?? 0,
+    sellerMemberSince: seller?.createdAt || null,
+    favoritesCount: rawListing.favoritesCount ?? rawListing._count?.favorites ?? 0,
+    boostType: hasActiveBoost ? rawListing.boostType : null,
+    boostExpiresAt: hasActiveBoost ? rawListing.boostExpiresAt : null,
     createdAt: rawListing.createdAt || null,
     updatedAt: rawListing.updatedAt || null,
     raw: rawListing,

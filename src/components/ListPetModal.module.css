@@ -607,6 +607,16 @@
   line-height: 1.4;
 }
 
+.boostNote {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  background: var(--color-surface-hover);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+
 .boostPrice {
   display: inline-block;
   margin-top: 8px;
@@ -682,4 +692,3 @@
 .fullWidthBtn {
   width: 100%;
 }
-

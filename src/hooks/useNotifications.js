@@ -41,8 +41,19 @@ export function useNotifications({ isAuthenticated, user, paymentsConfigured }) 
     setReadState(getStoredState(user?.id));
   }, [user?.id]);
 
-  const markNotificationRead = (notification) => {
+  const markNotificationRead = async (notification) => {
     if (!notification || !isAuthenticated) return;
+
+    if (notification.type === 'message' && notification.listingId && notification.otherUserId) {
+      try {
+        await api.post('/messages/read', {
+          listingId: notification.listingId,
+          userId: notification.otherUserId,
+        });
+      } catch {
+        return;
+      }
+    }
 
     setReadState((current) => {
       const next = { ...current };
@@ -70,8 +81,16 @@ export function useNotifications({ isAuthenticated, user, paymentsConfigured }) 
     });
   };
 
-  const markAllNotificationsRead = () => {
+  const markAllNotificationsRead = async () => {
     if (!isAuthenticated) return;
+
+    try {
+      if (messages.length > 0) {
+        await api.post('/messages/read', { all: true });
+      }
+    } catch {
+      return;
+    }
 
     setReadState((current) => {
       const next = { ...current };
@@ -116,6 +135,8 @@ export function useNotifications({ isAuthenticated, user, paymentsConfigured }) 
           .map((conversation) => ({
             type: 'message',
             id: `message-${conversation.listingId}-${conversation.otherUser.id}`,
+            listingId: conversation.listingId,
+            otherUserId: conversation.otherUser.id,
             title: `New message from ${conversation.otherUser.name}`,
             body: conversation.lastMessage.content || 'Sent media',
             href: `/messages/${conversation.listingId}?sellerId=${conversation.otherUser.id}`,

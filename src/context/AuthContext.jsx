@@ -1,7 +1,9 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import api from '../api/client';
 
 const AuthContext = createContext(null);
+const DEFAULT_AUTH_REDIRECT = '/dashboard';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
@@ -13,6 +15,31 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [authActionPending, setAuthActionPending] = useState(false);
   const [error, setError] = useState(null);
+
+  const clearSession = useCallback(() => {
+    setUser(null);
+    setAuthActionPending(false);
+    localStorage.removeItem('rehome_token');
+    localStorage.removeItem('rehome_user');
+  }, []);
+
+  const refreshUser = useCallback(async () => {
+    try {
+      const res = await api.get('/auth/me');
+      setUser(res.data.user);
+      setError(null);
+      localStorage.setItem('rehome_user', JSON.stringify(res.data.user));
+      return res.data.user;
+    } catch (err) {
+      clearSession();
+      if (!err.response || err.response.status >= 500) {
+        setError('We could not verify your session right now. Please try again in a moment.');
+      } else {
+        setError(null);
+      }
+      throw err;
+    }
+  }, [clearSession]);
 
   useEffect(() => {
     let cancelled = false;
@@ -30,10 +57,8 @@ export const AuthProvider = ({ children }) => {
     };
 
     const handleAuthInvalidated = () => {
-      setUser(null);
-      setAuthActionPending(false);
-      localStorage.removeItem('rehome_token');
-      localStorage.removeItem('rehome_user');
+      clearSession();
+      setError(null);
     };
 
     bootstrapSession();
@@ -43,27 +68,15 @@ export const AuthProvider = ({ children }) => {
       cancelled = true;
       window.removeEventListener('rehome:auth-invalidated', handleAuthInvalidated);
     };
-  }, []);
-
-  const refreshUser = async () => {
-    try {
-      const res = await api.get('/auth/me');
-      setUser(res.data.user);
-      localStorage.setItem('rehome_user', JSON.stringify(res.data.user));
-      return res.data.user;
-    } catch (err) {
-      setUser(null);
-      localStorage.removeItem('rehome_token');
-      localStorage.removeItem('rehome_user');
-      throw err;
-    }
-  };
+  }, [clearSession, refreshUser]);
 
   const login = async (email, password) => {
     setAuthActionPending(true);
+    setError(null);
     try {
       const res = await api.post('/auth/login', { email, password });
       setUser(res.data.user);
+      setError(null);
       localStorage.setItem('rehome_token', res.data.token);
       localStorage.setItem('rehome_user', JSON.stringify(res.data.user));
       return res.data;
@@ -75,9 +88,11 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (name, email, password, location) => {
     setAuthActionPending(true);
+    setError(null);
     try {
       const res = await api.post('/auth/register', { name, email, password, location });
       setUser(res.data.user);
+      setError(null);
       localStorage.setItem('rehome_token', res.data.token);
       localStorage.setItem('rehome_user', JSON.stringify(res.data.user));
       return res.data;
@@ -88,11 +103,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    try { await api.post('/auth/logout'); } catch {}
-    setUser(null);
-    setAuthActionPending(false);
-    localStorage.removeItem('rehome_token');
-    localStorage.removeItem('rehome_user');
+    try {
+      await api.post('/auth/logout');
+    } catch (err) {
+      void err;
+    }
+    clearSession();
+    setError(null);
   };
 
   useEffect(() => {

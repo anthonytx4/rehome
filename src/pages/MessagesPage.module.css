@@ -45,17 +45,43 @@
 }
 
 .searchWrap input {
+  flex: 1;
   border: none;
   background: none;
   font-size: 0.9rem;
-  width: 100%;
   outline: none;
   font-family: inherit;
+}
+
+.searchClear {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  color: var(--color-text-muted);
 }
 
 .convList {
   flex: 1;
   overflow-y: auto;
+}
+
+.emptyInbox {
+  padding: 32px 24px;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.emptyInbox h3 {
+  color: var(--color-secondary);
+  font-size: 1.1rem;
+  margin: 14px 0 8px;
+}
+
+.emptyInbox p {
+  font-size: 0.92rem;
+  line-height: 1.5;
 }
 
 .convItem {
@@ -138,6 +164,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  position: relative;
 }
 
 .headerInfo h3 {
@@ -155,6 +182,67 @@
   margin-left: auto;
   color: var(--color-text-muted);
   cursor: pointer;
+}
+
+.headerActions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+}
+
+.headerActionBtn {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: white;
+  color: var(--color-text-muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.headerActionBtn:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-secondary);
+}
+
+.threadMenuWrap {
+  position: relative;
+}
+
+.threadMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 180px;
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-lg);
+  padding: 8px;
+  z-index: 20;
+}
+
+.threadMenuItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  color: var(--color-secondary);
+  font-weight: 600;
+  background: none;
+  border: none;
+  text-align: left;
+}
+
+.threadMenuItem:hover {
+  background: var(--color-surface-hover);
 }
 
 .messageList {
@@ -264,6 +352,14 @@
 .startNote {
   font-size: 0.85rem;
   color: var(--color-text-muted);
+}
+
+.emptyActions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 18px;
 }
 
 /* Input Area */
@@ -395,6 +491,10 @@
   font-size: 0.95rem;
 }
 
+.windowHidden {
+  display: none;
+}
+
 /* Loading State */
 .loadingState {
   height: 60vh;
@@ -441,6 +541,14 @@
   
   .backBtn {
     display: block;
+  }
+
+  .headerActions {
+    gap: 8px;
+  }
+
+  .threadMenu {
+    min-width: 160px;
   }
 }
 

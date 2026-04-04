@@ -205,7 +205,7 @@ const ListPetModal = ({ isOpen, onClose }) => {
       }
 
       if (!paymentsConfigured) {
-        toast('Listing published. Paid boosts stay disabled until Stripe is connected.', { icon: 'ℹ️' });
+        toast('Listing published. Paid promotion was skipped because Stripe is not connected yet.', { icon: 'ℹ️' });
         navigate('/dashboard?tab=listings');
         return;
       }
@@ -480,7 +480,10 @@ const ListPetModal = ({ isOpen, onClose }) => {
 
           {/* STEP 4: Monetize / Boost */}
           {step === 4 && (
-            <div className={styles.boostSection}>
+          <div className={styles.boostSection}>
+              <p className={styles.sectionDesc}>
+                Choose a promotion level for this listing. Boosts add a badge and 7-day promotion metadata after checkout, but exact marketplace ranking depends on current demand.
+              </p>
               {/* Inline auth for guests */}
               {!isAuthenticated && showInlineAuth && (
                 <div className={styles.inlineAuth}>
@@ -519,7 +522,7 @@ const ListPetModal = ({ isOpen, onClose }) => {
                     <p>
                       {isLivestock ? 'Standard auction visibility. Your lot will appear in the livestock feed.' : 
                        isSupplies ? 'Standard market visibility. Your products will appear in search results.' : 
-                       'Standard visibility. Your listing will appear in search results.'}
+                       'Standard visibility with no paid promotion attached.'}
                     </p>
                     <span className={styles.boostPrice}>$0</span>
                   </div>
@@ -527,14 +530,14 @@ const ListPetModal = ({ isOpen, onClose }) => {
                     onClick={() => setSelectedMonetize('featured')}>
                     <div className={styles.boostBadge}><Rocket size={16} /> Recommended</div>
                     <h3>
-                      {isLivestock ? 'Elite Auction Placement' : 
-                       isSupplies ? 'Premium Shelf Space' : 
+                      {isLivestock ? 'Featured Auction Listing' :
+                       isSupplies ? 'Featured Supply Listing' :
                        'Featured Listing'}
                     </h3>
                     <p>
-                      {isLivestock ? 'Featured styling plus priority placement near the top of the livestock feed for 7 days.' : 
-                       isSupplies ? 'Featured styling plus stronger placement near the top of the supplies feed for 7 days.' : 
-                       'Featured styling plus stronger placement near the top of pet search results for 7 days.'}
+                      {isLivestock ? 'Adds featured styling and a 7-day promotion badge to this auction.' :
+                       isSupplies ? 'Adds featured styling and a 7-day promotion badge to this supply listing.' :
+                       'Adds featured styling and a 7-day promotion badge to this listing.'}
                     </p>
                     <span className={styles.boostPrice}>$15</span>
                   </div>
@@ -542,17 +545,20 @@ const ListPetModal = ({ isOpen, onClose }) => {
                     onClick={() => setSelectedMonetize('urgent')}>
                     <div className={styles.boostBadge}><Zap size={16} /> Fastest</div>
                     <h3>
-                      {isLivestock ? 'Global Breeder Blast' : 
-                       isSupplies ? 'Wholesale Network Blast' : 
-                       'Urgent Network Blast'}
+                      {isLivestock ? 'Urgent Auction Listing' :
+                       isSupplies ? 'Urgent Supply Listing' :
+                       'Urgent Listing'}
                     </h3>
                     <p>
-                      {isLivestock ? 'Expanded feature treatment with an urgent badge and top-feed visibility for 7 days.' : 
-                       isSupplies ? 'Expanded feature treatment with stronger wholesale visibility for 7 days.' : 
-                       'Expanded feature treatment with stronger local visibility and an urgent badge for 7 days.'}
+                      {isLivestock ? 'Adds urgent styling and a 7-day promotion badge for time-sensitive auctions.' :
+                       isSupplies ? 'Adds urgent styling and a 7-day promotion badge for time-sensitive supply listings.' :
+                       'Adds urgent styling and a 7-day promotion badge for time-sensitive listings.'}
                     </p>
                     <span className={styles.boostPrice}>$50</span>
                   </div>
+                  <p className={styles.boostNote}>
+                    The paid tiers differ by emphasis and price. They do not guarantee a specific rank, so use the tier that matches how quickly you want the listing to stand out.
+                  </p>
                 </>
               )}
             </div>

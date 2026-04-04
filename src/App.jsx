@@ -1,5 +1,5 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
-import { Analytics } from '@vercel/analytics/react';
+// import { Analytics } from '@vercel/analytics/react';
 import { useEffect, useState } from 'react';
 import { useAuth } from './context/AuthContext';
 import Navigation from './components/Navigation';
@@ -121,9 +121,16 @@ function App() {
     if (location.pathname === '/livestock') theme = 'livestock';
     if (location.pathname === '/supplies') theme = 'supplies';
     
-    const timer = setTimeout(() => setShowInterstitial(shouldShowInterstitial), 0);
+    /*
+    if (isProduction && window.location.hostname === SITE_ORIGIN.replace('https://', '')) {
+      window.location.replace(`${SITE_ORIGIN}${location.pathname}${location.search}`);
+      return;
+    }
+    */
+    
+    // const timer = setTimeout(() => setShowInterstitial(shouldShowInterstitial), 0);
     document.documentElement.setAttribute('data-marketplace', theme);
-    return () => clearTimeout(timer);
+    // return () => clearTimeout(timer);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -202,7 +209,7 @@ function App() {
       <InterstitialAd isOpen={showInterstitial} onClose={() => setShowInterstitial(false)} />
       <CookieConsent />
       <Footer />
-      <Analytics />
+      {/* <Analytics /> */}
     </div>
   );
 }

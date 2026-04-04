@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../utils/db.js';
 import bcrypt from 'bcryptjs';
-
-const prisma = new PrismaClient();
 
 const imagePaths = {
   dog: '/images/mock_dog_1775037305181.png',

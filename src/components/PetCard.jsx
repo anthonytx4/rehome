@@ -113,6 +113,18 @@ const PetCard = ({ pet, isAd, onClick }) => {
           </div>
         </div>
         
+        {pet.category && (
+          <span className={`${styles.categoryBadge} ${
+            pet.category === 'pets' ? styles.categoryPets :
+            pet.category === 'livestock' ? styles.categoryLivestock :
+            pet.category === 'supplies' ? styles.categorySupplies : ''
+          }`}>
+            {pet.category === 'pets' ? 'Pets' : 
+             pet.category === 'livestock' ? 'Livestock' : 
+             pet.category === 'supplies' ? 'Supplies' : pet.category}
+          </span>
+        )}
+        
         <p className={styles.breed}>{pet.breed} • {pet.age}</p>
 
         {(lotLabel || auctionEndsAt) && (

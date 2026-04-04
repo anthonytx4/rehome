@@ -74,7 +74,7 @@ const makeImageDataUrl = (item, index, variant = 0) => {
   }[baseKey] || 'REHOME';
   const headline = escapeXml(item.petName || item.title);
   const subline = escapeXml(item.breed || item.species || 'Marketplace');
-  const footer = escapeXml(`${item.location}  ${item.price ? `$${item.price}` : ''}`.trim());
+  const footer = escapeXml(item.location || 'Marketplace');
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="${headline}">
       <defs>

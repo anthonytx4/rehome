@@ -337,16 +337,16 @@ const DashboardPage = () => {
           </button>
         </div>
 
-        <div style={{ marginBottom: '24px', padding: '24px', borderRadius: '24px', background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(41, 37, 36, 0.92))', color: '#fff', display: 'flex', justifyContent: 'space-between', gap: '18px', alignItems: 'center', flexWrap: 'wrap', boxShadow: 'var(--shadow-lg)' }}>
-          <div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#FDE68A', fontWeight: 800, marginBottom: '10px' }}>
+        <div className={styles.premiumBanner}>
+          <div className={styles.premiumContent}>
+            <div className={styles.premiumBadge}>
               <ShieldCheck size={14} />
               {hasPaidMembership ? 'Membership Active' : 'Verified Breeder Membership'}
             </div>
-            <h2 style={{ fontSize: '1.35rem', marginBottom: '8px' }}>
+            <h2 className={styles.premiumTitle}>
               {hasPaidMembership ? 'Your account is ad-free and verified.' : 'Unlock breeder verification and billing controls for $25/month.'}
             </h2>
-            <p style={{ color: 'rgba(255,255,255,0.78)', maxWidth: '640px', lineHeight: 1.6 }}>
+            <p className={styles.premiumText}>
               {hasPaidMembership
                 ? `You currently have breeder verification, ad-free browsing, and premium account treatment enabled.${membershipEndsLabel ? ` Current billing period ends ${membershipEndsLabel}.` : ''}`
                 : paymentsConfigured
@@ -427,6 +427,11 @@ const DashboardPage = () => {
                         </div>
                       </div>
                       <div className={styles.listingInfo}>
+                        <div className={styles.categoryBadgeContainer}>
+                          <span className={`${styles.categoryBadge} ${styles[`category_${listing.category}`]}`}>
+                            {listing.category}
+                          </span>
+                        </div>
                         <h3>{listing.petName}</h3>
                         <p>{listing.breed} • {listing.age}</p>
                         <span className={styles.price}>${listing.price}</span>

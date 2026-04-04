@@ -6,6 +6,7 @@ import usePaymentConfig from '../hooks/usePaymentConfig';
 import useNotifications from '../hooks/useNotifications';
 import toast from 'react-hot-toast';
 import styles from './Navigation.module.css';
+import { MARKETPLACES, getMarketplaceByPath } from '../config/marketplace';
 
 const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks }) => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -16,6 +17,7 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
   const [showNotifications, setShowNotifications] = useState(false);
   const navigate = useNavigate();
   const notifications = useNotifications({ isAuthenticated, user, paymentsConfigured });
+  const currentMarketplace = getMarketplaceByPath(location.pathname);
 
   const handleLogout = async () => {
     await logout();
@@ -59,11 +61,7 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
           <Search size={18} className={styles.searchIcon} />
           <input 
             type="text" 
-            placeholder={
-              location.pathname === '/livestock' ? "Search cattle lots, bred females, equine consignments..." :
-              location.pathname === '/supplies' ? "Search soaps, brushes, bulk lots..." :
-              "Search for pets, breeds, or shelters..."
-            }
+            placeholder={currentMarketplace.searchPlaceholder}
             className={styles.searchInput}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -77,9 +75,7 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
             <>
               <button className={`btn ${styles.postBtn}`} onClick={onOpenPost}>
                 <PlusCircle size={18} />
-                {location.pathname === '/livestock' ? 'List Livestock' : 
-                 location.pathname === '/supplies' ? 'List Supplies' : 
-                 'List a Pet'}
+                {currentMarketplace.listLabel}
               </button>
               <div className={styles.userMenuWrap}>
                 <button
@@ -247,9 +243,7 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
             <>
               <button className={`btn ${styles.postBtn}`} onClick={onOpenPost}>
                 <PlusCircle size={18} />
-                {location.pathname === '/livestock' ? 'List Livestock' : 
-                 location.pathname === '/supplies' ? 'List Supplies' : 
-                 'List a Pet'}
+                {currentMarketplace.listLabel}
               </button>
               <Link to="/login" className={styles.loginBtn}>Sign In</Link>
               <Link to="/register" className={`btn btn-primary ${styles.registerBtn}`}>Sign Up</Link>
@@ -291,9 +285,7 @@ const Navigation = ({ onOpenPost, searchQuery, onSearchChange, onOpenHowItWorks 
           </div>
           <button type="button" className={styles.mobileLink} onClick={() => { onOpenHowItWorks(); setShowMobileMenu(false); }}>About</button>
           <button type="button" className={styles.mobileLink} onClick={() => { onOpenPost(); setShowMobileMenu(false); }}>
-            {location.pathname === '/livestock' ? 'List Livestock' : 
-             location.pathname === '/supplies' ? 'List Supplies' : 
-             'List a Pet'}
+            {currentMarketplace.listLabel}
           </button>
           <Link to="/help" className={styles.mobileLink} onClick={() => setShowMobileMenu(false)}>
             <LifeBuoy size={16} /> Help Center

@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { startCheckout } from '../utils/payments';
 import usePaymentConfig from '../hooks/usePaymentConfig';
 import styles from './ListPetModal.module.css';
+import { MARKETPLACES, getMarketplaceByPath } from '../config/marketplace';
 
 const DETAIL_SECTIONS = {
   pets: [
@@ -132,9 +133,7 @@ const ListPetModal = ({ isOpen, onClose }) => {
   const [authPassword, setAuthPassword] = useState('');
 
   const [selectedMarketplace, setSelectedMarketplace] = useState(() => {
-    if (location.pathname === '/livestock') return 'Livestock';
-    if (location.pathname === '/supplies') return 'Supplies';
-    return 'Pets';
+    return getMarketplaceByPath(location.pathname).label;
   });
 
   const isLivestock = selectedMarketplace === 'Livestock';

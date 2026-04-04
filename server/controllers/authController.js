@@ -1,23 +1,22 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import { normalizeEmailAddress, sanitizeText } from '../utils/marketplaceSafety.js';
+import { generatePasswordResetToken, generateSessionToken, hashPasswordVersion, verifySignedToken } from '../utils/authTokens.js';
 
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || 'rehome-dev-secret-key-change-in-prod';
 const MIN_PASSWORD_LENGTH = 8;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-const generateToken = (userId) => {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' });
-};
+const PASSWORD_RESET_EXPIRY_MINUTES = 30;
+const PASSWORD_RESET_PREVIEW_ENABLED = process.env.NODE_ENV !== 'production';
+const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+const PASSWORD_RESET_GENERIC_MESSAGE = 'If an account exists for that email, Rehome will prepare password reset instructions.';
 
 const setTokenCookie = (res, token) => {
   res.cookie('token', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 };
 
@@ -60,15 +59,15 @@ export const register = async (req, res, next) => {
         membershipExpiresAt: true,
         remainingSkips: true,
         createdAt: true,
-      }
+      },
     });
 
-    const token = generateToken(user.id);
+    const token = generateSessionToken(user.id, hashedPassword);
     setTokenCookie(res, token);
 
-    res.status(201).json({ user, token });
+    return res.status(201).json({ user, token });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 };
 
@@ -91,13 +90,13 @@ export const login = async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    const token = generateToken(user.id);
+    const token = generateSessionToken(user.id, user.password);
     setTokenCookie(res, token);
 
-    const { password: _, ...userWithoutPassword } = user;
-    res.json({ user: userWithoutPassword, token });
+    const { password: _password, ...userWithoutPassword } = user;
+    return res.json({ user: userWithoutPassword, token });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 };
 
@@ -112,4 +111,111 @@ export const logout = (req, res) => {
 
 export const getMe = async (req, res) => {
   res.json({ user: req.user });
+};
+
+export const forgotPassword = async (req, res, next) => {
+  try {
+    const normalizedEmail = normalizeEmailAddress(req.body?.email);
+
+    if (!normalizedEmail || !EMAIL_PATTERN.test(normalizedEmail)) {
+      return res.status(400).json({ error: 'Enter a valid email address' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+      },
+    });
+
+    const baseResponse = {
+      message: PASSWORD_RESET_GENERIC_MESSAGE,
+      delivery: PASSWORD_RESET_PREVIEW_ENABLED ? 'preview' : 'blocked_externally',
+      expiresInMinutes: PASSWORD_RESET_EXPIRY_MINUTES,
+    };
+
+    if (!user) {
+      return res.json(baseResponse);
+    }
+
+    const token = generatePasswordResetToken(user.id, user.password);
+    const resetUrl = new URL('/reset-password', CLIENT_URL);
+    resetUrl.searchParams.set('token', token);
+
+    if (PASSWORD_RESET_PREVIEW_ENABLED) {
+      return res.json({
+        ...baseResponse,
+        previewUrl: resetUrl.toString(),
+      });
+    }
+
+    console.warn(`[password-reset] Reset requested for ${normalizedEmail}, but email delivery is not configured.`);
+
+    return res.json({
+      ...baseResponse,
+      blockedReason: 'Password reset email delivery is not configured in this environment yet.',
+      requiredSetup: 'Connect a transactional email provider before advertising live self-serve password recovery.',
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+export const resetPassword = async (req, res, next) => {
+  try {
+    const token = sanitizeText(req.body?.token, { maxLength: 2000 });
+    const password = String(req.body?.password || '');
+
+    if (!token) {
+      return res.status(400).json({ error: 'Reset token is required' });
+    }
+
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      return res.status(400).json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` });
+    }
+
+    const decoded = verifySignedToken(token);
+    if (decoded?.purpose !== 'password-reset' || !decoded?.userId) {
+      return res.status(400).json({ error: 'That reset link is invalid. Request a new one.' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: {
+        id: true,
+        password: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: 'That reset link is no longer valid. Request a new one.' });
+    }
+
+    if (decoded.passwordVersion !== hashPasswordVersion(user.password)) {
+      return res.status(400).json({ error: 'That reset link has already been replaced. Request a new one.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword },
+    });
+
+    return res.json({
+      message: 'Password updated. Sign in with your new password.',
+    });
+  } catch (err) {
+    if (err.name === 'TokenExpiredError') {
+      return res.status(400).json({ error: 'That reset link expired. Request a new one.' });
+    }
+
+    if (err.name === 'JsonWebTokenError') {
+      return res.status(400).json({ error: 'That reset link is invalid. Request a new one.' });
+    }
+
+    return next(err);
+  }
 };

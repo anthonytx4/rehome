@@ -15,6 +15,8 @@ import PostActionBanner from './components/ads/PostActionBanner';
 import InterstitialAd from './components/ads/InterstitialAd';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import DashboardPage from './pages/DashboardPage';
 import MessagesPage from './pages/MessagesPage';
 import AdminPage from './pages/AdminPage';
@@ -27,7 +29,7 @@ import './App.css';
 
 const SITE_NAME = 'Rehome';
 const SITE_ORIGIN = 'https://rehome.world';
-const PRIVATE_PATHS = new Set(['/login', '/register', '/dashboard', '/messages', '/admin']);
+const PRIVATE_PATHS = new Set(['/login', '/register', '/forgot-password', '/reset-password', '/dashboard', '/messages', '/admin']);
 
 const PAGE_META = {
   '/': {
@@ -49,6 +51,16 @@ const PAGE_META = {
     title: 'Privacy, Terms, and Trust | Rehome',
     description: 'Read Rehome’s privacy policy, marketplace terms, payment notes, and trust and safety guidance.',
     ogType: 'article',
+  },
+  '/forgot-password': {
+    title: 'Forgot Password | Rehome',
+    description: 'Request a secure password reset for your Rehome account.',
+    ogType: 'website',
+  },
+  '/reset-password': {
+    title: 'Reset Password | Rehome',
+    description: 'Set a new password for your Rehome account.',
+    ogType: 'website',
   },
   '/help': {
     title: 'Help Center, FAQ, and Safety Guide | Rehome',
@@ -314,6 +326,8 @@ function App() {
           <Route path="/" element={<HomePage searchQuery={searchQuery} />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
           <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
           <Route path="/messages/:listingId" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />

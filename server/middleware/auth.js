@@ -1,18 +1,17 @@
-import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
+import { hashPasswordVersion, verifySignedToken } from '../utils/authTokens.js';
 
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || 'rehome-dev-secret-key-change-in-prod';
 
 export const auth = async (req, res, next) => {
   try {
     const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
-    
+
     if (!token) {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = verifySignedToken(token);
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
       select: {
@@ -28,22 +27,28 @@ export const auth = async (req, res, next) => {
         membershipExpiresAt: true,
         remainingSkips: true,
         stripeCustomerId: true,
+        password: true,
         createdAt: true,
-      }
+      },
     });
 
     if (!user) {
       return res.status(401).json({ error: 'User not found' });
     }
 
-    req.user = user;
-    next();
+    if (decoded.passwordVersion && decoded.passwordVersion !== hashPasswordVersion(user.password)) {
+      return res.status(401).json({ error: 'Session expired. Please sign in again.' });
+    }
+
+    const { password: _password, ...safeUser } = user;
+    req.user = safeUser;
+    return next();
   } catch (_err) {
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
 };
 
-export const authenticate = auth; // Alias for backward compatibility
+export const authenticate = auth;
 
 export const authorize = (...roles) => {
   return (req, res, next) => {
@@ -54,7 +59,7 @@ export const authorize = (...roles) => {
     if (roles.length && !roles.includes(userRole) && req.user.email !== 'admin@rehome.world') {
       return res.status(403).json({ error: 'Access denied' });
     }
-    next();
+    return next();
   };
 };
 
@@ -62,15 +67,22 @@ export const optionalAuth = async (req, res, next) => {
   try {
     const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
     if (token) {
-      const decoded = jwt.verify(token, JWT_SECRET);
+      const decoded = verifySignedToken(token);
       const user = await prisma.user.findUnique({
         where: { id: decoded.userId },
-        select: { id: true, name: true, email: true }
+        select: { id: true, name: true, email: true, password: true },
       });
-      req.user = user || null;
+
+      if (user && decoded.passwordVersion && decoded.passwordVersion !== hashPasswordVersion(user.password)) {
+        req.user = null;
+      } else {
+        req.user = user ? { id: user.id, name: user.name, email: user.email } : null;
+      }
+    } else {
+      req.user = null;
     }
   } catch {
     req.user = null;
   }
-  next();
+  return next();
 };

@@ -104,7 +104,10 @@ const LoginPage = () => {
             </div>
 
             <div className={styles.field}>
-              <label className={styles.label}>Password</label>
+              <div className={styles.fieldHeader}>
+                <label className={styles.label}>Password</label>
+                <Link to="/forgot-password" className={styles.inlineLink}>Forgot password?</Link>
+              </div>
               <div className={styles.inputWrap}>
                 <Lock size={18} className={styles.inputIcon} />
                 <input
@@ -135,6 +138,7 @@ const LoginPage = () => {
 
           <div className={styles.footer}>
             <p>Don&apos;t have an account? <Link to={registerLink} className={styles.link}>Create one</Link></p>
+            <p><Link to="/forgot-password" className={styles.link}>Reset my password</Link></p>
             <p className={styles.footerNote}>Secure sign-in for buyers, sellers, and marketplace managers.</p>
           </div>
 

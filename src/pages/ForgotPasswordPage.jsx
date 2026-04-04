@@ -67,9 +67,6 @@ const ForgotPasswordPage = () => {
           </div>
 
           <form onSubmit={handleSubmit} className={styles.form}>
-            <div className={styles.noticeBanner}>
-              Self-serve reset emails require a connected transactional email provider. Until that is configured, this page will tell you whether reset delivery is blocked in the current environment.
-            </div>
 
             <div className={styles.field}>
               <label className={styles.label}>Account Email</label>

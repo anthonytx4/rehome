@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
@@ -9,9 +9,9 @@ datasource db {
 }
 
 model User {
-  id                  String    @id @default(cuid())
+  id                  String     @id @default(cuid())
   name                String
-  email               String    @unique
+  email               String     @unique
   password            String
   avatar              String?
   location            String?
@@ -21,60 +21,57 @@ model User {
   dob                 String?
   experience          String?
   breederType         String?
-  isVerifiedBreeder   Boolean   @default(false)
-  membershipTier      String    @default("free")
+  isVerifiedBreeder   Boolean    @default(false)
+  membershipTier      String     @default("free")
   membershipExpiresAt DateTime?
   stripeCustomerId    String?
-  remainingSkips      Int       @default(0)
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-
-  listings         Listing[]
-  sentMessages     Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
-  favorites        Favorite[]
-  reviewsGiven     Review[]  @relation("ReviewsGiven")
-  reviewsReceived  Review[]  @relation("ReviewsReceived")
-  payments         Payment[]
-  bids             Bid[]
+  remainingSkips      Int        @default(0)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  bids                Bid[]
+  favorites           Favorite[]
+  listings            Listing[]
+  receivedMessages    Message[]  @relation("ReceivedMessages")
+  sentMessages        Message[]  @relation("SentMessages")
+  payments            Payment[]
+  reviewsGiven        Review[]   @relation("ReviewsGiven")
+  reviewsReceived     Review[]   @relation("ReviewsReceived")
 }
 
 model Listing {
-  id              String    @id @default(cuid())
-  title           String
-  petName         String
-  species         String
-  breed           String
-  age             String
-  gender          String
-  size            String
-  description     String
-  price           Float     @default(0)
-  status          String    @default("available")
-  images          String    @default("[]")
-  location        String
-  vaccinated      Boolean   @default(false)
-  neutered        Boolean   @default(false)
-  category        String    @default("pet")
-  listingType     String    @default("fixed")
-  lotSize         Int       @default(1)
-  allowPartialSale Boolean  @default(true)
-  reservePrice    Float?
-  currentBid      Float?
-  bidCount        Int       @default(0)
-  lastBidAt       DateTime?
-  auctionEndsAt   DateTime?
-  boostType       String?
-  boostExpiresAt  DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  messages    Message[]
-  favorites   Favorite[]
-  bids        Bid[]
+  id               String     @id @default(cuid())
+  title            String
+  petName          String
+  species          String
+  breed            String
+  age              String
+  gender           String
+  size             String
+  description      String
+  price            Float      @default(0)
+  status           String     @default("available")
+  images           String     @default("[]")
+  location         String
+  vaccinated       Boolean    @default(false)
+  neutered         Boolean    @default(false)
+  category         String     @default("pet")
+  listingType      String     @default("fixed")
+  lotSize          Int        @default(1)
+  allowPartialSale Boolean    @default(true)
+  reservePrice     Float?
+  currentBid       Float?
+  bidCount         Int        @default(0)
+  lastBidAt        DateTime?
+  auctionEndsAt    DateTime?
+  boostType        String?
+  boostExpiresAt   DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  userId           String
+  bids             Bid[]
+  favorites        Favorite[]
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages         Message[]
 
   @@index([species])
   @@index([status])
@@ -83,21 +80,18 @@ model Listing {
 }
 
 model Message {
-  id        String   @id @default(cuid())
-  content   String?
-  mediaUrl  String?
-  mediaType String?  // 'image' or 'video'
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
-
+  id         String   @id @default(cuid())
+  content    String?
+  mediaUrl   String?
+  mediaType  String?
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
   senderId   String
-  sender     User    @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
-
   receiverId String
-  receiver   User    @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
-
   listingId  String
-  listing    Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  listing    Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([senderId])
   @@index([receiverId])
@@ -107,28 +101,24 @@ model Message {
 model Favorite {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
-
   userId    String
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   listingId String
-  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, listingId])
   @@index([userId])
 }
 
 model Review {
-  id        String   @id @default(cuid())
-  rating    Int
-  comment   String?
-  createdAt DateTime @default(now())
-
+  id         String   @id @default(cuid())
+  rating     Int
+  comment    String?
+  createdAt  DateTime @default(now())
   reviewerId String
-  reviewer   User   @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
-
   sellerId   String
-  seller     User   @relation("ReviewsReceived", fields: [sellerId], references: [id], onDelete: Cascade)
+  reviewer   User     @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
+  seller     User     @relation("ReviewsReceived", fields: [sellerId], references: [id], onDelete: Cascade)
 
   @@index([sellerId])
 }
@@ -142,9 +132,8 @@ model Payment {
   metadata        String?
   stripePaymentId String?
   createdAt       DateTime @default(now())
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([stripePaymentId])
@@ -154,12 +143,10 @@ model Bid {
   id        String   @id @default(cuid())
   amount    Float
   createdAt DateTime @default(now())
-
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   listingId String
   listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([listingId])

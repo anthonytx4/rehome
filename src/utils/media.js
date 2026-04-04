@@ -5,6 +5,7 @@ const apiBaseUrl = (typeof import.meta !== 'undefined' && import.meta?.env?.VITE
 export const resolveMediaUrl = (value) => {
   if (!value) return '';
   if (/^https?:\/\//i.test(value) || value.startsWith('data:')) return value;
+  if (value.startsWith('/seed/')) return value; // Direct from public
   if (value.startsWith('/')) return `${apiBaseUrl}${value}`;
   return value;
 };
